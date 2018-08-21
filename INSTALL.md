@@ -87,7 +87,7 @@ Running the command line
 
 a random flowfield with zero-divergence, Dirichlet boundary conditions and the specified resolution and geometry is created.
 
-Time integration of this is initial condition is performed by the program `simulateflow` in the `programs` folder.
+Time integration of this initial condition is performed by the program `simulateflow` in the `programs` folder.
 The specific system to be simulated is specified via the program's options.
 
 The following example integrates for 200 advective time units a simple plane Couette system at the default Reynolds number
