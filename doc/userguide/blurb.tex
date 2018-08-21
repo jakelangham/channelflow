@@ -1,0 +1,122 @@
+\documentclass{article}[12pt]
+\usepackage{graphicx}
+\usepackage{float,times}
+\usepackage{alltt}
+\usepackage{moreverb}
+\usepackage{url}
+\usepackage{supertabular}
+
+\floatstyle{ruled}
+\newfloat{Code listing}{thp}{lop}[section]
+
+\include{macros}
+
+\begin{document}
+
+\renewcommand{\arraystretch}{1.5}
+
+\title{Channelflow description}
+\author{John F. Gibson\\jfg@member.fsf.org}
+\maketitle
+
+%\vspace{1in}
+%\begin{centering}
+%\includegraphics[height=3in]{streams.eps}
+%\end{centering}
+%\pagebreak
+\thispagestyle{empty}
+%\pagebreak
+\indent
+
+%\begin{abstract}
+%\end{abstract}
+
+Channelflow is a direct numerical simulator for incompressible fluid
+flow on a periodic, rectangular, wall-bounded domain. Channelflow uses
+spectral discretization in spatial directions (Fourier x Chebyshev x
+Fourier), finite-differencing in time, and primitive variables (3d
+velocity and pressure) to integrate the incompressible Navier-Stokes
+equations. The mathematics are based on the spectral channel-flow
+algorithm in Section 7.3 of {\em Spectral Methods in Fluid Dynamics}
+by Canuto, Hussaini, Quarteroni, and Zang. Channelflow is written in
+C++ and designed to be easy to use, easy to understand, modular,
+extensible, and fast. Channelflow is documented, licensed under the
+GNU GPL version 2, and available for download at
+
+Channelflow is written as a set of C++ classes that represent the
+major components of spectral channel-flow simulation. The channelflow
+class library provides a high-level representation for expressing and
+performing spectral channel-flow simulations. In channelflow's
+high-level syntax, fluids simulation programs are short, readable, and
+easily modifiable. Channelflow falls short of a providing a {\em
+language} for spectral simulation, due to the scope of the problem
+domain and to the difficulty of presenting a clean syntax through C++
+class libraries. But channelflow should be good enough for a general 
+use by fluids researchers who need a fast, simple, and extensible way 
+to simulate channel flows.
+
+Channelflow's classes are designed to be modular. Instances of classes
+behave as independent objects with automatic memory management. 
+Auxiliary fields and computations can be added to a program with a few
+lines of code. In channelflow, even the DNS algorithm is an object. 
+This greatly increases the flexibility of DNS computations. For
+example, a DNS can be reparameterized and restarted multiple times
+within a single program, multiple independent DNS computations can run
+side-by-side within the same program, and DNS computations can run as
+small components within a larger, more complex computations. As a
+result, comparative calculations that formerly required coordination 
+of several programs through shell scripts and saved data files can
+be done within single channelflow program. In this way channelflow 
+opens the way to a new class of computations that were not practically 
+possible with previous codes.
+
+Channelflow uses object-oriented programming and data abstraction to
+maximize the organization and readability of its library code, as
+well. Channelflow defines about a dozen C++ classes that act as
+abstract data types for the major components of spectral channel-flow
+simulation, as outlined by CHQZ. Each class forms a level of
+abstraction in which a set of mathematical operations are performed in
+terms of lower-level abstractions, from time-stepping equations at the
+top to linear algebra at the bottom. The channelflow library code thus
+naturally reflects mathematical algorithm, both in overall structure
+and line-by-line. One can look at any part of the code and quickly 
+understand what role it plays in the overall algorithm. One can learn 
+the algorithm in stages, either top-down or bottom-up, by focusing 
+on one level of abstraction at a time. 
+
+Thus channelflow has three main benefits: 
+\begin{itemize} 
+\item {\bf Ease of use:} Channelflow's high-level syntax allows 
+simple, rapid development of particular channel-flow simulations.
+\item {\bf Modularity:} Its modularity allows a broader range of 
+channel-flow computations.
+\item {\bf Intelligibility:} Its library code is organized and 
+documented in a way that makes learning the details easy.
+\end{itemize}
+Additional benefits are
+\begin{itemize} 
+\item {\bf Extensibility:} Channelflow is adaptable to new needs. For 
+example, it should be easy to add a new time-stepping algorithm or 
+method of calculating the nonlinear term. 
+\item {\bf Speed:} Channelflow is as fast as comparable Fortran codes
+\item {\bf Verifiability:} Channelflow contains a test suite 
+that verifies the correct behavior of major classes.
+\item {\bf Documentation:} The documentation describes how to use 
+the software and precisely specifies the mathematics of the algorithm.
+\item {\bf Support:} Channelflow has a support website 
+with public CVS access, support-request and bug-tracking systems, etc.
+(\url{http://savannah.nongnu.org/projects/channelflow}).
+\end{itemize}
+
+
+Channelflow is hosted at 
+\begin{center}
+\url{http://savannah.nongnu.org/projects/channelflow}
+\end{center}
+
+The latest source code and user's manual can be obtained at
+\begin{center}
+\url{http://savannah.nongnu.org/files/?group=channelflow}
+\end{center}
+
+\end{document}

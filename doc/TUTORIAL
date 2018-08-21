@@ -1,0 +1,267 @@
+OUTDATED
+
+$Date: 2008-04-21 21:58:58 +0530 (Mon, 21 Apr 2008) $ $Author: gibson $
+
+NOTE: For more up-to-date documentation, see
+
+  http://www.channelflow.org/dokuwiki/doku.php/docs
+
+
+
+
+Channelflow Tutorial
+
+1. Intro
+2. Overview of channelflow utility programs
+3. Example calculations
+   3.1 Make a movie
+   3.2. Project movie data onto state-space coordinates
+4. Writing your own channelflow programs: see examples/README
+
+
+===========================================================================
+1. Intro
+
+So you've installed channelflow. Now what? Well, computational fluid
+dynamics is a pretty big field, and there's no telling what kinds of
+ideas you might want to explore. For this reason Channelflow was
+developed primarily as a *programming language*. If you're using
+Channelflow for research towards a Ph.D. thesis, you will probably
+eventually end up writing your own channelflow programs, for example,
+modifying existing programs to integrate flows and analyze data. Or
+you might need to modify the time-integration routines to incorporate
+additional physics (polymer additives, bubbles, etc.)
+
+However, channelflow also includes a number of predefined utility
+programs that a basic set of important computations, such as
+time-integration of plane Couette and channel flows and measuring
+properties of velocity fields. These utilities suffice for the bulk
+of my own research. Probably the best way to get started with
+channelflow is to step through a few examples of run-of-the-mill
+calculations using these utilities. If you want to get right to these
+examples, skip to Section 3.
+
+
+===========================================================================
+2. Overview of channelflow utility programs
+
+Here's a list of current channelflow utilities. The first three
+are taken out of alphabetical order because they're featured in
+Section 3, Example Calculations.
+
+randomfield	build a random initial velocity field, save to disk
+couette		integrate an initial condition, save results to disk
+fieldprops	print out norms, symmetries, geometrical data of a stored field
+makemovie	extract slices of fields in order to make a movie
+
+addfields	compute sum a_n u_n and store result to disk
+arnoldi		compute the eigenvalues and eigenfunctions of eqbs and orbits
+ascii2field	convert a file of ASCII data to a channelflow FlowField
+changegrid	change the discretization or box size of a field
+field2ascii	convert a channelflow FlowField to a file of ASCII data
+fieldplots	extract a number of 2D slices of the 3D field, good for plots
+findorbit	compute an equilibrium or periodic orbit of plane Couette
+L2Dist		compute the L2 distance between two fields
+L2IP		compute the L2 inner product
+makebasis	construct an orthonormal basis from a set of fields
+makeheatmode	construct a field that decays in time according to Laplace eqn
+makestokesmode	construct a stokes eigenfunction of laminar equilibrium
+perturbfield	add random perturbations to a given field
+projectfields	project a set of fields onto a given basis
+projectseries	project a sequence of fields onto a given basis
+seriesprops	compute statistics on a sequence of data
+symmetrize	find the phase shift of a field that optimizes symmetries
+symmetryop      apply a symmetry operation to a field
+
+The utilities are stand-alone command-line programs that are run from
+the Unix shell. You can get brief built-in help information on each
+utility by running it with a -h or --help option. For example, running
+"couette --help" produces
+
+  gibson@akbar$ couette --help
+  couette :
+        integrate an initial condition and save velocity fields to disk.
+
+  options :
+    -T0       --T0           <real>   default == 0       start time
+    -T1       --T1           <real>   default == 100     end time
+    -vdt      --variabledt                               adjust dt for CFL
+    -dt       --dt           <real>   default == 0.03125 timestep
+    -dtmin    --dtmin        <real>   default == 0.001   minimum time step
+    -dtmax    --dtmax        <real>   default == 0.05    maximum time step
+    -dT       --dT           <real>   default == 1       save interval
+    -CFLmin   --CFLmin       <real>   default == 0.4     minimum CFL number
+    -CFLmax   --CFLmax       <real>   default == 0.6     maximum CFL number
+    -ts       --timestepping <string> default == sbdf3   timestepping algorithm
+    ...
+     -p        --pressure                                print pressure grad
+    <flowfield>      (trailing arg 1)                    initial condition
+
+The built-in help gives a brief description of each utility's purpose
+and a list of its command-line options and arguments. Channelflow
+utilities are invoked at the command line with syntax like
+
+   utility -opt1 value -opt2 value -flag1 arg3 arg2 arg1
+
+or concretely
+
+   couette -T0 0 -T1 -vdt -dt 0.02 -ts sbdf4 u0.ff
+
+
+"Options" (e.g. -opt1 value) are used to reset default values
+of parameters. For options, the first two columns in the built-in
+help give the short and long form of the option (e.g. -ts and
+--timestepping), the third column indicates the type of parameter
+expected (e.g. real, int, bool, string), and the fourth gives the
+the default value. For example, "couette -dt 0.02 -ts cnab2" sets
+the time stepping method to 2nd order Crank-Nicolson Adams-Bashforth
+with dt=0.02.
+
+"Flags" simply turn on boolean options that would otherwise be set
+to false. For example, calling "couette -vdt" turns on variable-dt
+timestepping, which adjusts dt at fixed intervals to keep the CFL
+number within bounds. For flags the third and fourth columns of
+built-in help are left blank.
+
+"Arguments" always come after all options and flags. Arguments usually
+specify the filenames of binary velocity fields that the utility will
+load and operate on. Most channelflow programs have one required
+argument (e.g. "couette u0.ff") some two (e.g. "L2Dist u0.ff u2.ff").
+Others take a variable number of arguments (e.g. makebasis u0 u1 u2").
+Unfortunately it's difficult to document variable-number arguments
+properly in the four-column option system, so variable-number arguments
+are usually documented with a "usage: line right after the description
+of the utility's purpose.
+
+So, as you read work through the Example Calculations, you can run the
+suggested command with a --help option to clarify what the options are
+doing and what other options are possible.
+
+===========================================================================
+3. Example Calculations
+
+---------------------------------------------------------
+3.1.  How to make a movie of a flow
+
+ 3.1.1. Generate an initial condition and examine its properties
+ 3.1.2. Integrate a flow in time, saving the results to disk
+ 3.1.3. Extract data from the sequence of stored velocity fields for plotting
+ 3.1.4. Make a movie from the extracted data
+
+
+3.1.1 Generate an initial condition and examine its properties
+
+  gibson@akbar$ randomfield -Nx 48 -Ny 35 -Nz 48 -lx 0.875 -lz 0.6 -m 0.20 u0.ff
+
+This command generates a no-slip, divergence-free velocity field with
+random spectral coefficients on a 48 x 35 x 48 grid, on [0, 2pi] x
+[-1, 1] x [0, pi], with magnitude 1/V \integral_V |u|^2 dx = 0.2. The
+field is a perturbation from the laminar flow --by default, velocity
+fields in channelflow are differences from laminar. The spectral
+coefficients are random within an exponentially decaying envelope,
+roughly similar to turbulent fields. The velocity field is saved to
+disk in binary format in file u0.ff (the .ff stands for "FlowField",
+the name of the C++ class for velocity, pressure and tensor fields in
+channelflow). The channelflow binary format stores the spectral
+coefficients, the geometry, and all discretization information so the
+field can be reconstructed entirely from the data in the file. You can
+list this information and some dynamical properties of the field by
+running
+
+  gibson@akbar$ fieldprops u0.ff
+
+
+3.1.2. Integrate a flow in time, saving the results to disk
+
+  gibson@akbar$ couette -T0 0 -T1 200 -l2 -o data u0.ff
+
+This command load the velocity field u0.ff from disk and integrates it
+in time (using the default integration algorithm and parameters) from
+t=T0=0 to t=T1=200, and saves the time varying velocity field to disk
+at the interval dT=1.0 (the default save interval) in a directory
+named data/. The -l2 option prints out the L2 norm of u as well as the
+Chebyshev-weighted norm.
+
+After this command finishes, look in the data/ directory, and you will
+see u0.ff u1.ff u2.ff etc. The integer label is the time (remember the
+save interval is dT=1.0). If you choose a noninteger save interval,
+the filenames will be something like u0.000.ff u0.975.ff etc.
+
+
+3.1.3 Extract data from the sequence of stored velocity fields for plotting
+
+  gibson@akbar$ movieframes -T0 0 -T1 200 -d data -o frames
+
+The movieframes program reads in the series of files data/u0.ff,
+data/u1.ff, etc. and extracts a number of 2D slices of the 3D fields
+that are good for visualizing the flow. These 2D slices are stored in
+the frames/ directory with filenames like u0_yz_slice.asc.
+
+
+3.1.4. Make a movie from the extracted data.
+
+To make a movie using channelflow's existing visualization tools, you
+need Matlab. (If you would like to write similar tools for another
+visualization package, please do so and send them to me!). Start up
+Matlab. Get all the scripts in channelflow/matlab into your Matlab
+path. Do this either by copying the scripts into the current
+directory, by copying them to wherever you store your Matlab scripts,
+or by putting channelflow/matlab in your Matlab path. You can do that
+by typing 'addpath /home/larry/channelflow-1.3.2/matlab' at the Matlab
+prompt (changing the directory as appropriate).
+
+Then, within Matlab change to the directory that where you ran the
+couette programs, the one with data/ and frames/ subdirectories.
+Within Matlab run
+
+   makemovie(0,1,200,0,1,10, 'couette.avi');
+
+This will construct a movie of the 3D velocity field as it evolves in
+time and store the result in file couette.avi, in AVI format. Running
+'help makemovie' will give you a help string about the makemovie
+script and its arguments; briefly, here the arguments are
+
+  0    starting frame number
+  1    frame interval
+  200  ending frame number
+  0    starting time (t=0.0)
+  1    time interval (dT=1.0)
+  10   frames per second
+  'couette.avi' output filename
+
+I have a number of scripts that will convert these AVI animations to
+other video formats and compress them along the way. These conversion
+scripts are not yet part of the channelflow distribution package, but
+I will try to work them in in the near future. Sorry for the delay,
+but these things take time.
+
+
+---------------------------------------------------------
+3.2. Project movie data onto state-space coordinates
+
+3.2.1 Make a low-d basis
+3.2.2 Project the movie data
+
+It can be useful to look at the temporal evolution of a fluid as
+a trajectory in state space. The number of degrees of freedom in
+a fluid simulation is very high (e.g. 10^5), so it is necessary
+to project the fields into a low-dimensional basis in order to
+plot the trajectory and look at it. We have found that good
+projection bases can be constructed from the "group orbits" of
+equilibria under the symmetries of plane Couette flow. In simple
+language, we take linear combinations of equilibria and their
+translations in x,z to form orthonormal basis sets.
+
+3.2.1 Make a low-d basis
+
+Download an equilibrium solution of plane Couette flow from the
+channelflow website, one that is compatible in geometry and
+discretization.
+
+(to be continued...)
+
+
+===========================================================================
+4. Writing your own channelflow programs
+
+Please refer to the file examples/README
