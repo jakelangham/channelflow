@@ -13,6 +13,7 @@
 #include "channelflow/realprofile.h"
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
 
 Real Linf(const ChebyCoeff& u);

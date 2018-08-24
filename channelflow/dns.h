@@ -20,8 +20,6 @@
 #include "channelflow/flowfield.h"
 #include "channelflow/nse.h"
 
-using namespace cfbasics;
-
 namespace channelflow {
 
 // DNS is a wrapper class for DNSAlgorithms. It's the main class for
@@ -46,7 +44,7 @@ class DNS {
                       const std::string indir);
     void advance(std::vector<FlowField>& fields, int nSteps = 1);
 
-    void project();                                      // Project onto symmetric subspace
+    void project();                                           // Project onto symmetric subspace
     void operator*=(const std::vector<FieldSymmetry>& symm);  // Apply symmetry to internal fields
 
     // Convert potentially fake pressure q and true pressure p, back and forth.
@@ -55,32 +53,29 @@ class DNS {
     void uq2p(FlowField u, FlowField q, FlowField& p) const;
 
     // void reset();                  // flush state, prepare for new integration
-    virtual void reset_dt(Real dt);
-    virtual void reset_time(Real t);
-    virtual void reset_gradp(Real dPdx, Real dPdz);    // change dPdx and enforce const dPdx
-    virtual void reset_bulkv(Real Ubulk, Real Wbulk);  // change Ubulk and enforce const Ubulk
-    // void reset_dPdx(Real dPdx);    // change dPdx and enforce const dPdx
-    // void reset_Ubulk(Real Ubulk);  // change Ubulk and enforce const Ubulk
+    virtual void reset_dt(cfbasics::Real dt);
+    virtual void reset_time(cfbasics::Real t);
+    virtual void reset_gradp(cfbasics::Real dPdx, cfbasics::Real dPdz);    // change dPdx and enforce const dPdx
+    virtual void reset_bulkv(cfbasics::Real Ubulk, cfbasics::Real Wbulk);  // change Ubulk and enforce const Ubulk
 
-    // void reset_uj(const FlowField& uj, int j);  // set u[j]=u(t-j*dt)
     bool push(const std::vector<FlowField>& fields);  // push into u[j] stack from another DNS,
-    virtual bool full() const;                   // is u[j] full, can we commence timestepping?
+    virtual bool full() const;                        // is u[j] full, can we commence timestepping?
 
     virtual int order() const;       // err should scale as dt^order
     virtual int Ninitsteps() const;  // number of steps needed to initialize
 
-    Real nu() const;
-    virtual Real dt() const;
-    virtual Real CFL(FlowField& u) const;
-    virtual Real time() const;
-    virtual Real dPdx() const;  // the mean pressure gradient at the current time
-    Real dPdz() const;
-    virtual Real Ubulk() const;  // the actual bulk velocity at the current time
-    Real Wbulk() const;
-    virtual Real dPdxRef() const;  // the mean press grad enforced during integration
-    Real dPdzRef() const;
-    virtual Real UbulkRef() const;  // the bulk velocity enforced during integ.
-    Real WbulkRef() const;          // the bulk velocity enforced during integ.
+    cfbasics::Real nu() const;
+    virtual cfbasics::Real dt() const;
+    virtual cfbasics::Real CFL(FlowField& u) const;
+    virtual cfbasics::Real time() const;
+    virtual cfbasics::Real dPdx() const;  // the mean pressure gradient at the current time
+    cfbasics::Real dPdz() const;
+    virtual cfbasics::Real Ubulk() const;  // the actual bulk velocity at the current time
+    cfbasics::Real Wbulk() const;
+    virtual cfbasics::Real dPdxRef() const;  // the mean press grad enforced during integration
+    cfbasics::Real dPdzRef() const;
+    virtual cfbasics::Real UbulkRef() const;  // the bulk velocity enforced during integ.
+    cfbasics::Real WbulkRef() const;          // the bulk velocity enforced during integ.
 
     virtual const ChebyCoeff& Ubase() const;
     virtual const ChebyCoeff& Wbase() const;
@@ -96,9 +91,11 @@ class DNS {
     DNSAlgorithm* init_algorithm_;
 
     std::shared_ptr<NSE> newNSE(const std::vector<FlowField>& fields, const DNSFlags& flags);
-    std::shared_ptr<NSE> newNSE(const std::vector<FlowField>& fields, const std::vector<ChebyCoeff>& base, const DNSFlags& flags);
+    std::shared_ptr<NSE> newNSE(const std::vector<FlowField>& fields, const std::vector<ChebyCoeff>& base,
+                                const DNSFlags& flags);
 
-    DNSAlgorithm* newAlgorithm(const std::vector<FlowField>& fields, const std::shared_ptr<NSE>& nse, const DNSFlags& flags);
+    DNSAlgorithm* newAlgorithm(const std::vector<FlowField>& fields, const std::shared_ptr<NSE>& nse,
+                               const DNSFlags& flags);
 };
 
 /****************************************************************************
@@ -193,33 +190,31 @@ class DNSPoincare : public DNS {
 
     DNSPoincare(FlowField& u, PoincareCondition* h, const DNSFlags& flags);
 
-    DNSPoincare(FlowField& u, const cfarray<FlowField>& e, const cfarray<FieldSymmetry>& sigma, PoincareCondition* h,
-                const DNSFlags& flags);
+    DNSPoincare(FlowField& u, const cfbasics::cfarray<FlowField>& e, const cfbasics::cfarray<FieldSymmetry>& sigma,
+                PoincareCondition* h, const DNSFlags& flags);
 
-    bool advanceToSection(FlowField& u, FlowField& q, int nSteps, int crosssign = 0, Real Tmin = 0,
-                          Real epsilon = 1e-13);
-
-    // Real f(const FlowField& u) const; // poincare condition is f(u) == 0
+    bool advanceToSection(FlowField& u, FlowField& q, int nSteps, int crosssign = 0, cfbasics::Real Tmin = 0,
+                          cfbasics::Real epsilon = 1e-13);
 
     const FlowField& ucrossing() const;
     const FlowField& pcrossing() const;
-    Real hcrossing() const;  // value of poincare condition at crossing
-    Real tcrossing() const;  // time of poincare crossing
-    int scrossing() const;   // -1 or 1 for dh/dt<0 or dh/dt>0
+    cfbasics::Real hcrossing() const;  // value of poincare condition at crossing
+    cfbasics::Real tcrossing() const;  // time of poincare crossing
+    int scrossing() const;             // -1 or 1 for dh/dt<0 or dh/dt>0
 
-    Real hcurrent() const;  // return h(u) at current timestep
+    cfbasics::Real hcurrent() const;  // return h(u) at current timestep
    private:
-    cfarray<FlowField> e_;          // Defines fundamental domain. See comments above.
-    cfarray<FieldSymmetry> sigma_;  // Maps u(t) back into fundamental domain. See above.
-    PoincareCondition* h_;          // The poincare condition h(u) == 0.
+    cfbasics::cfarray<FlowField> e_;          // Defines fundamental domain. See comments above.
+    cfbasics::cfarray<FieldSymmetry> sigma_;  // Maps u(t) back into fundamental domain. See above.
+    PoincareCondition* h_;                    // The poincare condition h(u) == 0.
 
-    FlowField ucrossing_;  // velocity field at crossing
-    FlowField pcrossing_;  // pressure field at crossing
-    Real tcrossing_;       // time at crossing
-    int scrossing_;        // sign of dh/dt at crossing
-    Real hcrossing_;       // value of (*h)(ucrossing_)
-    Real hcurrent_;        // value of (*h)(u)
-    Real t0_;              // starting time, used to check t-t0 >= Tmin
+    FlowField ucrossing_;       // velocity field at crossing
+    FlowField pcrossing_;       // pressure field at crossing
+    cfbasics::Real tcrossing_;  // time at crossing
+    int scrossing_;             // sign of dh/dt at crossing
+    cfbasics::Real hcrossing_;  // value of (*h)(ucrossing_)
+    cfbasics::Real hcurrent_;   // value of (*h)(u)
+    cfbasics::Real t0_;         // starting time, used to check t-t0 >= Tmin
 };
 // END EXPERIMENTAL CODE
 

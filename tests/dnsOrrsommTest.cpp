@@ -32,6 +32,7 @@
 // If the three integration methods are identical, an == al == ark.
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
 
 int main(int argc, char* argv[]) {

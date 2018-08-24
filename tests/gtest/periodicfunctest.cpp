@@ -12,6 +12,7 @@
 
 namespace channelflowtest {
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
 
 /// A physical periodic function with 10 points and p[i]==i

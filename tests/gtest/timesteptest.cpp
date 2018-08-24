@@ -10,9 +10,11 @@
 #include "channelflow/dnsflags.h"
 #include "gtest/gtest.h"
 
-namespace channelflowtest {
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
+
+namespace channelflowtest {
 
 /// A TimeStep object with some reasonable settings
 class TimeStepTest : public ::testing::Test {

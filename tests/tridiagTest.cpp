@@ -9,6 +9,9 @@ using namespace std;
 using namespace channelflow;
 
 int main() {
+
+    using cfbasics::Vector;
+
     bool save = false;
     bool verbose = true;
 

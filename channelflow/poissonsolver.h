@@ -25,7 +25,7 @@ class PoissonSolver {
    public:
     PoissonSolver();
     PoissonSolver(const FlowField& u);
-    PoissonSolver(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi);
+    PoissonSolver(int Nx, int Ny, int Nz, int Nd, cfbasics::Real Lx, cfbasics::Real Lz, cfbasics::Real a, cfbasics::Real b, CfMPI* cfmpi);
 
     PoissonSolver(const PoissonSolver& ps);
     PoissonSolver& operator=(const PoissonSolver& ps);
@@ -35,8 +35,8 @@ class PoissonSolver {
     void solve(FlowField& u, const FlowField& f) const;  // u=0 BC
     void solve(FlowField& u, const FlowField& f, const FlowField& bc) const;
 
-    Real verify(const FlowField& u, const FlowField& f) const;
-    Real verify(const FlowField& u, const FlowField& f, const FlowField& bc) const;
+    cfbasics::Real verify(const FlowField& u, const FlowField& f) const;
+    cfbasics::Real verify(const FlowField& u, const FlowField& f, const FlowField& bc) const;
 
     bool geomCongruent(const FlowField& u) const;
     bool congruent(const FlowField& u) const;
@@ -45,15 +45,15 @@ class PoissonSolver {
     int Mx_;  // number of X modes
     int My_;  // number of Chebyshev T(y) modes
     int Mz_;  // number of Z modes
-    lint Mxloc_;
-    lint Mzloc_;
-    lint mxlocmin_;
-    lint mzlocmin_;
+    cfbasics::lint Mxloc_;
+    cfbasics::lint Mzloc_;
+    cfbasics::lint mxlocmin_;
+    cfbasics::lint mzlocmin_;
     int Nd_;  // vector dimension
-    Real Lx_;
-    Real Lz_;
-    Real a_;
-    Real b_;
+    cfbasics::Real Lx_;
+    cfbasics::Real Lz_;
+    cfbasics::Real a_;
+    cfbasics::Real b_;
 
     HelmholtzSolver** helmholtz_;  // 2d cfarray of HelmHoltz solvers
 };
@@ -67,12 +67,12 @@ class PoissonSolver {
 class PressureSolver : public PoissonSolver {
    public:
     PressureSolver();
-    PressureSolver(int Nx, int Ny, int Nz, Real Lx, Real Lz, Real a, Real b, const ChebyCoeff& U, const ChebyCoeff& W,
-                   Real nu, Real Vsuck, NonlinearMethod nonl_method, CfMPI* cfmpi);
+    PressureSolver(int Nx, int Ny, int Nz, cfbasics::Real Lx, cfbasics::Real Lz, cfbasics::Real a, cfbasics::Real b, const ChebyCoeff& U, const ChebyCoeff& W,
+                   cfbasics::Real nu, cfbasics::Real Vsuck, NonlinearMethod nonl_method, CfMPI* cfmpi);
 
-    PressureSolver(const FlowField& u, Real nu, Real Vsuck, NonlinearMethod nonl_method);
+    PressureSolver(const FlowField& u, cfbasics::Real nu, cfbasics::Real Vsuck, NonlinearMethod nonl_method);
 
-    PressureSolver(const FlowField& u, const ChebyCoeff& U, const ChebyCoeff& W, Real nu, Real Vsuck,
+    PressureSolver(const FlowField& u, const ChebyCoeff& U, const ChebyCoeff& W, cfbasics::Real nu, cfbasics::Real Vsuck,
                    NonlinearMethod nonl_method);
 
     ~PressureSolver();
@@ -84,7 +84,7 @@ class PressureSolver : public PoissonSolver {
     FlowField solve(const FlowField& u);
     void solve(FlowField& p, FlowField u);
 
-    Real verify(const FlowField& p, const FlowField& u);
+    cfbasics::Real verify(const FlowField& p, const FlowField& u);
 
    private:
     ChebyCoeff U_;
@@ -93,8 +93,8 @@ class PressureSolver : public PoissonSolver {
     FlowField nonl_;
     FlowField tmp_;
     FlowField div_nonl_;
-    Real nu_;
-    Real Vsuck_;
+    cfbasics::Real nu_;
+    cfbasics::Real Vsuck_;
     NonlinearMethod nonl_method_;
 };
 

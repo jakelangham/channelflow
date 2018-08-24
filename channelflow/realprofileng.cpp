@@ -9,6 +9,8 @@
 #include <iostream>
 
 using namespace std;
+using namespace cfbasics;
+
 namespace channelflow {
 
 RealProfileNG::RealProfileNG(const int jx, const int jz, const int Nd, const int Ny, const Real Lx, const Real Lz,

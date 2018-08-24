@@ -36,83 +36,83 @@ class NSE {
     virtual void solve(std::vector<FlowField>& outfields, const std::vector<FlowField>& infields, const int i = 0);
 
     // redefines the tausolver objects with new time-stepping constant (allocates memory for tausolver at first use)
-    virtual void reset_lambda(const std::vector<Real> lambda_t);
+    virtual void reset_lambda(const std::vector<cfbasics::Real> lambda_t);
 
     // vector of RHS is smaller than of fields because of missing pressure equation
     virtual std::vector<FlowField> createRHS(const std::vector<FlowField>& fields) const;
 
     // returns vector of symmetries confining the vector of fields to a subspace
-    virtual std::vector<cfarray<FieldSymmetry>> createSymmVec() const;
+    virtual std::vector<cfbasics::cfarray<FieldSymmetry>> createSymmVec() const;
 
     inline int taskid() const;
 
-    void reset_gradp(Real dPdx, Real dPdz);    // change dPdx and enforce const dPdx
-    void reset_bulkv(Real Ubulk, Real Wbulk);  // change Ubulk and enforce const Ubulk
+    void reset_gradp(cfbasics::Real dPdx, cfbasics::Real dPdz);    // change dPdx and enforce const dPdx
+    void reset_bulkv(cfbasics::Real Ubulk, cfbasics::Real Wbulk);  // change Ubulk and enforce const Ubulk
 
     // getter functions
     int Nx() const;
     int Ny() const;
     int Nz() const;
 
-    Real Lx() const;
-    Real Lz() const;
-    Real a() const;
-    Real b() const;
-    Real nu() const;
+    cfbasics::Real Lx() const;
+    cfbasics::Real Lz() const;
+    cfbasics::Real a() const;
+    cfbasics::Real b() const;
+    cfbasics::Real nu() const;
 
-    Real dPdx() const;  // the mean pressure gradient at the current time
-    Real dPdz() const;
-    Real Ubulk() const;  // the actual bulk velocity at the current time
-    Real Wbulk() const;
-    Real dPdxRef() const;  // the mean press grad enforced during integration
-    Real dPdzRef() const;
-    Real UbulkRef() const;  // the bulk velocity enforced during integ.
-    Real WbulkRef() const;
+    cfbasics::Real dPdx() const;  // the mean pressure gradient at the current time
+    cfbasics::Real dPdz() const;
+    cfbasics::Real Ubulk() const;  // the actual bulk velocity at the current time
+    cfbasics::Real Wbulk() const;
+    cfbasics::Real dPdxRef() const;  // the mean press grad enforced during integration
+    cfbasics::Real dPdzRef() const;
+    cfbasics::Real UbulkRef() const;  // the bulk velocity enforced during integ.
+    cfbasics::Real WbulkRef() const;
 
     virtual const ChebyCoeff& Ubase() const;
     virtual const ChebyCoeff& Wbase() const;
 
    protected:
-    std::vector<Real> lambda_t_;
+    std::vector<cfbasics::Real> lambda_t_;
     TauSolver*** tausolver_;  // 3d cfarray of tausolvers, indexed by [i][mx][mz]
 
     DNSFlags flags_;  // User-defined integration parameters
     int taskid_;
 
     // Spatial parameter members
-    lint nxlocmin_;
-    lint Nxloc_;
-    lint nylocmin_;
-    lint nylocmax_;
+    cfbasics::lint nxlocmin_;
+    cfbasics::lint Nxloc_;
+    cfbasics::lint nylocmin_;
+    cfbasics::lint nylocmax_;
     int Nz_;  // number of Z gridpoints
-    lint mxlocmin_;
-    lint Mxloc_;
-    lint My_;
-    lint mzlocmin_;
-    lint Mzloc_;
+    cfbasics::lint mxlocmin_;
+    cfbasics::lint Mxloc_;
+    cfbasics::lint My_;
+    cfbasics::lint mzlocmin_;
+    cfbasics::lint Mzloc_;
     int Nyd_;      // number of dealiased Chebyshev T(y) modes
     int kxd_max_;  // maximum value of kx among dealiased modes
     int kzd_max_;  // maximum value of kz among dealiased modes
-    Real Lx_;
-    Real Lz_;
-    Real a_;
-    Real b_;
+    cfbasics::Real Lx_;
+    cfbasics::Real Lz_;
+    cfbasics::Real a_;
+    cfbasics::Real b_;
     int kxmax_;
     int kzmax_;
     std::vector<int> kxloc_;
     std::vector<int> kzloc_;
 
     // Base flow members
-    Real dPdxRef_;    // Enforced mean pressure gradient (0.0 if unused).
-    Real dPdxAct_;    // Actual   mean pressure gradient at previous timestep.
-    Real dPdzRef_;    //
-    Real dPdzAct_;    //
-    Real UbulkRef_;   // Enforced total bulk velocity (0.0 if unused).
-    Real UbulkAct_;   // Actual total bulk velocity bulk obtained.
-    Real UbulkBase_;  // Bulk velocity of Ubase
-    Real WbulkRef_;
-    Real WbulkAct_;
-    Real WbulkBase_;
+    cfbasics::Real dPdxRef_;    // Enforced mean pressure gradient (0.0 if unused).
+    cfbasics::Real dPdxAct_;    // Actual   mean pressure gradient at previous timestep.
+    cfbasics::Real dPdzRef_;    //
+    cfbasics::Real dPdzAct_;    //
+    cfbasics::Real UbulkRef_;   // Enforced total bulk velocity (0.0 if unused).
+    cfbasics::Real UbulkAct_;   // Actual total bulk velocity bulk obtained.
+    cfbasics::Real UbulkBase_;  // Bulk velocity of Ubase
+    cfbasics::Real WbulkRef_;
+    cfbasics::Real WbulkAct_;
+    cfbasics::Real WbulkBase_;
 
     ChebyCoeff Ubase_;    // baseflow physical
     ChebyCoeff Ubaseyy_;  // baseflow'' physical
@@ -159,16 +159,17 @@ void changeBaseFlow(const ChebyCoeff& U0, const FlowField& u0, const FlowField& 
 // constraint == is mean pressure gradient fixed, or mean (bulk) velocity?
 // dPdx, Ubulk == value of fixed pressure gradient or fixed Ubulk velocity
 // Vsuck == suction velocity at walls (asymptotic suction boundary layer)
-ChebyCoeff laminarProfile(Real nu, MeanConstraint constraint, Real dPdx, Real Ubulk, Real Vsuck, Real a, Real b,
-                          Real ua, Real ub, int Ny);
+ChebyCoeff laminarProfile(cfbasics::Real nu, MeanConstraint constraint, cfbasics::Real dPdx, cfbasics::Real Ubulk,
+                          cfbasics::Real Vsuck, cfbasics::Real a, cfbasics::Real b, cfbasics::Real ua,
+                          cfbasics::Real ub, int Ny);
 
-ChebyCoeff laminarProfile(const DNSFlags& flags, Real a, Real b, int Ny);
+ChebyCoeff laminarProfile(const DNSFlags& flags, cfbasics::Real a, cfbasics::Real b, int Ny);
 
 // Return viscosity nu == Uh/Reynolds, where U is determined by VelocityScale.
 // For BulkScale or ParabolicScale, U is determined from either dPdx or Ubulk,
 // depending on whether MeanConstraint is PressureGradient or BulkVelocity
-Real viscosity(Real Reynolds, VelocityScale vscale, MeanConstraint constraint, Real dPdx, Real Ubulk, Real Uwall,
-               Real h);
+cfbasics::Real viscosity(cfbasics::Real Reynolds, VelocityScale vscale, MeanConstraint constraint, cfbasics::Real dPdx,
+                         cfbasics::Real Ubulk, cfbasics::Real Uwall, cfbasics::Real h);
 
 }  // namespace channelflow
 #endif

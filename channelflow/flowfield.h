@@ -55,11 +55,13 @@ class FlowField {
    public:
     FlowField();
 
-    FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi = NULL,
-              fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE);
+    FlowField(int Nx, int Ny, int Nz, int Nd, cfbasics::Real Lx, cfbasics::Real Lz, cfbasics::Real a, cfbasics::Real b,
+              CfMPI* cfmpi = NULL, cfbasics::fieldstate xzstate = cfbasics::Spectral,
+              cfbasics::fieldstate ystate = cfbasics::Spectral, uint fftw_flags = FFTW_ESTIMATE);
 
-    FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi = NULL,
-              fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE);
+    FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, cfbasics::Real Lx, cfbasics::Real Lz, cfbasics::Real a,
+              cfbasics::Real b, CfMPI* cfmpi = NULL, cfbasics::fieldstate xzstate = cfbasics::Spectral,
+              cfbasics::fieldstate ystate = cfbasics::Spectral, uint fftw_flags = FFTW_ESTIMATE);
 
     FlowField(const FlowField& u);
     FlowField(const std::string& filebase, CfMPI* cfmpi = NULL);  // opens filebase.h5 or filebase.ff
@@ -69,35 +71,35 @@ class FlowField {
 
     // match geom params, set to zero
     void reconfig(const FlowField& u, uint fftw_flags = FFTW_ESTIMATE);
-    void resize(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi,
-                uint fftw_flags = FFTW_ESTIMATE);
-    void rescale(Real Lx, Real Lz);
+    void resize(int Nx, int Ny, int Nz, int Nd, cfbasics::Real Lx, cfbasics::Real Lz, cfbasics::Real a,
+                cfbasics::Real b, CfMPI* cfmpi, uint fftw_flags = FFTW_ESTIMATE);
+    void rescale(cfbasics::Real Lx, cfbasics::Real Lz);
     void interpolate(FlowField u);          // interpolate U onto this grid.
     void toprocess0(FlowField& v) const;    // communicate U onto process 0
     void fromprocess0(const FlowField& v);  // fill flowField from v, which is only on process 0
 
     void optimizeFFTW(uint fftw_flags = FFTW_MEASURE);
 
-    // Real    operator()(nx,ny,nz,i):  0<=nx<Nx, 0<=ny<Ny, 0<=nz<Nz, 0<=i<Nd
+    // cfbasics::Real    operator()(nx,ny,nz,i):  0<=nx<Nx, 0<=ny<Ny, 0<=nz<Nz, 0<=i<Nd
     // Complex cmplx(mx,my,mz,i):       0<=mx<Mx, 0<=my<My, 0<=mz<Mz, 0<=i<Nd
     //                           where    Mx==Nx    My==Ny  Mz==Nz_/2+1;
 
     // Element access methods for vector-valued fields
-    inline Real& operator()(int nx, int ny, int nz, int i);
-    inline const Real& operator()(int nx, int ny, int nz, int i) const;
-    inline Complex& cmplx(int mx, int my, int mz, int i);
-    inline const Complex& cmplx(int mx, int my, int mz, int i) const;
+    inline cfbasics::Real& operator()(int nx, int ny, int nz, int i);
+    inline const cfbasics::Real& operator()(int nx, int ny, int nz, int i) const;
+    inline cfbasics::Complex& cmplx(int mx, int my, int mz, int i);
+    inline const cfbasics::Complex& cmplx(int mx, int my, int mz, int i) const;
 
     // Element access methods for tensor-valued fields
-    inline Real& operator()(int nx, int ny, int nz, int i, int j);
-    inline const Real& operator()(int nx, int ny, int nz, int i, int j) const;
-    inline Complex& cmplx(int mx, int ny, int mz, int i, int j);
-    inline const Complex& cmplx(int mx, int ny, int mz, int i, int j) const;
+    inline cfbasics::Real& operator()(int nx, int ny, int nz, int i, int j);
+    inline const cfbasics::Real& operator()(int nx, int ny, int nz, int i, int j) const;
+    inline cfbasics::Complex& cmplx(int mx, int ny, int mz, int i, int j);
+    inline const cfbasics::Complex& cmplx(int mx, int ny, int mz, int i, int j) const;
 
-    FlowField operator[](int i) const;                  // extract ith component
-    FlowField operator[](const cfarray<int>& i) const;  // extract {i}th components,
+    FlowField operator[](int i) const;                            // extract ith component
+    FlowField operator[](const cfbasics::cfarray<int>& i) const;  // extract {i}th components,
 
-    Real eval(Real x, Real y, Real z, int i) const;
+    cfbasics::Real eval(cfbasics::Real x, cfbasics::Real y, cfbasics::Real z, int i) const;
 
     ComplexChebyCoeff profile(int mx, int mz, int i) const;
     BasisFunc profile(int mx, int mz) const;
@@ -108,18 +110,18 @@ class FlowField {
     void makePhysical_y();
     void makeSpectral();
     void makePhysical();
-    void makeState(fieldstate xzstate, fieldstate ystate);
+    void makeState(cfbasics::fieldstate xzstate, cfbasics::fieldstate ystate);
 
     void setToZero();
-    void perturb(Real magnitude, Real spectralDecay, bool meanflow = true);
-    void addPerturbation(int kx, int kz, Real mag, Real spectralDecay);
-    void addPerturbation1D(int kx, int kz, Real mag, Real spectralDecay);
-    void addPerturbations(int kxmax, int kzmax, Real mag, Real spectralDecay, bool meanflow = true);
-    void addPerturbations(Real magnitude, Real spectralDecay, bool meanflow = true);
+    void perturb(cfbasics::Real magnitude, cfbasics::Real spectralDecay, bool meanflow = true);
+    void addPerturbation(int kx, int kz, cfbasics::Real mag, cfbasics::Real spectralDecay);
+    void addPerturbation1D(int kx, int kz, cfbasics::Real mag, cfbasics::Real spectralDecay);
+    void addPerturbations(int kxmax, int kzmax, cfbasics::Real mag, cfbasics::Real spectralDecay, bool meanflow = true);
+    void addPerturbations(cfbasics::Real magnitude, cfbasics::Real spectralDecay, bool meanflow = true);
 
     FlowField& operator*=(const FieldSymmetry& s);
     FlowField& project(const FieldSymmetry& s);
-    FlowField& project(const cfarray<FieldSymmetry>& s);
+    FlowField& project(const cfbasics::cfarray<FieldSymmetry>& s);
 
     inline int numXmodes() const;  // should eliminate
     inline int numYmodes() const;
@@ -137,23 +139,23 @@ class FlowField {
     inline int My() const;  // same as numYmodes()
     inline int Mz() const;  // same as numZmodes()
 
-    inline lint Nloc() const;
-    inline lint Nxloc() const;
-    inline lint Nxlocmax() const;
-    inline lint nxlocmin() const;
-    inline lint Mxloc() const;
-    inline lint mxlocmin() const;
-    inline lint Nyloc() const;
-    inline lint Nylocpad() const;
-    inline lint Nypad() const;
-    inline lint nylocmin() const;
-    inline lint nylocmax() const;
-    inline lint Mzloc() const;
-    inline lint mzlocmin() const;
+    inline cfbasics::lint Nloc() const;
+    inline cfbasics::lint Nxloc() const;
+    inline cfbasics::lint Nxlocmax() const;
+    inline cfbasics::lint nxlocmin() const;
+    inline cfbasics::lint Mxloc() const;
+    inline cfbasics::lint mxlocmin() const;
+    inline cfbasics::lint Nyloc() const;
+    inline cfbasics::lint Nylocpad() const;
+    inline cfbasics::lint Nypad() const;
+    inline cfbasics::lint nylocmin() const;
+    inline cfbasics::lint nylocmax() const;
+    inline cfbasics::lint Mzloc() const;
+    inline cfbasics::lint mzlocmin() const;
 
-    inline int mx(int kx) const;  // where, in the cfarray, is kx?
+    inline int mx(int kx) const;  // where, in the cfbasics::cfarray, is kx?
     inline int mz(int kz) const;  // should be mx,mz rather than nx,nz
-    inline int kx(int mx) const;  // the wavenumber of the nxth cfarray elem
+    inline int kx(int mx) const;  // the wavenumber of the nxth cfbasics::cfarray elem
     inline int kz(int mz) const;
 
     inline int kxmax() const;  // the largest value kx takes on
@@ -166,14 +168,14 @@ class FlowField {
     inline int kzmaxDealiased() const;
     inline bool isAliased(int kx, int kz) const;
 
-    inline Real Lx() const;
-    inline Real Ly() const;
-    inline Real Lz() const;
-    inline Real a() const;
-    inline Real b() const;
-    inline Real x(int nx) const;  // the x coord of the nxth gridpoint
-    inline Real y(int ny) const;
-    inline Real z(int nz) const;
+    inline cfbasics::Real Lx() const;
+    inline cfbasics::Real Ly() const;
+    inline cfbasics::Real Lz() const;
+    inline cfbasics::Real a() const;
+    inline cfbasics::Real b() const;
+    inline cfbasics::Real x(int nx) const;  // the x coord of the nxth gridpoint
+    inline cfbasics::Real y(int ny) const;
+    inline cfbasics::Real z(int nz) const;
 
     inline int nproc0() const;
     inline int nproc1() const;
@@ -187,25 +189,25 @@ class FlowField {
     inline int task_coeff(int mx, int my, int mz, int i) const;
     inline MPI_Comm* comm_world() const;
 
-    Vector xgridpts() const;
-    Vector ygridpts() const;
-    Vector zgridpts() const;
+    cfbasics::Vector xgridpts() const;
+    cfbasics::Vector ygridpts() const;
+    cfbasics::Vector zgridpts() const;
 
-    Complex Dx(int mx) const;         // spectral diff operator
-    Complex Dz(int mz) const;         // spectral diff operator
-    Complex Dx(int mx, int n) const;  // spectral diff operator
-    Complex Dz(int mz, int n) const;  // spectral diff operator
+    cfbasics::Complex Dx(int mx) const;         // spectral diff operator
+    cfbasics::Complex Dz(int mz) const;         // spectral diff operator
+    cfbasics::Complex Dx(int mx, int n) const;  // spectral diff operator
+    cfbasics::Complex Dz(int mz, int n) const;  // spectral diff operator
 
-    FlowField& operator*=(Real x);
-    FlowField& operator*=(Complex x);
-    FlowField& operator+=(const ChebyCoeff& U);           //  i.e. u(0,*,0,0) += U
-    FlowField& operator-=(const ChebyCoeff& U);           //       u(0,*,0,0) -= U
+    FlowField& operator*=(cfbasics::Real x);
+    FlowField& operator*=(cfbasics::Complex x);
+    FlowField& operator+=(const ChebyCoeff& U);                //  i.e. u(0,*,0,0) += U
+    FlowField& operator-=(const ChebyCoeff& U);                //       u(0,*,0,0) -= U
     FlowField& operator+=(const std::vector<ChebyCoeff>& UW);  // i.e. u(0,*,0,0) += U and u(0,*,0.2) += W
     FlowField& operator-=(const std::vector<ChebyCoeff>& UW);  // i.e. u(0,*,0,0) -= U and u(0,*,0.2) -= W
-    FlowField& operator+=(const Real& a);                 //  i.e. u(0,*,0,0) += a
-    FlowField& operator-=(const Real& a);                 //       u(0,*,0,0) -= a
-    FlowField& operator+=(const ComplexChebyCoeff& U);    // u.cmplx(0,*,0,0) += U
-    FlowField& operator-=(const ComplexChebyCoeff& U);    // u.cmplx(0,*,0,0) += U
+    FlowField& operator+=(const cfbasics::Real& a);            //  i.e. u(0,*,0,0) += a
+    FlowField& operator-=(const cfbasics::Real& a);            //       u(0,*,0,0) -= a
+    FlowField& operator+=(const ComplexChebyCoeff& U);         // u.cmplx(0,*,0,0) += U
+    FlowField& operator-=(const ComplexChebyCoeff& U);         // u.cmplx(0,*,0,0) += U
     FlowField& operator+=(const BasisFunc& U);
     FlowField& operator-=(const BasisFunc& U);
     FlowField& operator+=(const RealProfile& U);
@@ -215,11 +217,11 @@ class FlowField {
     FlowField& operator+=(const RealProfileNG& U);
     FlowField& operator-=(const RealProfileNG& U);
 
-    inline void add(const Real a, const FlowField& u);
-    inline void add(const Real a, const FlowField& u, const Real b, const FlowField& v);
+    inline void add(const cfbasics::Real a, const FlowField& u);
+    inline void add(const cfbasics::Real a, const FlowField& u, const cfbasics::Real b, const FlowField& v);
 
-    bool geomCongruent(const FlowField& f, Real eps = 1e-13) const;
-    bool congruent(const FlowField& f, Real eps = 1e-13) const;
+    bool geomCongruent(const FlowField& f, cfbasics::Real eps = 1e-13) const;
+    bool congruent(const FlowField& f, cfbasics::Real eps = 1e-13) const;
     bool congruent(const BasisFunc& phi) const;
     bool congruent(const RealProfileNG& e) const;
     friend void swap(FlowField& f, FlowField& g);  // exchange data of two congruent fields.
@@ -228,7 +230,8 @@ class FlowField {
     void asciiSave(const std::string& filebase) const;
     void binarySave(const std::string& filebase) const;
     void hdf5Save(const std::string& filebase) const;
-    void writeNetCDF(const std::string& filebase, std::vector<std::string> component_names = std::vector<std::string>()) const;
+    void writeNetCDF(const std::string& filebase,
+                     std::vector<std::string> component_names = std::vector<std::string>()) const;
     void VTKSave(const std::string& filebase, bool SwapEndian = true) const;
 
     // read methods
@@ -252,28 +255,30 @@ class FlowField {
     void print() const;
     void dump() const;
 
-    Real energy(bool normalize = true) const;
-    Real energy(int mx, int mz, bool normalize = true) const;
-    Real dudy_a() const;
-    Real dudy_b() const;
-    Real dwdy_a() const;
-    Real dwdy_b() const;
-    Real CFLfactor() const;
-    Real CFLfactor(ChebyCoeff Ubase, ChebyCoeff Wbase) const;
+    cfbasics::Real energy(bool normalize = true) const;
+    cfbasics::Real energy(int mx, int mz, bool normalize = true) const;
+    cfbasics::Real dudy_a() const;
+    cfbasics::Real dudy_b() const;
+    cfbasics::Real dwdy_a() const;
+    cfbasics::Real dwdy_b() const;
+    cfbasics::Real CFLfactor() const;
+    cfbasics::Real CFLfactor(ChebyCoeff Ubase, ChebyCoeff Wbase) const;
 
-    void setState(fieldstate xz, fieldstate y);
-    void assertState(fieldstate xz, fieldstate y) const;
+    void setState(cfbasics::fieldstate xz, cfbasics::fieldstate y);
+    void assertState(cfbasics::fieldstate xz, cfbasics::fieldstate y) const;
 
-    inline fieldstate xzstate() const;
-    inline fieldstate ystate() const;
+    inline cfbasics::fieldstate xzstate() const;
+    inline cfbasics::fieldstate ystate() const;
 
     void zeroPaddedModes();  // set padded modes to zero
     void setPadded(bool b);  // turn on padded flag
     bool padded() const;     // true implies that upper 1/3 modes are zero
 
     // returns pointer to rdata_ array for IO which does not contain padding
-    void removePaddedModes(Real* rdata_io, lint Nxloc_io, lint nxlocmin_io, lint Mzloc_io, lint mzlocmin_io) const;
-    void addPaddedModes(Real* rdata_io, lint Nxloc_io, lint nxlocmin_io, lint Mzloc_io, lint mzlocmin_io);
+    void removePaddedModes(cfbasics::Real* rdata_io, cfbasics::lint Nxloc_io, cfbasics::lint nxlocmin_io,
+                           cfbasics::lint Mzloc_io, cfbasics::lint mzlocmin_io) const;
+    void addPaddedModes(cfbasics::Real* rdata_io, cfbasics::lint Nxloc_io, cfbasics::lint nxlocmin_io,
+                        cfbasics::lint Mzloc_io, cfbasics::lint mzlocmin_io);
 
     inline CfMPI* cfmpi() const;
 
@@ -285,29 +290,28 @@ class FlowField {
     int Nzpad2_ = 0;  // number of Z modes == Nz/2+1.
     int Nd_ = 0;
 
-    lint Nloc_;      // total number of gridpoints on this process
-    lint Nxloc_;     // number of x gridpoints on this proc in physical state
-    lint nxlocmin_;  // first gridpoint local
-    lint Nxlocmax_;  // max number over all processes (not really used)
-    lint Mx_;        // same as Nx
-    lint Mxloc_;     // number of x gridpoints on this proc in spectral state
-    lint Mxlocmax_;  // max number of gridpoints on any process in spectral state
-    lint mxlocmin_;  // first locally stored gridpoint
-    lint Nyloc_;     // number of y gridpoints on this proc in physical state
-    lint Nylocpad_;  // number of y gridpoints on this proc in physical state incl padding
-    lint Nypad_;     // Ny incl padding
-    lint nylocmin_;  // first locally stored gridpoint
-    lint nylocmax_;  // nylocmin_ + Nyloc, can be used in loops as nylocmin <= ny < nylocmax
-    lint Mz_;        // number of z gridpoints in spectral state
-    lint Mzloc_;     // number of z gridpoints on this proc in spectral state
-    lint Mzlocmax_;  // max number over all processes (not really used)
-    lint mzlocmin_;  // first locally stored gridpoint
+    cfbasics::lint Nloc_;      // total number of gridpoints on this process
+    cfbasics::lint Nxloc_;     // number of x gridpoints on this proc in physical state
+    cfbasics::lint nxlocmin_;  // first gridpoint local
+    cfbasics::lint Nxlocmax_;  // max number over all processes (not really used)
+    cfbasics::lint Mx_;        // same as Nx
+    cfbasics::lint Mxloc_;     // number of x gridpoints on this proc in spectral state
+    cfbasics::lint Mxlocmax_;  // max number of gridpoints on any process in spectral state
+    cfbasics::lint mxlocmin_;  // first locally stored gridpoint
+    cfbasics::lint Nyloc_;     // number of y gridpoints on this proc in physical state
+    cfbasics::lint Nylocpad_;  // number of y gridpoints on this proc in physical state incl padding
+    cfbasics::lint Nypad_;     // Ny incl padding
+    cfbasics::lint nylocmin_;  // first locally stored gridpoint
+    cfbasics::lint nylocmax_;  // nylocmin_ + Nyloc, can be used in loops as nylocmin <= ny < nylocmax
+    cfbasics::lint Mz_;        // number of z gridpoints in spectral state
+    cfbasics::lint Mzloc_;     // number of z gridpoints on this proc in spectral state
+    cfbasics::lint Mzlocmax_;  // max number over all processes (not really used)
+    cfbasics::lint mzlocmin_;  // first locally stored gridpoint
 
-    Real Lx_ = 0;
-    Real Lz_ = 0;
-    Real a_ = 0;
-    Real b_ = 0;
-    //   Real nu_;        // fluid kinematic viscosity, 0 if inappropriate
+    cfbasics::Real Lx_ = 0;
+    cfbasics::Real Lz_ = 0;
+    cfbasics::Real a_ = 0;
+    cfbasics::Real b_ = 0;
 
     // size parameters for dealiased I/O
     int Nx_io_;
@@ -317,15 +321,15 @@ class FlowField {
 
     // Manages the lifetime of FFTW data buffer
     std::unique_ptr<void, void (*)(void*)> data_handle_ = {nullptr, fftw_free};
-    Real* rdata_ = nullptr;     // stored with indices in order d, Ny, Nx, Nz
-    Complex* cdata_ = nullptr;  // Complex alias for rdata_ (cdata_ = (Complex*) rdata_).
+    cfbasics::Real* rdata_ = nullptr;     // stored with indices in order d, Ny, Nx, Nz
+    cfbasics::Complex* cdata_ = nullptr;  // Complex alias for rdata_ (cdata_ = (Complex*) rdata_).
 
 #ifndef HAVE_MPI
-    std::unique_ptr<Real, void (*)(void*)> scratch_ = {nullptr, fftw_free};
+    std::unique_ptr<cfbasics::Real, void (*)(void*)> scratch_ = {nullptr, fftw_free};
 #endif
 
-    fieldstate xzstate_ = Spectral;
-    fieldstate ystate_ = Spectral;
+    cfbasics::fieldstate xzstate_ = cfbasics::Spectral;
+    cfbasics::fieldstate ystate_ = cfbasics::Spectral;
 
     using fftw_plan_unique_ptr_t = std::unique_ptr<std::remove_pointer<fftw_plan>::type, void (*)(fftw_plan)>;
 
@@ -346,27 +350,30 @@ class FlowField {
     void fftw_initialize(uint fftw_flags = FFTW_ESTIMATE);
 };
 
-FlowField operator*(const Real a, const FlowField& w);
+FlowField operator*(const cfbasics::Real a, const FlowField& w);
 FlowField operator+(const FlowField& v, const FlowField& w);
 FlowField operator-(const FlowField& v, const FlowField& w);
 
-void normalize(cfarray<FlowField>& e);
-void orthogonalize(cfarray<FlowField>& e);
-void orthonormalize(cfarray<FlowField>& e);
+void normalize(cfbasics::cfarray<FlowField>& e);
+void orthogonalize(cfbasics::cfarray<FlowField>& e);
+void orthonormalize(cfbasics::cfarray<FlowField>& e);
 
 // Quadratic interpolation/expolate of FlowField as function of parameter mu.
 // Input cfarrays are length 3: un[0],un[1],un[2] at values mun[0], mun[1], mun[2].
 // At any gridpoint, if difference is less than eps, use un[0] instead of interpolating
-FlowField quadraticInterpolate(cfarray<FlowField>& un, const cfarray<Real>& mun, Real mu, Real eps = 1e-13);
-FlowField polynomialInterpolate(cfarray<FlowField>& un, cfarray<Real>& mun, Real mu);
+FlowField quadraticInterpolate(cfbasics::cfarray<FlowField>& un, const cfbasics::cfarray<cfbasics::Real>& mun,
+                               cfbasics::Real mu, cfbasics::Real eps = 1e-13);
+FlowField polynomialInterpolate(cfbasics::cfarray<FlowField>& un, cfbasics::cfarray<cfbasics::Real>& mun,
+                                cfbasics::Real mu);
 
 void transmit_coeff(FlowField& g, int gmx, int gmz, const FlowField& f, int fmx, int fmz, int ny, int i,
                     int taskid = -1);
 
 // To set g(gmx,ny,gmz,i) on one processor with a complex value from another processor
-void transmit_coeff(FlowField& g, int gmx, int gmz, int ny, int i, const Complex& fval, int taskidf, int taskid = -1);
+void transmit_coeff(FlowField& g, int gmx, int gmz, int ny, int i, const cfbasics::Complex& fval, int taskidf,
+                    int taskid = -1);
 
-void hdf5addstuff(const std::string& filebase, Real nu, ChebyCoeff& Ubase, ChebyCoeff& Wbase);
+void hdf5addstuff(const std::string& filebase, cfbasics::Real nu, ChebyCoeff& Ubase, ChebyCoeff& Wbase);
 
 // Vector-valued access methods
 inline int FlowField::flatten(int nx, int ny, int nz, int i) const {
@@ -403,20 +410,20 @@ inline int FlowField::complex_flatten(int mx, int my, int mz, int i) const {
 #endif
 }
 
-inline const Real& FlowField::operator()(int nx, int ny, int nz, int i) const {
-    assert(xzstate_ == Physical);
+inline const cfbasics::Real& FlowField::operator()(int nx, int ny, int nz, int i) const {
+    assert(xzstate_ == cfbasics::Physical);
     return rdata_[flatten(nx, ny, nz, i)];
 }
-inline Real& FlowField::operator()(int nx, int ny, int nz, int i) {
-    assert(xzstate_ == Physical);
+inline cfbasics::Real& FlowField::operator()(int nx, int ny, int nz, int i) {
+    assert(xzstate_ == cfbasics::Physical);
     return rdata_[flatten(nx, ny, nz, i)];
 }
-inline Complex& FlowField::cmplx(int mx, int my, int mz, int i) {
-    assert(xzstate_ == Spectral);
+inline cfbasics::Complex& FlowField::cmplx(int mx, int my, int mz, int i) {
+    assert(xzstate_ == cfbasics::Spectral);
     return cdata_[complex_flatten(mx, my, mz, i)];
 }
-inline const Complex& FlowField::cmplx(int mx, int my, int mz, int i) const {
-    assert(xzstate_ == Spectral);
+inline const cfbasics::Complex& FlowField::cmplx(int mx, int my, int mz, int i) const {
+    assert(xzstate_ == cfbasics::Spectral);
     return cdata_[complex_flatten(mx, my, mz, i)];
 }
 
@@ -438,28 +445,28 @@ inline int FlowField::complex_flatten(int mx, int my, int mz, int i, int j) cons
     return (mz + Nzpad2_ * (mx + Nx_ * (my + Ny_ * (i + Nd_ * j))));
 }
 
-inline const Real& FlowField::operator()(int nx, int ny, int nz, int i, int j) const {
-    assert(xzstate_ == Physical);
+inline const cfbasics::Real& FlowField::operator()(int nx, int ny, int nz, int i, int j) const {
+    assert(xzstate_ == cfbasics::Physical);
     return rdata_[flatten(nx, ny, nz, i, j)];
 }
-inline Real& FlowField::operator()(int nx, int ny, int nz, int i, int j) {
-    assert(xzstate_ == Physical);
+inline cfbasics::Real& FlowField::operator()(int nx, int ny, int nz, int i, int j) {
+    assert(xzstate_ == cfbasics::Physical);
     return rdata_[flatten(nx, ny, nz, i, j)];
 }
-inline Complex& FlowField::cmplx(int mx, int my, int mz, int i, int j) {
-    assert(xzstate_ == Spectral);
+inline cfbasics::Complex& FlowField::cmplx(int mx, int my, int mz, int i, int j) {
+    assert(xzstate_ == cfbasics::Spectral);
     return cdata_[complex_flatten(mx, my, mz, i, j)];
 }
-inline const Complex& FlowField::cmplx(int mx, int my, int mz, int i, int j) const {
-    assert(xzstate_ == Spectral);
+inline const cfbasics::Complex& FlowField::cmplx(int mx, int my, int mz, int i, int j) const {
+    assert(xzstate_ == cfbasics::Spectral);
     return cdata_[complex_flatten(mx, my, mz, i, j)];
 }
 
-inline Real FlowField::Lx() const { return Lx_; }
-inline Real FlowField::Ly() const { return b_ - a_; }
-inline Real FlowField::Lz() const { return Lz_; }
-inline Real FlowField::a() const { return a_; }
-inline Real FlowField::b() const { return b_; }
+inline cfbasics::Real FlowField::Lx() const { return Lx_; }
+inline cfbasics::Real FlowField::Ly() const { return b_ - a_; }
+inline cfbasics::Real FlowField::Lz() const { return Lz_; }
+inline cfbasics::Real FlowField::a() const { return a_; }
+inline cfbasics::Real FlowField::b() const { return b_; }
 
 inline int FlowField::kx(int mx) const {
     assert(mx >= 0 && mx < Nx_);
@@ -481,9 +488,11 @@ inline int FlowField::mz(int kz) const {
     return kz;
 }
 
-inline Real FlowField::x(int nx) const { return nx * Lx_ / Nx_; }
-inline Real FlowField::y(int ny) const { return 0.5 * ((b_ + a_) + (b_ - a_) * cos(pi * ny / (Ny_ - 1))); }
-inline Real FlowField::z(int nz) const { return nz * Lz_ / Nz_; }
+inline cfbasics::Real FlowField::x(int nx) const { return nx * Lx_ / Nx_; }
+inline cfbasics::Real FlowField::y(int ny) const {
+    return 0.5 * ((b_ + a_) + (b_ - a_) * cos(cfbasics::pi * ny / (Ny_ - 1)));
+}
+inline cfbasics::Real FlowField::z(int nz) const { return nz * Lz_ / Nz_; }
 
 inline int FlowField::numXmodes() const { return Nx_; }
 inline int FlowField::numYmodes() const { return Ny_; }
@@ -501,19 +510,19 @@ inline int FlowField::Mx() const { return Nx_; }
 inline int FlowField::My() const { return Ny_; }
 inline int FlowField::Mz() const { return Nzpad2_; }
 
-inline lint FlowField::Nloc() const { return Nloc_; }
-inline lint FlowField::Nxloc() const { return Nxloc_; }
-inline lint FlowField::nxlocmin() const { return nxlocmin_; }
-inline lint FlowField::Nxlocmax() const { return Nxlocmax_; }
-inline lint FlowField::Mxloc() const { return Mxloc_; }
-inline lint FlowField::mxlocmin() const { return mxlocmin_; }
-inline lint FlowField::Nyloc() const { return Nyloc_; }
-inline lint FlowField::Nylocpad() const { return Nylocpad_; }
-inline lint FlowField::Nypad() const { return Nypad_; }
-inline lint FlowField::nylocmin() const { return nylocmin_; }
-inline lint FlowField::nylocmax() const { return nylocmax_; }
-inline lint FlowField::Mzloc() const { return Mzloc_; }
-inline lint FlowField::mzlocmin() const { return mzlocmin_; }
+inline cfbasics::lint FlowField::Nloc() const { return Nloc_; }
+inline cfbasics::lint FlowField::Nxloc() const { return Nxloc_; }
+inline cfbasics::lint FlowField::nxlocmin() const { return nxlocmin_; }
+inline cfbasics::lint FlowField::Nxlocmax() const { return Nxlocmax_; }
+inline cfbasics::lint FlowField::Mxloc() const { return Mxloc_; }
+inline cfbasics::lint FlowField::mxlocmin() const { return mxlocmin_; }
+inline cfbasics::lint FlowField::Nyloc() const { return Nyloc_; }
+inline cfbasics::lint FlowField::Nylocpad() const { return Nylocpad_; }
+inline cfbasics::lint FlowField::Nypad() const { return Nypad_; }
+inline cfbasics::lint FlowField::nylocmin() const { return nylocmin_; }
+inline cfbasics::lint FlowField::nylocmax() const { return nylocmax_; }
+inline cfbasics::lint FlowField::Mzloc() const { return Mzloc_; }
+inline cfbasics::lint FlowField::mzlocmin() const { return mzlocmin_; }
 
 inline int FlowField::nproc0() const {
     if (cfmpi_ == NULL)
@@ -552,14 +561,14 @@ inline int FlowField::numtasks() const {
 }
 
 inline int FlowField::task_coeff(int mx, int mz) const {
-    assert(xzstate_ == Spectral);
+    assert(xzstate_ == cfbasics::Spectral);
 
     int res = mx / Mxlocmax_ * nproc1() + mz / Mzlocmax_;
     return res;
 }
 inline int FlowField::task_coeff(int mx, int my, int mz, int i) const { return task_coeff(mx, mz); }
 inline int FlowField::task_coeffp(int nx, int ny) const {
-    assert(xzstate_ == Physical);
+    assert(xzstate_ == cfbasics::Physical);
     int res = ny / Nylocpad_ * nproc1() + nx / Nxlocmax_;
     return res;
 }
@@ -587,15 +596,15 @@ inline bool FlowField::isAliased(int kx, int kz) const {
 inline int FlowField::vectorDim() const { return Nd_; }
 inline int FlowField::Nd() const { return Nd_; }
 
-inline fieldstate FlowField::xzstate() const { return xzstate_; }
-inline fieldstate FlowField::ystate() const { return ystate_; }
+inline cfbasics::fieldstate FlowField::xzstate() const { return xzstate_; }
+inline cfbasics::fieldstate FlowField::ystate() const { return ystate_; }
 
 // helper func for zeroing highest-order mode under odd differentiation
 // See Trefethen Spectral Methods in Matlab pg 19.
 inline int zero_last_mode(int k, int kmax, int n) { return ((k == kmax) && (n % 2 == 1)) ? 0 : 1; }
 
 // functions for fast addition of FlowFields
-inline void FlowField::add(const Real a, const FlowField& u) {
+inline void FlowField::add(const cfbasics::Real a, const FlowField& u) {
     assert(congruent(u));
     const auto* __restrict__ urdata_pnt = u.rdata_;
     auto* __restrict__ rdata_pnt = rdata_;
@@ -605,7 +614,7 @@ inline void FlowField::add(const Real a, const FlowField& u) {
     }
 }
 
-inline void FlowField::add(const Real a, const FlowField& u, const Real b, const FlowField& v) {
+inline void FlowField::add(const cfbasics::Real a, const FlowField& u, const cfbasics::Real b, const FlowField& v) {
     assert(congruent(u));
     const auto* __restrict__ urdata_pnt = u.rdata_;
     const auto* __restrict__ vrdata_pnt = v.rdata_;

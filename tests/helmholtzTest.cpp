@@ -6,6 +6,7 @@
 #include "channelflow/helmholtz.h"
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
 
 Real tauDist(const ChebyCoeff& u, const ChebyCoeff& v) {

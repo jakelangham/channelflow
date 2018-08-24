@@ -15,8 +15,6 @@
 #ifdef HAVE_MPI
 #include <fftw3-mpi.h>
 #include <mpi.h>
-#else
-using namespace cfbasics;
 #endif
 
 #ifdef DEBUG

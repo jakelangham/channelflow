@@ -11,6 +11,7 @@
 #include "channelflow/utilfuncs.h"
 
 using namespace std;
+using namespace cfbasics;
 
 namespace channelflow {
 

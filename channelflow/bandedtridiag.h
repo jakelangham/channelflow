@@ -13,7 +13,6 @@
 #include "cfbasics/cfvector.h"
 #include "cfbasics/mathdefs.h"
 
-using namespace cfbasics;
 namespace channelflow {
 
 typedef double Real;
@@ -57,10 +56,10 @@ class BandedTridiag {
     const Real& elem(int i, int j) const;
     void ULdecomp();  // no pivoting
 
-    void ULsolve(Vector& b) const;
-    void multiply(const Vector& x, Vector& b) const;
-    void ULsolveStrided(Vector& b, int offset, int stride) const;
-    void multiplyStrided(const Vector& x, Vector& b, int offset, int stride) const;
+    void ULsolve(cfbasics::Vector& b) const;
+    void multiply(const cfbasics::Vector& x, cfbasics::Vector& b) const;
+    void ULsolveStrided(cfbasics::Vector& b, int offset, int stride) const;
+    void multiplyStrided(const cfbasics::Vector& x, cfbasics::Vector& b, int offset, int stride) const;
 
     void print() const;
     void ULprint() const;

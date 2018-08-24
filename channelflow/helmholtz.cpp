@@ -9,6 +9,7 @@
 #include "channelflow/chebyshev.h"
 
 using namespace std;
+using namespace cfbasics;
 
 namespace channelflow {
 
@@ -33,7 +34,7 @@ HelmholtzSolver::HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, R
     assert(nModes_ % 2 == 1);  // Is this required or assumed in C&H?
     assert(nModes_ > 2);
 
-    Real nuscaled = nu / square((b_ - a_) / 2);
+    cfbasics::Real nuscaled = nu / cfbasics::square((b_ - a_) / 2);
 
     // Canuto & Hussaini eqn 5.1.24.
     // Even mode matrices:

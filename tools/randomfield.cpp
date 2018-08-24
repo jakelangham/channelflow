@@ -12,6 +12,7 @@
 
 using namespace std;
 using namespace channelflow;
+using namespace cfbasics;
 
 int main(int argc, char* argv[]) {
     cfMPI_Init(&argc, &argv);

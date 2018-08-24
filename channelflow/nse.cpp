@@ -6,6 +6,7 @@
 #include "channelflow/nse.h"
 
 using namespace std;
+using namespace cfbasics;
 
 namespace channelflow {
 

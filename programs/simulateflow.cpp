@@ -21,6 +21,7 @@
 
 using namespace std;
 using namespace channelflow;
+using namespace cfbasics;
 
 string printdiagnostics(FlowField& u, const DNS& dns, Real t, const TimeStep& dt, Real nu, Real umin, bool vardt,
                         bool pl2norm, bool pchnorm, bool pdissip, bool pshear, bool pdiverge, bool pUbulk, bool pubulk,

@@ -7,6 +7,7 @@
 #include "channelflow/flowfield.h"
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
 
 int main(int argc, char* argv[]) {

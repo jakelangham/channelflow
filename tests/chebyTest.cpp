@@ -6,6 +6,7 @@
 #include "channelflow/chebyshev.h"
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
 
 int main() {

@@ -17,6 +17,7 @@
 
 using namespace std;
 using namespace channelflow;
+using namespace cfbasics;
 
 enum Attractor { NoAttractor, Laminar, Turbulent };
 

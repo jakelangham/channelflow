@@ -8,6 +8,7 @@
 #include "channelflow/poissonsolver.h"
 
 using namespace std;
+using namespace cfbasics;
 
 namespace channelflow {
 

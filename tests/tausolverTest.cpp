@@ -8,6 +8,7 @@
 #include "channelflow/tausolver.h"
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
 
 void randomVprofile(ComplexChebyCoeff& v, Real decay);

@@ -12,6 +12,7 @@
 #include "channelflow/utilfuncs.h"
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
 
 int main(int argc, char* argv[]) {

@@ -15,6 +15,7 @@
 #include "channelflow/utilfuncs.h"
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
 
 Real energy(FlowField& u, int i, bool normalize = true);

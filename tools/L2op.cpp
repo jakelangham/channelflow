@@ -13,6 +13,7 @@
 #include "channelflow/utilfuncs.h"
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
 
 void geomprint(const FlowField& u, ostream& os);

@@ -14,6 +14,7 @@
 
 using namespace std;
 using namespace Eigen;
+using namespace cfbasics;
 
 namespace channelflow {
 
