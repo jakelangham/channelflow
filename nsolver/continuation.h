@@ -38,16 +38,16 @@ class ContinuationFlags {
     bool haveTargetMu;         // Abort if a target value of mu is reached
     Real targetMu;             // The target value
 
-    void save(const string& outdir = "") const;
-    void load(int taskid, const string indir);
-    const vector<string> getFlagList();
+    void save(const std::string& outdir = "") const;
+    void load(int taskid, const std::string indir);
+    const std::vector<std::string> getFlagList();
 };
 
 // Real continuation1(DSI& dsi, NewtonAlgorithm& N, const VectorXd& x0, const Real mu0, ContinuationFlags& cflags);
 
 VectorXd quadraticInterpolate(cfarray<VectorXd>& xn, const cfarray<Real>& mun, Real mu, Real eps = 1e-13);
 
-bool readContinuationInfo(string restartdir[3], ContinuationFlags& cflags);
+bool readContinuationInfo(std::string restartdir[3], ContinuationFlags& cflags);
 
 /** Perform hookstep continuation.
  *

@@ -311,7 +311,7 @@ Real getUbulk(const FlowField& u);
 Real getWbulk(const FlowField& u);
 
 std::string fieldstats_t(const FlowField& u, Real t);      // return some information about u
-std::string fieldstatsheader_t(const string tname = "t");  // header for fieldstats
+std::string fieldstatsheader_t(const std::string tname = "t");  // header for fieldstats
 std::string fieldstats(const FlowField& u);                // return some information about u
 std::string fieldstatsheader();                            // header for fieldstats
 

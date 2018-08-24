@@ -200,8 +200,8 @@ class FlowField {
     FlowField& operator*=(Complex x);
     FlowField& operator+=(const ChebyCoeff& U);           //  i.e. u(0,*,0,0) += U
     FlowField& operator-=(const ChebyCoeff& U);           //       u(0,*,0,0) -= U
-    FlowField& operator+=(const vector<ChebyCoeff>& UW);  // i.e. u(0,*,0,0) += U and u(0,*,0.2) += W
-    FlowField& operator-=(const vector<ChebyCoeff>& UW);  // i.e. u(0,*,0,0) -= U and u(0,*,0.2) -= W
+    FlowField& operator+=(const std::vector<ChebyCoeff>& UW);  // i.e. u(0,*,0,0) += U and u(0,*,0.2) += W
+    FlowField& operator-=(const std::vector<ChebyCoeff>& UW);  // i.e. u(0,*,0,0) -= U and u(0,*,0.2) -= W
     FlowField& operator+=(const Real& a);                 //  i.e. u(0,*,0,0) += a
     FlowField& operator-=(const Real& a);                 //       u(0,*,0,0) -= a
     FlowField& operator+=(const ComplexChebyCoeff& U);    // u.cmplx(0,*,0,0) += U
@@ -228,14 +228,14 @@ class FlowField {
     void asciiSave(const std::string& filebase) const;
     void binarySave(const std::string& filebase) const;
     void hdf5Save(const std::string& filebase) const;
-    void writeNetCDF(const std::string& filebase, vector<string> component_names = vector<string>()) const;
+    void writeNetCDF(const std::string& filebase, std::vector<std::string> component_names = std::vector<std::string>()) const;
     void VTKSave(const std::string& filebase, bool SwapEndian = true) const;
 
     // read methods
     void readNetCDF(const std::string& filebase);
 
     // save to .h5 or .ff based on file extension, or if none, presence of HDF5 libs
-    void save(const std::string& filebase, vector<string> component_names = vector<string>()) const;
+    void save(const std::string& filebase, std::vector<std::string> component_names = std::vector<std::string>()) const;
 
     // save k-normal slice of ith component at nkth gridpoint (along k-direction)
     void saveSlice(int k, int i, int nk, const std::string& filebase, int xstride = 1, int ystride = 1,

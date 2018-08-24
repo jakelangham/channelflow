@@ -111,14 +111,14 @@ class NewtonSearchFlags {
 
     NewtonSearchFlags(ArgList& args);
     SolverMethod string2solver(std::string);
-    string solver2string() const;
+    std::string solver2string() const;
     OptimizationMethod string2optimization(std::string);
-    string optimization2string() const;
-    SolutionType string2solntype(string s) const;
-    string solntype2string() const;
-    void save(const string& outdir = "") const;
-    void load(int taskid, const string indir);
-    const vector<string> getFlagList();
+    std::string optimization2string() const;
+    SolutionType string2solntype(std::string s) const;
+    std::string solntype2string() const;
+    void save(const std::string& outdir = "") const;
+    void load(int taskid, const std::string indir);
+    const std::vector<std::string> getFlagList();
 };
 
 /** Combined Newton Hookstep algorithm
@@ -147,13 +147,13 @@ class NewtonAlgorithm : public Newton {
     int hookstep(VectorXd& dxH, VectorXd& GxH, const VectorXd& x, const VectorXd& b);
     int convergenceCheckAC(const VectorXd& dx, VectorXd& Gx, const VectorXd& x);
 
-    ostream* os;
+    std::ostream* os;
     int fcount_newton_;
     int fcount_opt_;
 
     // required for Hookstep algorithm
-    unique_ptr<GMRES> gmres_;
-    unique_ptr<FGMRES> fgmres_;
+    std::unique_ptr<GMRES> gmres_;
+    std::unique_ptr<FGMRES> fgmres_;
     Real delta_;
     Real rx_;  // Dennis & Schnabel residual r(x) = 1/2 ||f(x)||^2
 };

@@ -30,7 +30,8 @@ namespace channelflow {
 using cfbasics::ArgList;
 using cfbasics::cfarray;
 
-void WriteProcessInfo(int argc, char* argv[], string filename = "processinfo", ios::openmode mode = ios::out);
+void WriteProcessInfo(int argc, char* argv[], std::string filename = "processinfo",
+                      std::ios::openmode mode = std::ios::out);
 
 void save(const std::string& filebase, Real T, const FieldSymmetry& tau);
 void load(const std::string& filebase, Real& T, FieldSymmetry& tau);
@@ -104,16 +105,16 @@ class FieldSeries {
 Real tFromFilename(const std::string filename);
 
 // Extract t from filenames and return which t is smaller (useful for sorting)
-bool comparetimes(const string& s0, const string& s1);
+bool comparetimes(const std::string& s0, const std::string& s1);
 
 // Return channlflow version numbers, e.g. 0, 9, 20 for channelflow-0.9.20.
 void channelflowVersion(int& major, int& minor, int& update);
 
 // Set dnsflags required to create a baseflow
-DNSFlags setBaseFlowFlags(ArgList& args, string& Uname, string& Wname);
+DNSFlags setBaseFlowFlags(ArgList& args, std::string& Uname, std::string& Wname);
 
 // Creates baseflow with BCs
-vector<ChebyCoeff> baseFlow(int Ny, Real a, Real b, DNSFlags& flags, string Uname, string Wname);
+std::vector<ChebyCoeff> baseFlow(int Ny, Real a, Real b, DNSFlags& flags, std::string Uname, std::string Wname);
 
 }  // namespace channelflow
 #endif

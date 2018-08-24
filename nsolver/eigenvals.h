@@ -34,14 +34,14 @@ class EigenvalsFlags {
     bool centdiff = false;
     bool orthochk = false;
 
-    string duname = "";
-    string outdir = "./";
+    std::string duname = "";
+    std::string outdir = "./";
 
     // new flags:
     Real EPS_stab = 1e-06;
 
     void save(const std::string& outdir = "") const;  // save into file filebase.txt
-    void load(int taskid, const string indir);
+    void load(int taskid, const std::string indir);
 };
 
 class Eigenvals {

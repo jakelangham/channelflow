@@ -10,6 +10,8 @@
 #include "gtest/gtest.h"
 #include "nsolver/nsolver.h"
 
+using namespace std;
+
 namespace nsolver {
 class exampleDSI : public DSI {
    public:

@@ -50,11 +50,12 @@ class DSI {
                       const bool fieldsonly = false);
 
     /** Save eigenvectors x in "outdir */
-    virtual void saveEigenvec(const VectorXd& x, const string label, const string outdir);  // Save real eigenvectors
+    virtual void saveEigenvec(const VectorXd& x, const std::string label,
+                              const std::string outdir);  // Save real eigenvectors
 
     // Save complex conjugate eigenvectors pair
-    virtual void saveEigenvec(const VectorXd& x1, const VectorXd& x2, const string label1, const string label2,
-                              const string outdir);
+    virtual void saveEigenvec(const VectorXd& x1, const VectorXd& x2, const std::string label1,
+                              const std::string label2, const std::string outdir);
 
     virtual VectorXd quadraticInterpolate_vector(const cfarray<VectorXd>& xn, const cfarray<Real>& s, Real snew);
     /** Norm(x) */
@@ -69,7 +70,7 @@ class DSI {
      * the disk. Standard delimiter should be tab ("\t")
      */
     virtual std::string stats(const VectorXd& x);
-    virtual pair<string, string> stats_minmax(const VectorXd& x);
+    virtual std::pair<std::string, std::string> stats_minmax(const VectorXd& x);
 
     /** Return an appropriate file header for the string returned by stats. */
     virtual std::string statsHeader();
@@ -79,10 +80,10 @@ class DSI {
      * what the parameter mu means and update the ODE accordingly.
      */
     virtual void updateMu(Real mu) { mu_ = mu; }
-    virtual void saveParameters(string searchdir) {}
-    virtual void saveResults(string searchdir) {}
+    virtual void saveParameters(std::string searchdir) {}
+    virtual void saveResults(std::string searchdir) {}
     virtual Real mu() const { return mu_; }
-    virtual string printMu() { return ""; }
+    virtual std::string printMu() { return ""; }
     virtual Real observable(VectorXd& x) { return 0; }
     virtual void phaseShift(MatrixXd& y) {}
     virtual void phaseShift(VectorXd& x) {}

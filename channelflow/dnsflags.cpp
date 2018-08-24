@@ -9,6 +9,8 @@
 
 #include <type_traits>
 
+using namespace std;
+
 namespace {
 /**
  * Parse an enum value from an input stream line

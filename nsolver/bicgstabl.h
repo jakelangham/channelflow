@@ -28,7 +28,7 @@ class BiCGStabL {
     Real rho, alpha, omega, beta;
     int L, l_, Lmax = 6;
     int N;
-    vector<vec> u, r;
+    std::vector<vec> u, r;
     vec x, xsoln;
     MatrixXd tau;
     VectorXd gamma, gammap, gammapp, sigma;

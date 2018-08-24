@@ -36,22 +36,22 @@ class DNSAlgorithm {
    public:
     DNSAlgorithm();
     DNSAlgorithm(const DNSAlgorithm& dns);
-    DNSAlgorithm(const vector<FlowField>& fields, const shared_ptr<NSE>& nse, const DNSFlags& flags);
+    DNSAlgorithm(const std::vector<FlowField>& fields, const std::shared_ptr<NSE>& nse, const DNSFlags& flags);
 
     virtual ~DNSAlgorithm();
     // DNSAlgorithm& operator=(const DNSAlgorithm& dns);
 
     // PURE VIRT, definition of time stepping scheme
-    virtual void advance(vector<FlowField>& fields, int nSteps = 1) = 0;
-    virtual void project();                                      // project onto symm subspace (a member of flags)
-    virtual void operator*=(const vector<FieldSymmetry>& symm);  // apply symmetry operator
+    virtual void advance(std::vector<FlowField>& fields, int nSteps = 1) = 0;
+    virtual void project();                                           // project onto symm subspace (a member of flags)
+    virtual void operator*=(const std::vector<FieldSymmetry>& symm);  // apply symmetry operator
     // virtual void reset() = 0;					// flush state, prepare for new integration
-    virtual void reset_dt(Real dt) = 0;                  // PURE VIRT, somewhat expensive
-    virtual bool push(const vector<FlowField>& fields);  // push u onto u[j] stack, t += dt
-    virtual bool full() const;                           // have enough init data?
+    virtual void reset_dt(Real dt) = 0;                       // PURE VIRT, somewhat expensive
+    virtual bool push(const std::vector<FlowField>& fields);  // push u onto u[j] stack, t += dt
+    virtual bool full() const;                                // have enough init data?
 
     void reset_time(Real t);
-    void reset_nse(shared_ptr<NSE> nse);
+    void reset_nse(std::shared_ptr<NSE> nse);
 
     int order() const;       // err should scale as dt^order
     int Ninitsteps() const;  // number of steps needed to initialize
@@ -65,7 +65,7 @@ class DNSAlgorithm {
     const DNSFlags& flags() const;
     TimeStepMethod timestepping() const;
 
-    virtual DNSAlgorithm* clone(const shared_ptr<NSE>& nse) const = 0;  // PURE VIRT, new copy of *this
+    virtual DNSAlgorithm* clone(const std::shared_ptr<NSE>& nse) const = 0;  // PURE VIRT, new copy of *this
 
     virtual void printStack() const;
 
@@ -80,10 +80,10 @@ class DNSAlgorithm {
     Real t_;  // time in convective units
               //     Real cfl_;			// NEW: CFL number is computed on demand
 
-    vector<Real> lambda_t_;  // time stepping factors for implicit solver
-    shared_ptr<NSE> nse_;    // copy of pointer to navier-stokes equations of channelflow
-                             // defined and space-discretized in separate NSE class, ptr is given at construction
-    vector<cfarray<FieldSymmetry>> symmetries_;
+    std::vector<Real> lambda_t_;  // time stepping factors for implicit solver
+    std::shared_ptr<NSE> nse_;    // copy of pointer to navier-stokes equations of channelflow
+    // defined and space-discretized in separate NSE class, ptr is given at construction
+    std::vector<cfarray<FieldSymmetry>> symmetries_;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,30 +94,30 @@ class MultistepDNS : public DNSAlgorithm {
    public:
     MultistepDNS();
     MultistepDNS(const MultistepDNS& dns);
-    MultistepDNS(const vector<FlowField>& fields, const shared_ptr<NSE>& nse, const DNSFlags& flags);
+    MultistepDNS(const std::vector<FlowField>& fields, const std::shared_ptr<NSE>& nse, const DNSFlags& flags);
 
     ~MultistepDNS();
 
     MultistepDNS& operator=(const MultistepDNS& dns);
 
-    virtual void advance(vector<FlowField>& fields, int nSteps = 1);
+    virtual void advance(std::vector<FlowField>& fields, int nSteps = 1);
     virtual void project();
-    virtual void operator*=(const vector<FieldSymmetry>& symm);
+    virtual void operator*=(const std::vector<FieldSymmetry>& symm);
     virtual void reset_dt(Real dt);
-    virtual bool push(const vector<FlowField>& fields);  // for initialization
-    virtual bool full() const;                           // have enough init data?
+    virtual bool push(const std::vector<FlowField>& fields);  // for initialization
+    virtual bool full() const;                                // have enough init data?
     // virtual void reset();       // flush state, prepare for new integration
 
-    virtual DNSAlgorithm* clone(const shared_ptr<NSE>& nse) const;  // new copy of *this
+    virtual DNSAlgorithm* clone(const std::shared_ptr<NSE>& nse) const;  // new copy of *this
 
     virtual void printStack() const;
 
    protected:
-    Real eta_;                           // new field coeff for implicit term, equals a0 in Peyret
-    cfarray<Real> alpha_;                // coefficients of field history
-    cfarray<Real> beta_;                 // coefficients of nonlin. field history
-    cfarray<vector<FlowField>> fields_;  // u[j] == u at t-j*dt for multistep algorithms
-    cfarray<vector<FlowField>> nonlf_;   // f[j] == f at t-j*dt for multistep algorithms (nonlinear term)
+    Real eta_;                                // new field coeff for implicit term, equals a0 in Peyret
+    cfarray<Real> alpha_;                     // coefficients of field history
+    cfarray<Real> beta_;                      // coefficients of nonlin. field history
+    cfarray<std::vector<FlowField>> fields_;  // u[j] == u at t-j*dt for multistep algorithms
+    cfarray<std::vector<FlowField>> nonlf_;   // f[j] == f at t-j*dt for multistep algorithms (nonlinear term)
 
     int countdown_;
 };
@@ -128,27 +128,20 @@ class RungeKuttaDNS : public DNSAlgorithm {
    public:
     RungeKuttaDNS();
     RungeKuttaDNS(const RungeKuttaDNS& dns);
-    RungeKuttaDNS(const vector<FlowField>& fields, const shared_ptr<NSE>& nse, const DNSFlags& flags);
+    RungeKuttaDNS(const std::vector<FlowField>& fields, const std::shared_ptr<NSE>& nse, const DNSFlags& flags);
 
     ~RungeKuttaDNS();
 
-    // RungeKuttaDNS & operator= (const RungeKuttaDNS & dns);
-
-    virtual void advance(vector<FlowField>& fields, int nSteps = 1);
+    virtual void advance(std::vector<FlowField>& fields, int nSteps = 1);
     virtual void reset_dt(Real dt);
 
-    // next few functions are no-ops so base class defns suffice
-    // virtual void project();
-    // virtual void operator *= (const FieldSymmetry& symm);
-    // virtual void reset();  // flush state, prepare for new integration
-
-    virtual DNSAlgorithm* clone(const shared_ptr<NSE>& nse) const;  // new copy of *this
+    virtual DNSAlgorithm* clone(const std::shared_ptr<NSE>& nse) const;  // new copy of *this
    protected:
     int Nsubsteps_;
-    vector<FlowField> Qj1_;  // Q_{j-1} (Q at previous substep)
-    vector<FlowField> Qj_;   // Q_j     (Q at current  substep)
-    cfarray<Real> A_;        // Q_{j+1} = A_j Q_j + N(u_j)
-    cfarray<Real> B_;        // u_{j+1} = u_j + dt B_j Q_j + dt C_j (L u_j + L u_{j+1})
+    std::vector<FlowField> Qj1_;  // Q_{j-1} (Q at previous substep)
+    std::vector<FlowField> Qj_;   // Q_j     (Q at current  substep)
+    cfarray<Real> A_;             // Q_{j+1} = A_j Q_j + N(u_j)
+    cfarray<Real> B_;             // u_{j+1} = u_j + dt B_j Q_j + dt C_j (L u_j + L u_{j+1})
     cfarray<Real> C_;
 };
 
@@ -158,29 +151,29 @@ class CNABstyleDNS : public DNSAlgorithm {
    public:
     CNABstyleDNS();
     CNABstyleDNS(const CNABstyleDNS& dns);
-    CNABstyleDNS(const vector<FlowField>& fields, const shared_ptr<NSE>& nse, const DNSFlags& flags);
+    CNABstyleDNS(const std::vector<FlowField>& fields, const std::shared_ptr<NSE>& nse, const DNSFlags& flags);
 
     ~CNABstyleDNS();
 
     //     CNABstyleDNS & operator= (const CNABstyleDNS & dns);
 
-    virtual void advance(vector<FlowField>& fields, int nSteps = 1);
+    virtual void advance(std::vector<FlowField>& fields, int nSteps = 1);
     virtual void project();
-    virtual void operator*=(const vector<FieldSymmetry>& symm);  // apply symmetry operator
+    virtual void operator*=(const std::vector<FieldSymmetry>& symm);  // apply symmetry operator
     virtual void reset_dt(Real dt);
-    virtual bool push(const vector<FlowField>& fields);  // push u onto u[j] stack, t += dt for initial steps
-    virtual bool full() const;                           // have enough init data?
+    virtual bool push(const std::vector<FlowField>& fields);  // push u onto u[j] stack, t += dt for initial steps
+    virtual bool full() const;                                // have enough init data?
     virtual void printStack() const;
 
-    virtual DNSAlgorithm* clone(const shared_ptr<NSE>& nse) const;  // new copy of *this
+    virtual DNSAlgorithm* clone(const std::shared_ptr<NSE>& nse) const;  // new copy of *this
 
    protected:
     int Nsubsteps_;  // time integration takes Nsubsteps per dt step
     bool full_;
-    vector<FlowField> fj1_;  // f_{j-1} (nonlinear term f at previous substep)
-    vector<FlowField> fj_;   // f_j     (nonlinear term f at current  substep)
-    cfarray<Real> alpha_;    // u_{j+1} = u_j + dt L (alpha_j u_j + beta_j u_{j+1})
-    cfarray<Real> beta_;     //           + dt gamma_j N(u_j) + dt zeta N(u_{j-1})
+    std::vector<FlowField> fj1_;  // f_{j-1} (nonlinear term f at previous substep)
+    std::vector<FlowField> fj_;   // f_j     (nonlinear term f at current  substep)
+    cfarray<Real> alpha_;         // u_{j+1} = u_j + dt L (alpha_j u_j + beta_j u_{j+1})
+    cfarray<Real> beta_;          //           + dt gamma_j N(u_j) + dt zeta N(u_{j-1})
     cfarray<Real> gamma_;
     cfarray<Real> zeta_;
 };

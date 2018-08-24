@@ -49,9 +49,9 @@ class MultishootingDSI {
                                         // observable called by DSI::tph_observable.
     bool tph();                         // to know if t phase is fixed at a point with zero variation of the observable
     Real DSIL2Norm(const VectorXd& x);  // to call DSI::L2Norm on the first shot
-    string stats(const VectorXd& x);    // to return stats of the first shot
-    pair<string, string> stats_minmax(const VectorXd& x);  // to return DSI::stats_minmax on the first shot
-    void save(const VectorXd& x, const string filebase, const string outdir);  // to save the results
+    std::string stats(const VectorXd& x);    // to return stats of the first shot
+    std::pair<std::string, std::string> stats_minmax(const VectorXd& x);  // to return DSI::stats_minmax on the first shot
+    void save(const VectorXd& x, const std::string filebase, const std::string outdir);  // to save the results
     int nShot();                                                               // to return number of the shots
 
    private:

@@ -5,6 +5,8 @@
 
 #include "channelflow/nse.h"
 
+using namespace std;
+
 namespace channelflow {
 
 void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, FlowField& f, FlowField& tmp,

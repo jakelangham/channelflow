@@ -26,23 +26,23 @@ class NSE {
    public:
     NSE();
     NSE(const NSE& nse);
-    NSE(const vector<FlowField>& fields, const DNSFlags& flags);
-    NSE(const vector<FlowField>& fields, const vector<ChebyCoeff>& base, const DNSFlags& flags);
+    NSE(const std::vector<FlowField>& fields, const DNSFlags& flags);
+    NSE(const std::vector<FlowField>& fields, const std::vector<ChebyCoeff>& base, const DNSFlags& flags);
     virtual ~NSE();
 
-    virtual void nonlinear(const vector<FlowField>& infields, vector<FlowField>& outfields);
-    virtual void linear(const vector<FlowField>& infields, vector<FlowField>& outfields);
+    virtual void nonlinear(const std::vector<FlowField>& infields, std::vector<FlowField>& outfields);
+    virtual void linear(const std::vector<FlowField>& infields, std::vector<FlowField>& outfields);
     // calls a tausolver for each Fourier mode
-    virtual void solve(vector<FlowField>& outfields, const vector<FlowField>& infields, const int i = 0);
+    virtual void solve(std::vector<FlowField>& outfields, const std::vector<FlowField>& infields, const int i = 0);
 
     // redefines the tausolver objects with new time-stepping constant (allocates memory for tausolver at first use)
-    virtual void reset_lambda(const vector<Real> lambda_t);
+    virtual void reset_lambda(const std::vector<Real> lambda_t);
 
     // vector of RHS is smaller than of fields because of missing pressure equation
-    virtual vector<FlowField> createRHS(const vector<FlowField>& fields) const;
+    virtual std::vector<FlowField> createRHS(const std::vector<FlowField>& fields) const;
 
     // returns vector of symmetries confining the vector of fields to a subspace
-    virtual vector<cfarray<FieldSymmetry>> createSymmVec() const;
+    virtual std::vector<cfarray<FieldSymmetry>> createSymmVec() const;
 
     inline int taskid() const;
 
@@ -73,7 +73,7 @@ class NSE {
     virtual const ChebyCoeff& Wbase() const;
 
    protected:
-    vector<Real> lambda_t_;
+    std::vector<Real> lambda_t_;
     TauSolver*** tausolver_;  // 3d cfarray of tausolvers, indexed by [i][mx][mz]
 
     DNSFlags flags_;  // User-defined integration parameters
@@ -99,8 +99,8 @@ class NSE {
     Real b_;
     int kxmax_;
     int kzmax_;
-    vector<int> kxloc_;
-    vector<int> kzloc_;
+    std::vector<int> kxloc_;
+    std::vector<int> kzloc_;
 
     // Base flow members
     Real dPdxRef_;    // Enforced mean pressure gradient (0.0 if unused).
