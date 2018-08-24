@@ -9,6 +9,7 @@
 #include "cfbasics/cfbasics.h"
 
 using namespace std;
+using namespace Eigen;
 using namespace cfbasics;
 
 namespace nsolver {

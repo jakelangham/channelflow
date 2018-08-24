@@ -32,8 +32,6 @@
 
 extern const char* g_GIT_SHA1;
 
-using namespace Eigen;
-
 namespace cfbasics {
 
 enum HookstepPhase { ConstantDelta, ReducingDelta, IncreasingDelta, Finished };
@@ -45,7 +43,7 @@ enum SolutionType { Equilibrium, PeriodicOrbit };
 // This enum is used for labeling diagnostic output data
 enum fEvalType { fEval, DfEval, HookstepEval };
 
-using Rn2Rnfunc = std::function<VectorXd(VectorXd)>;
+using Rn2Rnfunc = std::function<Eigen::VectorXd(Eigen::VectorXd)>;
 
 inline std::string r2s(Real r);
 inline std::string i2s(int n, int length = 0, char pad = '0');
@@ -94,31 +92,31 @@ inline void read(std::istream& os, fieldstate& s);
 
 // end mathdefs port
 
-inline void print(const MatrixXd& x);
-inline void print(const VectorXd& x);
-inline void save(const MatrixXd& A, const std::string& filebase);
-inline void save(const VectorXd& x, const std::string& filebase);
-inline void save(const VectorXcd& x, const std::string& filebase);
-inline void load(MatrixXd& A, const std::string& filebase);
-inline void load(VectorXd& x, const std::string& filebase);
-inline void load(VectorXcd& x, const std::string& filebase);
+inline void print(const Eigen::MatrixXd& x);
+inline void print(const Eigen::VectorXd& x);
+inline void save(const Eigen::MatrixXd& A, const std::string& filebase);
+inline void save(const Eigen::VectorXd& x, const std::string& filebase);
+inline void save(const Eigen::VectorXcd& x, const std::string& filebase);
+inline void load(Eigen::MatrixXd& A, const std::string& filebase);
+inline void load(Eigen::VectorXd& x, const std::string& filebase);
+inline void load(Eigen::VectorXcd& x, const std::string& filebase);
 inline Real getRealfromLine(int taskid, std::ifstream& is);
 inline int getIntfromLine(int taskid, std::ifstream& is);
 inline std::string getStringfromLine(int taskid, std::ifstream& is);
-inline void setToZero(MatrixXd& A);
-inline void setToZero(VectorXd& x);
+inline void setToZero(Eigen::MatrixXd& A);
+inline void setToZero(Eigen::VectorXd& x);
 
-inline Real L2Norm(const VectorXd& x, int cutoff = 0);
-inline Real L2Norm(const VectorXcd& x, int cutoff = 0);
-inline Real L2Norm2(const VectorXd& x, int cutoff = 0);
-inline Real L2Norm2(const VectorXcd& x, int cutoff = 0);
-inline Real L2Dist(const VectorXd& x, const VectorXd& y, int cutoff = 0);
-inline Real L2Dist(const VectorXcd& x, const VectorXcd& y, int cutoff = 0);
-inline Real L2Dist2(const VectorXd& x, const VectorXd& y, int cutoff = 0);
-inline Real L2Dist2(const VectorXcd& x, const VectorXcd& y, int cutoff = 0);
+inline Real L2Norm(const Eigen::VectorXd& x, int cutoff = 0);
+inline Real L2Norm(const Eigen::VectorXcd& x, int cutoff = 0);
+inline Real L2Norm2(const Eigen::VectorXd& x, int cutoff = 0);
+inline Real L2Norm2(const Eigen::VectorXcd& x, int cutoff = 0);
+inline Real L2Dist(const Eigen::VectorXd& x, const Eigen::VectorXd& y, int cutoff = 0);
+inline Real L2Dist(const Eigen::VectorXcd& x, const Eigen::VectorXcd& y, int cutoff = 0);
+inline Real L2Dist2(const Eigen::VectorXd& x, const Eigen::VectorXd& y, int cutoff = 0);
+inline Real L2Dist2(const Eigen::VectorXcd& x, const Eigen::VectorXcd& y, int cutoff = 0);
 
-inline Real L2IP(const VectorXd& u, const VectorXd& v, int cutoff = 0);
-inline void operator*=(VectorXcd& x, Complex c);
+inline Real L2IP(const Eigen::VectorXd& u, const Eigen::VectorXd& v, int cutoff = 0);
+inline void operator*=(Eigen::VectorXcd& x, Complex c);
 
 inline void rename(const std::string& oldname, const std::string& newname);
 inline Real pythag(Real a, Real b);
@@ -128,15 +126,16 @@ inline std::ostream& operator<<(std::ostream& os, HookstepPhase p);
 inline std::ostream& operator<<(std::ostream& os, ResidualImprovement i);
 inline std::ostream& operator<<(std::ostream& os, SolutionType solntype);
 
-inline void rescale(VectorXd& x, const VectorXd& xscale);  // x -> x./xscale
-inline void unscale(VectorXd& x, const VectorXd& xscale);  // x -> x.*xscale
+inline void rescale(Eigen::VectorXd& x, const Eigen::VectorXd& xscale);  // x -> x./xscale
+inline void unscale(Eigen::VectorXd& x, const Eigen::VectorXd& xscale);  // x -> x.*xscale
 
 inline Real adjustDelta(Real delta, Real rescale, Real deltaMin, Real deltaMax, std::ostream& os = std::cout);
 inline Real adjustLambda(Real lambda, Real lambdaMin, Real lambdaMax, std::ostream& os = std::cout);
 
-inline void solve(const MatrixXd& Ut, const VectorXd& D, const MatrixXd& C, const VectorXd& b, VectorXd& x);
+inline void solve(const Eigen::MatrixXd& Ut, const Eigen::VectorXd& D, const Eigen::MatrixXd& C,
+                  const Eigen::VectorXd& b, Eigen::VectorXd& x);
 
-inline Real align(const VectorXd& u, const VectorXd& v);
+inline Real align(const Eigen::VectorXd& u, const Eigen::VectorXd& v);
 
 // Measure execution time (wall-clock time) in seconds.
 // Returns seconds passed since first call
@@ -525,7 +524,7 @@ inline void load(Real& c, const std::string& filebase) {
 #endif
 }
 
-inline void save(const MatrixXd& A, const std::string& filebase) {
+inline void save(const Eigen::MatrixXd& A, const std::string& filebase) {
     int taskid = mpirank();
 
     if (taskid != 0) {
@@ -542,7 +541,7 @@ inline void save(const MatrixXd& A, const std::string& filebase) {
     }
 }
 
-inline void save(const VectorXd& x, const std::string& filebase) {
+inline void save(const Eigen::VectorXd& x, const std::string& filebase) {
     int taskid = mpirank();
 
     if (taskid != 0) {
@@ -570,7 +569,7 @@ inline void save(Complex c, const std::string& filebase) {
     os << Re(c) << ' ' << Im(c) << '\n';  // format can be read by matlab.
 }
 
-inline void save(const VectorXcd& x, const std::string& filebase) {
+inline void save(const Eigen::VectorXcd& x, const std::string& filebase) {
     int taskid = mpirank();
 
     if (taskid != 0) {
@@ -584,7 +583,7 @@ inline void save(const VectorXcd& x, const std::string& filebase) {
         os << Re(x(i)) << ' ' << Im(x(i)) << '\n';
 }
 
-inline void load(MatrixXd& A, const std::string& filebase) {
+inline void load(Eigen::MatrixXd& A, const std::string& filebase) {
     std::string filename = appendSuffix(filebase, ".asc");
     std::ifstream is(filename.c_str());
     int M, N;
@@ -602,7 +601,7 @@ inline void load(MatrixXd& A, const std::string& filebase) {
             is >> A(i, j);
 }
 
-inline void load(VectorXd& x, const std::string& filebase) {
+inline void load(Eigen::VectorXd& x, const std::string& filebase) {
     std::string filename = appendSuffix(filebase, ".asc");
     std::ifstream is(filename.c_str());
     int N;
@@ -619,7 +618,7 @@ inline void load(VectorXd& x, const std::string& filebase) {
         is >> x(i);
 }
 
-inline void load(VectorXcd& x, const std::string& filebase) {
+inline void load(Eigen::VectorXcd& x, const std::string& filebase) {
     std::string filename = appendSuffix(filebase, ".asc");
     std::ifstream is(filename.c_str());
     int N;
@@ -693,22 +692,22 @@ std::string getStringfromLine(int taskid, std::ifstream& is) {
     return val;
 }
 
-inline void setToZero(MatrixXd& A) {
+inline void setToZero(Eigen::MatrixXd& A) {
     for (int i = 0; i < A.rows(); ++i)
         for (int j = 0; j < A.cols(); ++j)
             A(i, j) = 0.0;
 }
 
-inline void setToZero(VectorXd& x) {
+inline void setToZero(Eigen::VectorXd& x) {
     for (int i = 0; i < x.size(); ++i)
         x(i) = 0.0;
 }
 
-inline Real L2Norm(const VectorXd& x, int cutoff) { return sqrt(L2Norm2(x, cutoff)); }
+inline Real L2Norm(const Eigen::VectorXd& x, int cutoff) { return sqrt(L2Norm2(x, cutoff)); }
 
-inline Real L2Norm(const VectorXcd& x, int cutoff) { return sqrt(L2Norm2(x, cutoff)); }
+inline Real L2Norm(const Eigen::VectorXcd& x, int cutoff) { return sqrt(L2Norm2(x, cutoff)); }
 
-inline Real L2Norm2(const VectorXd& x, int cutoff) {
+inline Real L2Norm2(const Eigen::VectorXd& x, int cutoff) {
     Real sum = 0.0;
     for (int i = 0; i < x.size() - cutoff; ++i)
         sum += x(i) * x(i);
@@ -719,7 +718,7 @@ inline Real L2Norm2(const VectorXd& x, int cutoff) {
     return sum;
 }
 
-inline Real L2Norm2(const VectorXcd& x, int cutoff) {
+inline Real L2Norm2(const Eigen::VectorXcd& x, int cutoff) {
     Real sum = 0.0;
     for (int i = 0; i < x.size() - cutoff; ++i)
         sum += abs2(x(i));
@@ -731,11 +730,15 @@ inline Real L2Norm2(const VectorXcd& x, int cutoff) {
     return sum;
 }
 
-inline Real L2Dist(const VectorXd& x, const VectorXd& y, int cutoff) { return sqrt(L2Dist2(x, y, cutoff)); }
+inline Real L2Dist(const Eigen::VectorXd& x, const Eigen::VectorXd& y, int cutoff) {
+    return sqrt(L2Dist2(x, y, cutoff));
+}
 
-inline Real L2Dist(const VectorXcd& x, const VectorXcd& y, int cutoff) { return sqrt(L2Dist2(x, y, cutoff)); }
+inline Real L2Dist(const Eigen::VectorXcd& x, const Eigen::VectorXcd& y, int cutoff) {
+    return sqrt(L2Dist2(x, y, cutoff));
+}
 
-inline Real L2Dist2(const VectorXd& x, const VectorXd& y, int cutoff) {
+inline Real L2Dist2(const Eigen::VectorXd& x, const Eigen::VectorXd& y, int cutoff) {
     assert(x.size() == y.size());
     Real sum = 0.0;
     for (int i = 0; i < x.size() - cutoff; ++i)
@@ -747,7 +750,7 @@ inline Real L2Dist2(const VectorXd& x, const VectorXd& y, int cutoff) {
     return sum;
 }
 
-inline Real L2Dist2(const VectorXcd& x, const VectorXcd& y, int cutoff) {
+inline Real L2Dist2(const Eigen::VectorXcd& x, const Eigen::VectorXcd& y, int cutoff) {
     assert(x.size() == y.size());
 
     Real sum = 0.0;
@@ -761,7 +764,7 @@ inline Real L2Dist2(const VectorXcd& x, const VectorXcd& y, int cutoff) {
     return sum;
 }
 
-inline Real L2IP(const VectorXd& u, const VectorXd& v, int cutoff) {
+inline Real L2IP(const Eigen::VectorXd& u, const Eigen::VectorXd& v, int cutoff) {
     if (u.size() != v.size()) {
         std::cerr << "error in L2IP(VectorXd, VectorXd) : vector length mismatch" << std::endl;
         exit(1);
@@ -777,7 +780,7 @@ inline Real L2IP(const VectorXd& u, const VectorXd& v, int cutoff) {
     return sum;
 }
 
-inline void operator*=(VectorXcd& x, Complex c) {
+inline void operator*=(Eigen::VectorXcd& x, Complex c) {
     for (int i = 0; i < x.size(); ++i)
         x(i) = x(i) * c;
 }
@@ -946,12 +949,12 @@ inline std::ostream& operator<<(std::ostream& os, SolutionType solntype) {
     return os;
 }
 
-inline void rescale(VectorXd& x, const VectorXd& xscale) {
+inline void rescale(Eigen::VectorXd& x, const Eigen::VectorXd& xscale) {
     if (xscale.size() != 0)
         for (int i = 0; i < x.size(); ++i)
             x(i) /= xscale(i);
 }
-inline void unscale(VectorXd& x, const VectorXd& xscale) {
+inline void unscale(Eigen::VectorXd& x, const Eigen::VectorXd& xscale) {
     if (xscale.size() != 0)
         for (int i = 0; i < x.size(); ++i)
             x(i) *= xscale(i);
@@ -994,8 +997,9 @@ inline Real adjustLambda(Real lambda, Real lambdaMin, Real lambdaMax, std::ostre
     return lambda;
 }
 
-inline void solve(const MatrixXd& Ut, const VectorXd& D, const MatrixXd& V, const VectorXd& b, VectorXd& x) {
-    VectorXd bh = Ut * b;
+inline void solve(const Eigen::MatrixXd& Ut, const Eigen::VectorXd& D, const Eigen::MatrixXd& V,
+                  const Eigen::VectorXd& b, Eigen::VectorXd& x) {
+    Eigen::VectorXd bh = Ut * b;
     const Real eps = 1e-12;
     for (int i = 0; i < D.size(); ++i) {
         if (abs(D(i)) > eps)
@@ -1007,7 +1011,7 @@ inline void solve(const MatrixXd& Ut, const VectorXd& D, const MatrixXd& V, cons
 }
 
 // returns u dot v/(|u||v|) or zero if either has zero norm
-inline Real align(const VectorXd& u, const VectorXd& v) {
+inline Real align(const Eigen::VectorXd& u, const Eigen::VectorXd& v) {
     Real norm = L2Norm(u) * L2Norm(v);
     if (norm == 0.0)
         return 0.0;

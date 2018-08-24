@@ -41,34 +41,34 @@ class ArclengthConstraint {
      * \param[in] yLast the last known solution (including mu at last position)
      * \param[in] muRef reference value of mu, mu is scaled by this when computing arclength
      */
-    ArclengthConstraint(const VectorXd& yLast, Real ds = 0, Real muRef = 1.);
+    ArclengthConstraint(const Eigen::VectorXd& yLast, Real ds = 0, Real muRef = 1.);
 
     /** \brief compute pseudo arclength squared
      * \param[in] y current guess vector, including mu at last position
      * \return pseudo arclength: L2Dist2(x-xLast) + (mu-muLast)^2
      */
-    Real arclength2(const VectorXd& y);
+    Real arclength2(const Eigen::VectorXd& y);
 
     /** \brief compute pseudo arclength
      * \param[in] y current guess vector, including mu at last position
      * \return pseudo arclength: sqrt(L2Dist2(x-xLast) + (mu-muLast)^2)
      */
-    Real arclength(const VectorXd& y);
+    Real arclength(const Eigen::VectorXd& y);
 
     /** \brief compute difference between pseudo arclength and desired value
      * \param[in] y current guess vector
      * \return arclength - ds^2
      */
-    Real arclengthDiff(const VectorXd& y);
+    Real arclengthDiff(const Eigen::VectorXd& y);
 
     /// Getter function for target arclength distance
     Real ds();
     /// Setter for target arclength distance
     void setDs(Real newDs);
 
-    void setYLast(const VectorXd& yLast);
+    void setYLast(const Eigen::VectorXd& yLast);
 
-    VectorXd yLast();
+    Eigen::VectorXd yLast();
 
     /// Is an arclength constraint set?
     bool use();
@@ -77,16 +77,16 @@ class ArclengthConstraint {
     void notUse();
 
     /// Extract parameter from vector
-    Real muFromVector(const VectorXd& y);
+    Real muFromVector(const Eigen::VectorXd& y);
 
     /// Combine vector x and parameter mu into one larger vector
-    VectorXd makeVector(const VectorXd& x, Real mu);
+    Eigen::VectorXd makeVector(const Eigen::VectorXd& x, Real mu);
 
-    VectorXd extractVector(const VectorXd& y);
+    Eigen::VectorXd extractVector(const Eigen::VectorXd& y);
 
    private:
     bool use_ = false;
-    VectorXd yLast_;
+    Eigen::VectorXd yLast_;
     Real muRef_;
     Real ds_;
 };
@@ -110,7 +110,7 @@ class Newton {
      * \param[out] residual the final search residual
      * \return the root (or the last try)
      */
-    virtual VectorXd solve(DSI& dsi, const VectorXd& x, Real& residual) = 0;
+    virtual Eigen::VectorXd solve(DSI& dsi, const Eigen::VectorXd& x, Real& residual) = 0;
     virtual void setLogstream(std::ostream* os) { logstream = os; }
     virtual void setOutdir(std::string od) { outdir = od; }
     virtual std::string getOutdir() { return outdir; }
@@ -119,9 +119,9 @@ class Newton {
     virtual std::ostream* getLogstream() { return logstream; }
     bool getConvergence() { return success; }
 
-    VectorXd evalWithAC(const VectorXd& y, int& fcount);
-    VectorXd jacobianWithAC(const VectorXd& y, const VectorXd& dy, const VectorXd& Gy, const Real& epsDx, bool centdiff,
-                            int& fcount);
+    Eigen::VectorXd evalWithAC(const Eigen::VectorXd& y, int& fcount);
+    Eigen::VectorXd jacobianWithAC(const Eigen::VectorXd& y, const Eigen::VectorXd& dy, const Eigen::VectorXd& Gy,
+                                   const Real& epsDx, bool centdiff, int& fcount);
 
     void setArclengthConstraint(ArclengthConstraint* newAC);
     MultishootingDSI* getMultishootingDSI();

@@ -13,6 +13,7 @@
 #include "channelflow/periodicfunc.h"
 
 using namespace std;
+using namespace Eigen;
 
 namespace channelflow {
 

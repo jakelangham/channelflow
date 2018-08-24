@@ -618,8 +618,8 @@ inline void FlowField::add(const Real a, const FlowField& u, const Real b, const
 
 // The field2vector and vector2field functions assume zero divergece and no-slip BCs.
 int field2vector_size(const FlowField& u);
-void field2vector(const FlowField& u, VectorXd& v);
-void vector2field(const VectorXd& v, FlowField& u);
+void field2vector(const FlowField& u, Eigen::VectorXd& v);
+void vector2field(const Eigen::VectorXd& v, FlowField& u);
 void fixdivnoslip(FlowField& u);
 
 }  // namespace channelflow

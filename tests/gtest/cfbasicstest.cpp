@@ -10,6 +10,8 @@
 #include <cfbasics/cfbasics.h>
 #include <gtest/gtest.h>
 
+using namespace Eigen;
+
 namespace channelflowtest {
 
 class SortByAbsTest : public ::testing::Test {

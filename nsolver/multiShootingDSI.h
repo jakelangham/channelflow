@@ -27,32 +27,38 @@ class MultishootingDSI {
     bool isDSIset();                                              // to check if dsi is previously set
     bool isVecMS(int MSVec_size, bool isAC);  // to find out the format of a vector which is passed to Newton
     void updateMu(Real mu);                   // to call updatemu of DSI
-    VectorXd eval(const VectorXd& x);         // to integrate shots in time by separately calling DSI::eval on them
-    VectorXd Jacobian(const VectorXd& x, const VectorXd& dx, const VectorXd& Gx, const Real& epsDx, bool centdiff,
-                      int& fcount);  // to calculate jacobian
-    MatrixXd extractVectors(
-        const VectorXd& x);  // to transform a long vector to a matrix of short vectors; ax and az are stored in the
-                             // last vector but T is devided and stored in all of them
-    VectorXd makeMSVector(const VectorXd& yvec);  // to form an initial long vector by integrating an initial field
-    VectorXd toVector(const MatrixXd& y);         // to transform a matrix of short vectors to a long vector
-    VectorXd xdiff(const VectorXd& x);  // to call DSI::xdiff on the first shot and put it in the long vector format
-    VectorXd zdiff(const VectorXd& x);  // to call DSI::zdiff on the first shot and put it in the long vector format
-    VectorXd tdiff(const VectorXd& x,
-                   Real epsDt);        // to call DSI::tdiff on the first shot and put it in the long vector format
-    Real extractT(const VectorXd& x);  // to extract T from the vector
-    Real extractXshift(const VectorXd& x);
-    Real extractZshift(const VectorXd& x);
-    Real observable(VectorXd& x);  // to call DSI::observable on the first shot
-    void phaseShift(VectorXd& x,
+    Eigen::VectorXd eval(
+        const Eigen::VectorXd& x);  // to integrate shots in time by separately calling DSI::eval on them
+    Eigen::VectorXd Jacobian(const Eigen::VectorXd& x, const Eigen::VectorXd& dx, const Eigen::VectorXd& Gx,
+                             const Real& epsDx, bool centdiff,
+                             int& fcount);                     // to calculate jacobian
+    Eigen::MatrixXd extractVectors(const Eigen::VectorXd& x);  // to transform a long vector to a matrix of short
+                                                               // vectors; ax and az are stored in the
+    // last vector but T is devided and stored in all of them
+    Eigen::VectorXd makeMSVector(
+        const Eigen::VectorXd& yvec);  // to form an initial long vector by integrating an initial field
+    Eigen::VectorXd toVector(const Eigen::MatrixXd& y);  // to transform a matrix of short vectors to a long vector
+    Eigen::VectorXd xdiff(
+        const Eigen::VectorXd& x);  // to call DSI::xdiff on the first shot and put it in the long vector format
+    Eigen::VectorXd zdiff(
+        const Eigen::VectorXd& x);  // to call DSI::zdiff on the first shot and put it in the long vector format
+    Eigen::VectorXd tdiff(const Eigen::VectorXd& x,
+                          Real epsDt);  // to call DSI::tdiff on the first shot and put it in the long vector format
+    Real extractT(const Eigen::VectorXd& x);  // to extract T from the vector
+    Real extractXshift(const Eigen::VectorXd& x);
+    Real extractZshift(const Eigen::VectorXd& x);
+    Real observable(Eigen::VectorXd& x);  // to call DSI::observable on the first shot
+    void phaseShift(Eigen::VectorXd& x,
                     bool isAC);  // to call DSI::phaseshift on the first shot, but apply the result on all of the shots
-    Real fixtphase(const VectorXd& x);  // to fix the first shot at a position of the orbit with zero variation of an
-                                        // observable called by DSI::tph_observable.
-    bool tph();                         // to know if t phase is fixed at a point with zero variation of the observable
-    Real DSIL2Norm(const VectorXd& x);  // to call DSI::L2Norm on the first shot
-    std::string stats(const VectorXd& x);    // to return stats of the first shot
-    std::pair<std::string, std::string> stats_minmax(const VectorXd& x);  // to return DSI::stats_minmax on the first shot
-    void save(const VectorXd& x, const std::string filebase, const std::string outdir);  // to save the results
-    int nShot();                                                               // to return number of the shots
+    Real fixtphase(const Eigen::VectorXd& x);  // to fix the first shot at a position of the orbit with zero variation
+                                               // of an observable called by DSI::tph_observable.
+    bool tph();  // to know if t phase is fixed at a point with zero variation of the observable
+    Real DSIL2Norm(const Eigen::VectorXd& x);     // to call DSI::L2Norm on the first shot
+    std::string stats(const Eigen::VectorXd& x);  // to return stats of the first shot
+    std::pair<std::string, std::string> stats_minmax(
+        const Eigen::VectorXd& x);  // to return DSI::stats_minmax on the first shot
+    void save(const Eigen::VectorXd& x, const std::string filebase, const std::string outdir);  // to save the results
+    int nShot();  // to return number of the shots
 
    private:
     DSI* dsi_;

@@ -30,8 +30,8 @@ class BiCGStabL {
     int N;
     std::vector<vec> u, r;
     vec x, xsoln;
-    MatrixXd tau;
-    VectorXd gamma, gammap, gammapp, sigma;
+    Eigen::MatrixXd tau;
+    Eigen::VectorXd gamma, gammap, gammapp, sigma;
     std::function<vec(const vec&)> A_;
     Real residual_;
     int nIter_, maxIter_;
@@ -57,8 +57,8 @@ inline BiCGStabL<vec>::BiCGStabL(std::function<vec(const vec&)> A, const vec& b,
         r[j] = nullvec;
     }
 
-    gamma = gammap = gammapp = sigma = VectorXd::Zero(L + 1);
-    tau = MatrixXd(L + 1, L + 1);
+    gamma = gammap = gammapp = sigma = Eigen::VectorXd::Zero(L + 1);
+    tau = Eigen::MatrixXd(L + 1, L + 1);
 
     // Initialization
 

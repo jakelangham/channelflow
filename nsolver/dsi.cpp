@@ -12,6 +12,7 @@
 #include "nsolver/dsi.h"
 
 using namespace std;
+using namespace Eigen;
 
 namespace nsolver {
 

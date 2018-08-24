@@ -5,6 +5,7 @@
 #include "nsolver/bicgstab.h"
 #include <iostream>
 using namespace std;
+using namespace Eigen;
 using namespace cfbasics;
 
 namespace nsolver {

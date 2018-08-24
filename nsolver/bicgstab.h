@@ -32,19 +32,19 @@ class BiCGStab {
     // residual.
 
    public:
-    BiCGStab(VectorXd b);
-    VectorXd step1();
-    VectorXd step2(VectorXd& Ap);
-    VectorXd step3(VectorXd& As);
+    BiCGStab(Eigen::VectorXd b);
+    Eigen::VectorXd step1();
+    Eigen::VectorXd step2(Eigen::VectorXd& Ap);
+    Eigen::VectorXd step3(Eigen::VectorXd& As);
 
-    VectorXd solution();
+    Eigen::VectorXd solution();
     Real residual();
 
    private:
-    VectorXd r, r0;
+    Eigen::VectorXd r, r0;
     Real r0_sqnorm, rhs_sqnorm;
     Real rho, alpha, w, rho_old, beta;
-    VectorXd v, p, kt, ks, s, t, x, solution_;
+    Eigen::VectorXd v, p, kt, ks, s, t, x, solution_;
     Real residual_;
 };
 
