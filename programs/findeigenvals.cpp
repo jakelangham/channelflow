@@ -18,7 +18,9 @@
 #include "nsolver/nsolver.h"
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
+using namespace Eigen;
 
 // This program calculates eigenvalues of fixed point of plane Couette flow
 // using Arnoldi iteration. The ideas and algorithm are based on Divakar

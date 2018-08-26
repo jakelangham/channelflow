@@ -7,8 +7,6 @@
 #define NSOLVER_FGMRES_H
 
 #include "cfbasics/cfbasics.h"
-using namespace Eigen;
-using namespace cfbasics;
 
 namespace nsolver {
 
@@ -21,44 +19,44 @@ class FGMRES {
 
    public:
     FGMRES();
-    FGMRES(const VectorXd& b, int Niterations, Real minCondition = 1e-13);
+    FGMRES(const Eigen::VectorXd& b, int Niterations, cfbasics::Real minCondition = 1e-13);
 
-    const VectorXd& testVector() const;
-    void iterate(const VectorXd& testvec, const VectorXd& A_testvec);
+    const Eigen::VectorXd& testVector() const;
+    void iterate(const Eigen::VectorXd& testvec, const Eigen::VectorXd& A_testvec);
 
-    const VectorXd& solution() const;  // current best approx to soln x of Ax=b
-    const VectorXd& guess() const;
-    Real residual() const;  // |Ax-b|/|b|
+    const Eigen::VectorXd& solution() const;  // current best approx to soln x of Ax=b
+    const Eigen::VectorXd& guess() const;
+    cfbasics::Real residual() const;  // |Ax-b|/|b|
 
     int n() const;
     int Niter() const;
 
-    MatrixXd Hn() const;  // Hn  = (n+1) x n submatrix of H
-    MatrixXd Zn() const;  // Qn  = M x n     submatrix of Q
-    MatrixXd AZn() const;
-    MatrixXd Vn() const;        // Qn1 = M x (n+1) submatrix of Q
+    Eigen::MatrixXd Hn() const;  // Hn  = (n+1) x n submatrix of H
+    Eigen::MatrixXd Zn() const;  // Qn  = M x n     submatrix of Q
+    Eigen::MatrixXd AZn() const;
+    Eigen::MatrixXd Vn() const;        // Qn1 = M x (n+1) submatrix of Q
     void resetV();              // reset Qn to size(b)
-    const MatrixXd& V() const;  // Q is large, so avoid copying it
+    const Eigen::MatrixXd& V() const;  // Q is large, so avoid copying it
 
-    VectorXd solve(const VectorXd& bprime, Real& residual);
-    VectorXd b();
+    Eigen::VectorXd solve(const Eigen::VectorXd& bprime, cfbasics::Real& residual);
+    Eigen::VectorXd b();
 
    private:
     int M_;      // dimension of vector space
     int Niter_;  // max number of iterations
     int n_;      // current iteration number
-    Real condition_;
+    cfbasics::Real condition_;
 
-    MatrixXd H_;   // Hessenberg Matrix
-    MatrixXd V_;   // Orthogonalaized basis
-    MatrixXd Z_;   // Prefined vectors
-    MatrixXd AZ_;  // AZ_(:,j) = A*Z_(:,j)
-    VectorXd x0_;  // guess;
-    VectorXd v_;
-    VectorXd qn_;
-    VectorXd xn_;
-    Real bnorm_;
-    Real residual_;
+    Eigen::MatrixXd H_;   // Hessenberg Matrix
+    Eigen::MatrixXd V_;   // Orthogonalaized basis
+    Eigen::MatrixXd Z_;   // Prefined vectors
+    Eigen::MatrixXd AZ_;  // AZ_(:,j) = A*Z_(:,j)
+    Eigen::VectorXd x0_;  // guess;
+    Eigen::VectorXd v_;
+    Eigen::VectorXd qn_;
+    Eigen::VectorXd xn_;
+    cfbasics::Real bnorm_;
+    cfbasics::Real residual_;
 };
 }  // namespace nsolver
 #endif

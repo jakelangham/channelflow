@@ -6,6 +6,7 @@
 
 using namespace std;
 using namespace cfbasics;
+using namespace Eigen;
 
 namespace nsolver {
 

@@ -13,7 +13,9 @@
 
 namespace channelflowtest {
 using namespace std;
+using namespace cfbasics;
 using namespace nsolver;
+using namespace Eigen;
 using namespace ::testing;
 
 // A Arnoldi object with some reasonable settings

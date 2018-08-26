@@ -7,7 +7,6 @@
 #define NSOLVER_BICGSTAB_H
 
 #include "cfbasics/cfbasics.h"
-using namespace cfbasics;
 
 namespace nsolver {
 
@@ -38,14 +37,14 @@ class BiCGStab {
     Eigen::VectorXd step3(Eigen::VectorXd& As);
 
     Eigen::VectorXd solution();
-    Real residual();
+    cfbasics::Real residual();
 
    private:
     Eigen::VectorXd r, r0;
-    Real r0_sqnorm, rhs_sqnorm;
-    Real rho, alpha, w, rho_old, beta;
+    cfbasics::Real r0_sqnorm, rhs_sqnorm;
+    cfbasics::Real rho, alpha, w, rho_old, beta;
     Eigen::VectorXd v, p, kt, ks, s, t, x, solution_;
-    Real residual_;
+    cfbasics::Real residual_;
 };
 
 }  // namespace nsolver

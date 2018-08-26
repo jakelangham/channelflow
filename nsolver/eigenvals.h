@@ -13,14 +13,12 @@
 #include "nsolver/dsi.h"
 #include "nsolver/lanczos.h"
 
-using namespace cfbasics;
-
 namespace nsolver {
 
 class EigenvalsFlags {
    public:
     EigenvalsFlags();
-    EigenvalsFlags(ArgList& args);
+    EigenvalsFlags(cfbasics::ArgList& args);
 
     std::ostream* logstream = &std::cout;
 
@@ -30,7 +28,7 @@ class EigenvalsFlags {
     int Nstable = 5;
     bool fixedNs = false;
 
-    Real EPS_kry = 1e-10;
+    cfbasics::Real EPS_kry = 1e-10;
     bool centdiff = false;
     bool orthochk = false;
 
@@ -38,7 +36,7 @@ class EigenvalsFlags {
     std::string outdir = "./";
 
     // new flags:
-    Real EPS_stab = 1e-06;
+    cfbasics::Real EPS_stab = 1e-06;
 
     void save(const std::string& outdir = "") const;  // save into file filebase.txt
     void load(int taskid, const std::string indir);
@@ -46,11 +44,11 @@ class EigenvalsFlags {
 
 class Eigenvals {
    public:
-    Eigenvals(ArgList& args);
+    Eigenvals(cfbasics::ArgList& args);
     Eigenvals(EigenvalsFlags eigenflags);
 
-    void solve(nsolver::DSI& dsi, const VectorXd& x, VectorXd& dx, Real T, Real eps);
-    void checkConjugacy(const VectorXcd& u, const VectorXcd& v);
+    void solve(nsolver::DSI& dsi, const Eigen::VectorXd& x, Eigen::VectorXd& dx, cfbasics::Real T, cfbasics::Real eps);
+    void checkConjugacy(const Eigen::VectorXcd& u, const Eigen::VectorXcd& v);
     std::ostream* getLogstream() { return eigenflags.logstream; }
 
    private:

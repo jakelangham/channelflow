@@ -5,11 +5,11 @@
 #include "channelflow/laurettedsi.h"
 #include <memory>
 
-namespace channelflow {
 using namespace std;
-using cfbasics::Im;
-using cfbasics::L2Norm;
-using cfbasics::Re;
+using namespace Eigen;
+using namespace cfbasics;
+
+namespace channelflow {
 using nsolver::BiCGStab;
 using nsolver::GMRES;
 

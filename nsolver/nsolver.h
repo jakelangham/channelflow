@@ -32,7 +32,4 @@
 #include "nsolver/newton.h"
 #include "nsolver/newtonalgorithm.h"
 
-using namespace Eigen;
-
-namespace nsolver {}  // namespace nsolver
 #endif                // NSOLVER_H

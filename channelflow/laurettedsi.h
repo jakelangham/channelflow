@@ -93,13 +93,12 @@ class LauretteDSI : public cfDSI {
    public:
     LauretteDSI(FlowField& u, DNSFlags& flags, Real dt, bool xrel, bool zrel, FieldSymmetry sigma);
     virtual ~LauretteDSI();
-    VectorXd eval(const VectorXd& x);
-    virtual VectorXd Jacobian(const VectorXd& x, const VectorXd& dx, const VectorXd& Gx, const cfbasics::Real& epsDx,
+    Eigen::VectorXd eval(const Eigen::VectorXd& x);
+    virtual Eigen::VectorXd Jacobian(const Eigen::VectorXd& x, const Eigen::VectorXd& dx, const Eigen::VectorXd& Gx, const cfbasics::Real& epsDx,
                               bool centdiff, int& fcount);
     virtual void updateMu(cfbasics::Real mu);
 
-    VectorXd Q(const VectorXd& w);
-    //   virtual VectorXd makeVector(const FlowField& u, FieldSymmetry& sigma, Real T);
+    Eigen::VectorXd Q(const Eigen::VectorXd& w);
 
     Real shift2speed(Real ax);
 

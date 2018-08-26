@@ -11,10 +11,13 @@
 #include "gtest/gtest.h"
 #include "nsolver/nsolver.h"
 
-namespace channelflowtest {
 using namespace std;
 using namespace nsolver;
+using namespace cfbasics;
+using namespace Eigen;
 using namespace ::testing;
+
+namespace channelflowtest {
 
 // L Lanczos object with some reasonable settings
 class LanczosTest : public ::testing::Test {

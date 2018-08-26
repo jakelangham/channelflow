@@ -9,11 +9,10 @@
 #include "mpi.h"
 #endif
 using namespace std;
+using namespace cfbasics;
+using namespace Eigen;
 
 namespace nsolver {
-
-// VectorXd dsiDGp(DSI& dsiG, const VectorXd& x, const VectorXd& dx, const VectorXd& Gx, const Real& epsDx, bool
-// centdiff, int& fcount);
 
 NewtonSearchFlags::NewtonSearchFlags(SolutionType solntype_,
                                      bool xrelative_,  // new

@@ -15,6 +15,7 @@
 
 using namespace std;
 using namespace cfbasics;
+using namespace Eigen;
 
 // Arnoldi iteration estimates the eigenvalues of a matrix A by iteratively
 // constructing a QR decomposition of a matrix whose columns are

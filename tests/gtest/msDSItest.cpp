@@ -11,6 +11,8 @@
 #include "nsolver/nsolver.h"
 
 using namespace std;
+using namespace cfbasics;
+using namespace Eigen;
 
 namespace nsolver {
 class exampleDSI : public DSI {

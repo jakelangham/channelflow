@@ -7,7 +7,6 @@
 #define NSOLVER_BICGSTABL_H
 
 #include "cfbasics/cfbasics.h"
-using namespace cfbasics;
 
 // typedef VectorXd (*Rn2Rnfunc)(const VectorXd& x);
 
@@ -18,14 +17,14 @@ class BiCGStabL {
    public:
     BiCGStabL(std::function<vec(const vec&)> A, const vec& b, int l, int maxIter);
     void iterate();
-    const vec& solve(Real tol = 1e-8);
+    const vec& solve(cfbasics::Real tol = 1e-8);
     const vec& solution() { return xsoln; }
-    Real residual() { return residual_; }
+    cfbasics::Real residual() { return residual_; }
     int l() { return L; }
 
    private:
     vec rtilde;
-    Real rho, alpha, omega, beta;
+    cfbasics::Real rho, alpha, omega, beta;
     int L, l_, Lmax = 6;
     int N;
     std::vector<vec> u, r;
@@ -33,9 +32,9 @@ class BiCGStabL {
     Eigen::MatrixXd tau;
     Eigen::VectorXd gamma, gammap, gammapp, sigma;
     std::function<vec(const vec&)> A_;
-    Real residual_;
+    cfbasics::Real residual_;
     int nIter_, maxIter_;
-    Real rhsnorm;
+    cfbasics::Real rhsnorm;
     int nNoDecrease = 0;
 };
 
@@ -72,8 +71,8 @@ inline BiCGStabL<vec>::BiCGStabL(std::function<vec(const vec&)> A, const vec& b,
 
     // u[0] = 0
 
-    rhsnorm = L2Norm(b);
-    residual_ = L2Norm(r[0]) / rhsnorm;
+    rhsnorm = cfbasics::L2Norm(b);
+    residual_ = cfbasics::L2Norm(r[0]) / rhsnorm;
 }
 
 template <class vec>
@@ -87,7 +86,7 @@ inline void BiCGStabL<vec>::iterate() {
 
     // Bi-CG part
     for (int j = 0; j < L; ++j) {
-        Real rho1 = L2IP(r[j], rtilde);
+        cfbasics::Real rho1 = cfbasics::L2IP(r[j], rtilde);
         beta = alpha * rho1 / rho;
         rho = rho1;
         for (int i = 0; i <= j; ++i) {
@@ -97,7 +96,7 @@ inline void BiCGStabL<vec>::iterate() {
         u[j + 1] = A_(u[j]);
 
         //     gamma =
-        alpha = rho / L2IP(u[j + 1], rtilde);
+        alpha = rho / cfbasics::L2IP(u[j + 1], rtilde);
 
         for (int i = 0; i <= j; ++i) {
             r[i] -= alpha * u[i + 1];
@@ -109,11 +108,11 @@ inline void BiCGStabL<vec>::iterate() {
     // (mod. GS) MR part
     for (int j = 1; j <= L; ++j) {
         for (int i = 1; i < j; ++i) {
-            tau(i, j) = L2IP(r[j], r[i]) / sigma(i);
+            tau(i, j) = cfbasics::L2IP(r[j], r[i]) / sigma(i);
             r[j] -= tau(i, j) * r[i];
         }
-        sigma(j) = L2IP(r[j], r[j]);
-        gammap(j) = L2IP(r[0], r[j]) / sigma(j);
+        sigma(j) = cfbasics::L2IP(r[j], r[j]);
+        gammap(j) = cfbasics::L2IP(r[0], r[j]) / sigma(j);
     }
 
     omega = gamma(L) = gammap(L);
@@ -145,7 +144,7 @@ inline void BiCGStabL<vec>::iterate() {
         r[0] -= gammap(j) * r[j];
     }
 
-    Real rtmp = L2Norm(r[0]) / rhsnorm;
+    cfbasics::Real rtmp = cfbasics::L2Norm(r[0]) / rhsnorm;
     if (rtmp < residual_) {
         residual_ = rtmp;
         xsoln = x;
@@ -158,7 +157,7 @@ inline void BiCGStabL<vec>::iterate() {
 }
 
 template <class vec>
-inline const vec& BiCGStabL<vec>::solve(Real tol) {
+inline const vec& BiCGStabL<vec>::solve(cfbasics::Real tol) {
     while (nIter_ < maxIter_ && residual_ > tol)
         iterate();
     return x;

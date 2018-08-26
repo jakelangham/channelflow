@@ -11,7 +11,9 @@
 #include "nsolver/nsolver.h"
 
 using namespace std;
+using namespace cfbasics;
 using namespace channelflow;
+using namespace Eigen;
 
 int main(int argc, char* argv[]) {
     cfMPI_Init(&argc, &argv);

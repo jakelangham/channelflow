@@ -18,25 +18,26 @@ class ContinuationFlags {
     ContinuationFlags();
     ContinuationFlags(cfbasics::ArgList& args);
 
-    bool arclength;            // arclength continuation
-    Real initialParamStep;     ///< initial relative increment for quadratic extrapolation in continuation parameter
-    bool adjdt;                ///< adjust dt between continuation steps to keep CFL in bounds
-    Real s0;                   ///< start value for arclength (arbitrary)
-    Real ds0;                  ///< initial increment for arclength continuation
-    Real dsmax;                ///< Maximum arclength step
-    Real dsmin;                ///< Minimum arclength step
-    Real guessErrMin;          ///< minimum error for extrapolated guesses
-    Real guessErrMax;          ///< maximum error for extrapolated guesses
-    int digits;                ///< number of digits for MuD.asc
-    bool orbOut;               // use flag to print max/min of statistics into MuEmax.asc/MuEmin.asc
-    bool restartMode;          // Continuation in restart mode
-    int maxSteps;              // Maximum number of continuation steps
-    Real muRef;                // mu reference
-    int initStep = 0;          // takes a non-zero number only when restart mode is on
-    int nlastFailedSteps = 0;  // only for restart continuation
-    Real guesserr_last;        // last guess error; only for restart continuation
-    bool haveTargetMu;         // Abort if a target value of mu is reached
-    Real targetMu;             // The target value
+    bool arclength;  // arclength continuation
+    cfbasics::Real
+        initialParamStep;          ///< initial relative increment for quadratic extrapolation in continuation parameter
+    bool adjdt;                    ///< adjust dt between continuation steps to keep CFL in bounds
+    cfbasics::Real s0;             ///< start value for arclength (arbitrary)
+    cfbasics::Real ds0;            ///< initial increment for arclength continuation
+    cfbasics::Real dsmax;          ///< Maximum arclength step
+    cfbasics::Real dsmin;          ///< Minimum arclength step
+    cfbasics::Real guessErrMin;    ///< minimum error for extrapolated guesses
+    cfbasics::Real guessErrMax;    ///< maximum error for extrapolated guesses
+    int digits;                    ///< number of digits for MuD.asc
+    bool orbOut;                   // use flag to print max/min of statistics into MuEmax.asc/MuEmin.asc
+    bool restartMode;              // Continuation in restart mode
+    int maxSteps;                  // Maximum number of continuation steps
+    cfbasics::Real muRef;          // mu reference
+    int initStep = 0;              // takes a non-zero number only when restart mode is on
+    int nlastFailedSteps = 0;      // only for restart continuation
+    cfbasics::Real guesserr_last;  // last guess error; only for restart continuation
+    bool haveTargetMu;             // Abort if a target value of mu is reached
+    cfbasics::Real targetMu;       // The target value
 
     void save(const std::string& outdir = "") const;
     void load(int taskid, const std::string indir);
@@ -45,7 +46,9 @@ class ContinuationFlags {
 
 // Real continuation1(DSI& dsi, NewtonAlgorithm& N, const VectorXd& x0, const Real mu0, ContinuationFlags& cflags);
 
-VectorXd quadraticInterpolate(cfarray<VectorXd>& xn, const cfarray<Real>& mun, Real mu, Real eps = 1e-13);
+Eigen::VectorXd quadraticInterpolate(cfbasics::cfarray<Eigen::VectorXd>& xn,
+                                     const cfbasics::cfarray<cfbasics::Real>& mun, cfbasics::Real mu,
+                                     cfbasics::Real eps = 1e-13);
 
 bool readContinuationInfo(std::string restartdir[3], ContinuationFlags& cflags);
 
@@ -62,7 +65,8 @@ bool readContinuationInfo(std::string restartdir[3], ContinuationFlags& cflags);
  * Intermediate results get saved into directories search-i where i is the step counter.
  * The parameter value, L2Norm and arclength are saved into MuE.asc
  */
-Real continuation(DSI& dsiG, Newton& newton, cfarray<VectorXd> x, cfarray<Real> mu, nsolver::ContinuationFlags& cflags);
+cfbasics::Real continuation(DSI& dsiG, Newton& newton, cfbasics::cfarray<Eigen::VectorXd> x,
+                            cfbasics::cfarray<cfbasics::Real> mu, nsolver::ContinuationFlags& cflags);
 
 }  // namespace nsolver
 #endif  // NSOLVER_CONTINUATION_H

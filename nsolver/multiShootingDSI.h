@@ -10,14 +10,12 @@
 #include "cfbasics/cfbasics.h"
 #include "nsolver/dsi.h"
 
-using namespace cfbasics;
-
 namespace nsolver {
 
 class MultishootingDSI {
    public:
     MultishootingDSI();
-    MultishootingDSI(int nShot, bool TSearch, bool xrelative, bool zrelative, Real Tfac, Real Xfac, Real Zfac,
+    MultishootingDSI(int nShot, bool TSearch, bool xrelative, bool zrelative, cfbasics::Real Tfac, cfbasics::Real Xfac, cfbasics::Real Zfac,
                      bool fix_tphase);
 
     ~MultishootingDSI() {}
@@ -26,11 +24,11 @@ class MultishootingDSI {
                                                                   // ax and az in the short and long vector formats
     bool isDSIset();                                              // to check if dsi is previously set
     bool isVecMS(int MSVec_size, bool isAC);  // to find out the format of a vector which is passed to Newton
-    void updateMu(Real mu);                   // to call updatemu of DSI
+    void updateMu(cfbasics::Real mu);                   // to call updatemu of DSI
     Eigen::VectorXd eval(
         const Eigen::VectorXd& x);  // to integrate shots in time by separately calling DSI::eval on them
     Eigen::VectorXd Jacobian(const Eigen::VectorXd& x, const Eigen::VectorXd& dx, const Eigen::VectorXd& Gx,
-                             const Real& epsDx, bool centdiff,
+                             const cfbasics::Real& epsDx, bool centdiff,
                              int& fcount);                     // to calculate jacobian
     Eigen::MatrixXd extractVectors(const Eigen::VectorXd& x);  // to transform a long vector to a matrix of short
                                                                // vectors; ax and az are stored in the
@@ -43,17 +41,17 @@ class MultishootingDSI {
     Eigen::VectorXd zdiff(
         const Eigen::VectorXd& x);  // to call DSI::zdiff on the first shot and put it in the long vector format
     Eigen::VectorXd tdiff(const Eigen::VectorXd& x,
-                          Real epsDt);  // to call DSI::tdiff on the first shot and put it in the long vector format
-    Real extractT(const Eigen::VectorXd& x);  // to extract T from the vector
-    Real extractXshift(const Eigen::VectorXd& x);
-    Real extractZshift(const Eigen::VectorXd& x);
-    Real observable(Eigen::VectorXd& x);  // to call DSI::observable on the first shot
+                          cfbasics::Real epsDt);  // to call DSI::tdiff on the first shot and put it in the long vector format
+    cfbasics::Real extractT(const Eigen::VectorXd& x);  // to extract T from the vector
+    cfbasics::Real extractXshift(const Eigen::VectorXd& x);
+    cfbasics::Real extractZshift(const Eigen::VectorXd& x);
+    cfbasics::Real observable(Eigen::VectorXd& x);  // to call DSI::observable on the first shot
     void phaseShift(Eigen::VectorXd& x,
                     bool isAC);  // to call DSI::phaseshift on the first shot, but apply the result on all of the shots
-    Real fixtphase(const Eigen::VectorXd& x);  // to fix the first shot at a position of the orbit with zero variation
+    cfbasics::Real fixtphase(const Eigen::VectorXd& x);  // to fix the first shot at a position of the orbit with zero variation
                                                // of an observable called by DSI::tph_observable.
     bool tph();  // to know if t phase is fixed at a point with zero variation of the observable
-    Real DSIL2Norm(const Eigen::VectorXd& x);     // to call DSI::L2Norm on the first shot
+    cfbasics::Real DSIL2Norm(const Eigen::VectorXd& x);     // to call DSI::L2Norm on the first shot
     std::string stats(const Eigen::VectorXd& x);  // to return stats of the first shot
     std::pair<std::string, std::string> stats_minmax(
         const Eigen::VectorXd& x);  // to return DSI::stats_minmax on the first shot
@@ -67,9 +65,9 @@ class MultishootingDSI {
     bool zrelative_;
     bool fixtphase_;
     int nShot_ = 1;
-    Real axRef_ = 1;
-    Real azRef_ = 1;
-    Real TRef_ = 1;
+    cfbasics::Real axRef_ = 1;
+    cfbasics::Real azRef_ = 1;
+    cfbasics::Real TRef_ = 1;
 
     int Nxtot_;  // size of the long vector
     int Nx_;     // size of the long vector without T, ax ,az

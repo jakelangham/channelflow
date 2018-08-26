@@ -9,8 +9,9 @@
 #include "nsolver/nsolver.h"
 
 using namespace std;
-
+using namespace cfbasics;
 using namespace nsolver;
+using namespace Eigen;
 
 VectorXd Ax(const VectorXd& x, const MatrixXd& A) { return A * x; }
 

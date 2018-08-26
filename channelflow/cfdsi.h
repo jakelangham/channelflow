@@ -71,26 +71,26 @@ class cfDSI : public nsolver::DSI {
     cfDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, TimeStep dt, bool Tsearch, bool xrelative,
           bool zrelative, bool Tnormalize, Real Unormalize, const FlowField& u, std::ostream* os = &std::cout);
 
-    VectorXd eval(const VectorXd& x) override;
-    VectorXd eval(const VectorXd& x0, const VectorXd& x1, bool symopt) override;
-    void save(const VectorXd& x, const std::string filebase, const std::string outdir = "./",
+    Eigen::VectorXd eval(const Eigen::VectorXd& x) override;
+    Eigen::VectorXd eval(const Eigen::VectorXd& x0, const Eigen::VectorXd& x1, bool symopt) override;
+    void save(const Eigen::VectorXd& x, const std::string filebase, const std::string outdir = "./",
               const bool fieldsonly = false) override;
-    void saveEigenvec(const VectorXd& x, const std::string label, const std::string outdir) override;
-    void saveEigenvec(const VectorXd& x1, const VectorXd& x2, const std::string label1, const std::string label2,
-                      const std::string outdir) override;
+    void saveEigenvec(const Eigen::VectorXd& x, const std::string label, const std::string outdir) override;
+    void saveEigenvec(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, const std::string label1,
+                      const std::string label2, const std::string outdir) override;
 
-    Real DSIL2Norm(const VectorXd& x) override;
-    std::string stats(const VectorXd& x) override;
-    std::pair<std::string, std::string> stats_minmax(const VectorXd& x) override;
+    Real DSIL2Norm(const Eigen::VectorXd& x) override;
+    std::string stats(const Eigen::VectorXd& x) override;
+    std::pair<std::string, std::string> stats_minmax(const Eigen::VectorXd& x) override;
     std::string statsHeader() override;
-    void makeVector(const channelflow::FlowField& u, const FieldSymmetry& sigma, const Real T, VectorXd& x);
-    void extractVector(const VectorXd& x, FlowField& u, FieldSymmetry& sigma, Real& T);
-    void toVector(const std::vector<FlowField>& u, const FieldSymmetry& sigma, const Real T, VectorXd& x){};
+    void makeVector(const channelflow::FlowField& u, const FieldSymmetry& sigma, const Real T, Eigen::VectorXd& x);
+    void extractVector(const Eigen::VectorXd& x, FlowField& u, FieldSymmetry& sigma, Real& T);
+    void toVector(const std::vector<FlowField>& u, const FieldSymmetry& sigma, const Real T, Eigen::VectorXd& x){};
 
     /// \name Compute derivatives of FlowField corresponding to this vector
-    VectorXd xdiff(const VectorXd& a) override;
-    VectorXd zdiff(const VectorXd& a) override;
-    VectorXd tdiff(const VectorXd& a, Real epsDt) override;
+    Eigen::VectorXd xdiff(const Eigen::VectorXd& a) override;
+    Eigen::VectorXd zdiff(const Eigen::VectorXd& a) override;
+    Eigen::VectorXd tdiff(const Eigen::VectorXd& a, Real epsDt) override;
 
     /// \name Handle continuation parameter
     void updateMu(Real mu) override;
@@ -100,15 +100,15 @@ class cfDSI : public nsolver::DSI {
     void saveParameters(std::string searchdir) override;
     continuationParameter s2cPar(std::string muName);
     std::string cPar2s(continuationParameter cPar);
-    void phaseShift(VectorXd& x) override;
-    void phaseShift(MatrixXd& y) override;
+    void phaseShift(Eigen::VectorXd& x) override;
+    void phaseShift(Eigen::MatrixXd& y) override;
     inline void setPhaseShifts(bool xphasehack, bool zphasehack, bool uUbasehack);
-    Real observable(VectorXd& x) override;
+    Real observable(Eigen::VectorXd& x) override;
 
-    Real tph_observable(VectorXd& x) override;
-    Real extractT(const VectorXd& x) override;
-    Real extractXshift(const VectorXd& x) override;
-    Real extractZshift(const VectorXd& x) override;
+    Real tph_observable(Eigen::VectorXd& x) override;
+    Real extractT(const Eigen::VectorXd& x) override;
+    Real extractXshift(const Eigen::VectorXd& x) override;
+    Real extractZshift(const Eigen::VectorXd& x) override;
 
     Real getCFL() const { return CFL_; };
     bool XrelSearch() const override { return xrelative_; };
