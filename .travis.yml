@@ -6,10 +6,10 @@ sudo: false
 # Add ccache to try speed-up builds
 cache: ccache
 
-# Only build 'ecps' branch on push
+# Only build 'master' branch on push
 branches:
   only:
-    - ecps
+    - master
 
 jobs:
   fast_finish: true
