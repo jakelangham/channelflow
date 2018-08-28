@@ -17,7 +17,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/flowfield.h"
 
-namespace channelflow {
+namespace chflow {
 
 class DNSFlags;
 
@@ -73,27 +73,27 @@ class BodyForce {
     /** \brief The infamous virtual destructor */
     virtual ~BodyForce() = default;
 
-    cfbasics::Vector operator()(cfbasics::Real x, cfbasics::Real y, cfbasics::Real z, cfbasics::Real t);
-    void eval(cfbasics::Real t, FlowField& f);
-    virtual void eval(cfbasics::Real x, cfbasics::Real y, cfbasics::Real z, cfbasics::Real t, cfbasics::Real& fx, cfbasics::Real& fy, cfbasics::Real& fz);
-    virtual bool isOn(cfbasics::Real t);
+    Vector operator()(Real x, Real y, Real z, Real t);
+    void eval(Real t, FlowField& f);
+    virtual void eval(Real x, Real y, Real z, Real t, Real& fx, Real& fy, Real& fz);
+    virtual bool isOn(Real t);
 };
 
 // Specify the behavior of NSIntegrators by setting fields of DNSFlags.
 class DNSFlags {
    public:
     //        type name       default
-    DNSFlags(cfbasics::Real nu = 0.0025, cfbasics::Real dPdx = 0.0, cfbasics::Real dPdz = 0.0, cfbasics::Real Ubulk = 0.0, cfbasics::Real Wbulk = 0.0, cfbasics::Real Uwall = 1.0,
-             cfbasics::Real ulowerwall = 0.0, cfbasics::Real uupperwall = 0.0, cfbasics::Real wlowerwall = 0.0, cfbasics::Real wupperwall = 0.0,
-             cfbasics::Real theta = 0.0, cfbasics::Real Vsuck = 0.0, cfbasics::Real rotation = 0.0, cfbasics::Real t0 = 0.0, cfbasics::Real T = 20.0, cfbasics::Real dT = 1.0,
-             cfbasics::Real dt = 0.03125, bool variabledt = true, cfbasics::Real dtmin = 0.001, cfbasics::Real dtmax = 0.2, cfbasics::Real CFLmin = 0.4,
-             cfbasics::Real CFLmax = 0.6, cfbasics::Real symmetryprojectioninterval = 100.0, BaseFlow baseflow = LaminarBase,
+    DNSFlags(Real nu = 0.0025, Real dPdx = 0.0, Real dPdz = 0.0, Real Ubulk = 0.0, Real Wbulk = 0.0, Real Uwall = 1.0,
+             Real ulowerwall = 0.0, Real uupperwall = 0.0, Real wlowerwall = 0.0, Real wupperwall = 0.0,
+             Real theta = 0.0, Real Vsuck = 0.0, Real rotation = 0.0, Real t0 = 0.0, Real T = 20.0, Real dT = 1.0,
+             Real dt = 0.03125, bool variabledt = true, Real dtmin = 0.001, Real dtmax = 0.2, Real CFLmin = 0.4,
+             Real CFLmax = 0.6, Real symmetryprojectioninterval = 100.0, BaseFlow baseflow = LaminarBase,
              MeanConstraint constraint = PressureGradient, TimeStepMethod timestepping = SBDF3,
              TimeStepMethod initstepping = SMRK2, NonlinearMethod nonlinearity = Rotational,
              Dealiasing dealiasing = DealiasXZ, BodyForce* bodyforce = 0, bool taucorrection = true,
              Verbosity verbosity = PrintTicks, std::ostream* logstream = &std::cout);
 
-    DNSFlags(cfbasics::ArgList& args, const bool laurette = false);
+    DNSFlags(ArgList& args, const bool laurette = false);
 
     /** \brief The infamous virtual destructor */
     virtual ~DNSFlags() = default;
@@ -114,36 +114,36 @@ class DNSFlags {
     BodyForce* bodyforce;          // Body force, zero if pointer set to 0
     bool taucorrection;            // Remove divergence caused by discretization
 
-    cfbasics::Real nu;                            // Kinematic viscosity nu
-    cfbasics::Real Vsuck;                         // suction velocity
-    cfbasics::Real rotation;                      // dimensionless rotation around the z-axis
-    cfbasics::Real theta;                         // tilt of the domain relative to downstream
-    cfbasics::Real dPdx;                          // Constraint value for mean flow: pressure gradient in x
-    cfbasics::Real dPdz;                          // Constraint value for mean flow: pressure gradient in z
-    cfbasics::Real Ubulk;                         // Constraint value for mean flow: bulk velocity in x
-    cfbasics::Real Wbulk;                         // Constraint value for mean flow: bulk velocity in z
-    cfbasics::Real Uwall;                         // wall speed downstream
-    cfbasics::Real ulowerwall;                    // lower wall speed along x, e.g. -1 for plane couette
-    cfbasics::Real uupperwall;                    // upper wall speed along x, e.g. +1 for plane couette
-    cfbasics::Real wlowerwall;                    // lower wall speed along z
-    cfbasics::Real wupperwall;                    // upper wall speed along z
-    cfbasics::Real t0;                            // start time
-    cfbasics::Real T;                             // final time
-    cfbasics::Real dT;                            // print interval
-    cfbasics::Real dt;                            // time step
+    Real nu;                            // Kinematic viscosity nu
+    Real Vsuck;                         // suction velocity
+    Real rotation;                      // dimensionless rotation around the z-axis
+    Real theta;                         // tilt of the domain relative to downstream
+    Real dPdx;                          // Constraint value for mean flow: pressure gradient in x
+    Real dPdz;                          // Constraint value for mean flow: pressure gradient in z
+    Real Ubulk;                         // Constraint value for mean flow: bulk velocity in x
+    Real Wbulk;                         // Constraint value for mean flow: bulk velocity in z
+    Real Uwall;                         // wall speed downstream
+    Real ulowerwall;                    // lower wall speed along x, e.g. -1 for plane couette
+    Real uupperwall;                    // upper wall speed along x, e.g. +1 for plane couette
+    Real wlowerwall;                    // lower wall speed along z
+    Real wupperwall;                    // upper wall speed along z
+    Real t0;                            // start time
+    Real T;                             // final time
+    Real dT;                            // print interval
+    Real dt;                            // time step
     bool variabledt;                    // use variable time step
-    cfbasics::Real dtmin;                         // lower bound for time step
-    cfbasics::Real dtmax;                         // upper bound for time step
-    cfbasics::Real CFLmin;                        // lower bound for CFL number
-    cfbasics::Real CFLmax;                        // upper bound for CFL number
+    Real dtmin;                         // lower bound for time step
+    Real dtmax;                         // upper bound for time step
+    Real CFLmin;                        // lower bound for CFL number
+    Real CFLmax;                        // upper bound for CFL number
     int symmetryprojectioninterval;     // Only project onto symmetries at this interval
     Verbosity verbosity;                // Print diagnostics, times, ticks, or nothing
     std::ostream* logstream;            // stream for output
-    cfbasics::cfarray<FieldSymmetry> symmetries;  // restrict u(t) to these symmetries
+    cfarray<FieldSymmetry> symmetries;  // restrict u(t) to these symmetries
 
    protected:
-    void args2BC(cfbasics::ArgList& args);
-    void args2numerics(cfbasics::ArgList& args, const bool laurette = false);
+    void args2BC(ArgList& args);
+    void args2numerics(ArgList& args, const bool laurette = false);
 };
 
 std::ostream& operator<<(std::ostream& os, const DNSFlags& flags);
@@ -157,49 +157,49 @@ std::ostream& operator<<(std::ostream& os, const DNSFlags& flags);
 class TimeStep {
    public:
     TimeStep();
-    TimeStep(cfbasics::Real dt, cfbasics::Real dtmin, cfbasics::Real dtmax, cfbasics::Real dT, cfbasics::Real CFLmin, cfbasics::Real CFLmax, bool variable = true);
+    TimeStep(Real dt, Real dtmin, Real dtmax, Real dT, Real CFLmin, Real CFLmax, bool variable = true);
     TimeStep(DNSFlags& flags);
 
     // If variable, adjust dt to keep CFLmin<=CFL<=CFLmax (soft),
     // and dtmin<=dt<=dtmax (hard). Returns true if dt changes, false otherwise
-    bool adjust(cfbasics::Real CFL, bool verbose = true, std::ostream& os = std::cout);
-    bool adjustToMiddle(cfbasics::Real CFL, bool verbose = true, std::ostream& os = std::cout);
+    bool adjust(Real CFL, bool verbose = true, std::ostream& os = std::cout);
+    bool adjustToMiddle(Real CFL, bool verbose = true, std::ostream& os = std::cout);
 
     // to bring any variable * dt below a maximum
-    bool adjust(cfbasics::Real a, cfbasics::Real a_max, bool verbose = true, std::ostream& os = std::cout);
-    bool adjustToDesired(cfbasics::Real a, cfbasics::Real a_des, bool verbose = true, std::ostream& os = std::cout);
+    bool adjust(Real a, Real a_max, bool verbose = true, std::ostream& os = std::cout);
+    bool adjustToDesired(Real a, Real a_des, bool verbose = true, std::ostream& os = std::cout);
 
     // tweak dT and dt to fit T exactly
-    bool adjust_for_T(cfbasics::Real T, bool verbose = true, std::ostream& os = std::cout);
+    bool adjust_for_T(Real T, bool verbose = true, std::ostream& os = std::cout);
 
     int n() const;    // n*dt == dT
     int N() const;    // N*dT == T
-    cfbasics::Real dt() const;  // integration timestep
-    cfbasics::Real dtmin() const;
-    cfbasics::Real dtmax() const;
-    cfbasics::Real dT() const;  // plot/CFL-check interval
-    cfbasics::Real T() const;   // total integration time
-    cfbasics::Real CFL() const;
-    cfbasics::Real CFLmin() const;
-    cfbasics::Real CFLmax() const;
+    Real dt() const;  // integration timestep
+    Real dtmin() const;
+    Real dtmax() const;
+    Real dT() const;  // plot/CFL-check interval
+    Real T() const;   // total integration time
+    Real CFL() const;
+    Real CFLmin() const;
+    Real CFLmax() const;
     bool variable() const;
-    operator cfbasics::Real() const;  // same as dt()
+    operator Real() const;  // same as dt()
 
    private:
     int n_;
     int N_;
-    cfbasics::Real dt_;
-    cfbasics::Real dtmin_;  //
-    cfbasics::Real dtmax_;  //
-    cfbasics::Real dT_;     // dT_ == n_*dt_, plot interval
-    cfbasics::Real T_;      // T_  == N_*dt_, total integration time
-    cfbasics::Real CFLmin_;
-    cfbasics::Real CFL_;
-    cfbasics::Real CFLmax_;
+    Real dt_;
+    Real dtmin_;  //
+    Real dtmax_;  //
+    Real dT_;     // dT_ == n_*dt_, plot interval
+    Real T_;      // T_  == N_*dt_, total integration time
+    Real CFLmin_;
+    Real CFL_;
+    Real CFLmax_;
     bool variable_;
 };
 
 std::ostream& operator<<(std::ostream& os, const TimeStep& ts);
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif

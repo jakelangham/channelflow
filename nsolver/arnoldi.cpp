@@ -12,10 +12,10 @@
 #endif
 
 using namespace std;
-using namespace cfbasics;
+
 using namespace Eigen;
 
-namespace nsolver {
+namespace chflow {
 
 /*==================================================================================*/
 /*            Class Arnoldi                                                         */
@@ -130,4 +130,4 @@ const MatrixXcd& Arnoldi::ev() {
         eigencalc();
     return ev_;
 }
-}  // namespace nsolver
+}  // namespace chflow

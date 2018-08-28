@@ -13,12 +13,12 @@
 #include "nsolver/dsi.h"
 #include "nsolver/lanczos.h"
 
-namespace nsolver {
+namespace chflow {
 
 class EigenvalsFlags {
    public:
     EigenvalsFlags();
-    EigenvalsFlags(cfbasics::ArgList& args);
+    EigenvalsFlags(ArgList& args);
 
     std::ostream* logstream = &std::cout;
 
@@ -28,7 +28,7 @@ class EigenvalsFlags {
     int Nstable = 5;
     bool fixedNs = false;
 
-    cfbasics::Real EPS_kry = 1e-10;
+    Real EPS_kry = 1e-10;
     bool centdiff = false;
     bool orthochk = false;
 
@@ -36,7 +36,7 @@ class EigenvalsFlags {
     std::string outdir = "./";
 
     // new flags:
-    cfbasics::Real EPS_stab = 1e-06;
+    Real EPS_stab = 1e-06;
 
     void save(const std::string& outdir = "") const;  // save into file filebase.txt
     void load(int taskid, const std::string indir);
@@ -44,10 +44,10 @@ class EigenvalsFlags {
 
 class Eigenvals {
    public:
-    Eigenvals(cfbasics::ArgList& args);
+    Eigenvals(ArgList& args);
     Eigenvals(EigenvalsFlags eigenflags);
 
-    void solve(nsolver::DSI& dsi, const Eigen::VectorXd& x, Eigen::VectorXd& dx, cfbasics::Real T, cfbasics::Real eps);
+    void solve(DSI& dsi, const Eigen::VectorXd& x, Eigen::VectorXd& dx, Real T, Real eps);
     void checkConjugacy(const Eigen::VectorXcd& u, const Eigen::VectorXcd& v);
     std::ostream* getLogstream() { return eigenflags.logstream; }
 
@@ -57,6 +57,6 @@ class Eigenvals {
 
 std::ostream& operator<<(std::ostream& os, const EigenvalsFlags& flags);
 
-}  // namespace nsolver
+}  // namespace chflow
 
 #endif

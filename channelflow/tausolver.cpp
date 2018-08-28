@@ -10,8 +10,8 @@
 #include "cfbasics/mathdefs.h"
 
 using namespace std;
-using namespace cfbasics;
-namespace channelflow {
+
+namespace chflow {
 
 inline int kprime_func(int k, int Nb) { return (k % 2 == 0) ? Nb - 1 : Nb; }
 
@@ -454,9 +454,9 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
 Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                        const ComplexChebyCoeff& P, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
                        const ComplexChebyCoeff& Rz, bool verbose) const {
-    Real umean = cfbasics::Re(u.mean());
+    Real umean = Re(u.mean());
     Real dPdx = 0.0;
-    Real wmean = cfbasics::Re(w.mean());
+    Real wmean = Re(w.mean());
     Real dPdz = 0.0;
     return verify(u, v, w, P, dPdx, dPdz, Rx, Ry, Rz, umean, wmean, verbose);
 }
@@ -611,8 +611,8 @@ Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, c
     if (verbose)
         cout << "w(a),w(b) == " << wa << " " << wb << endl;
 
-    Real umean_error = abs2(cfbasics::Re(u.mean()) - umean);
-    Real wmean_error = abs2(cfbasics::Re(w.mean()) - wmean);
+    Real umean_error = abs2(Re(u.mean()) - umean);
+    Real wmean_error = abs2(Re(w.mean()) - wmean);
     if (verbose) {
         cout << "abs2(u.mean() - umean) == " << umean_error << endl;
         cout << "abs2(w.mean() - wmean) == " << wmean_error << endl;
@@ -649,4 +649,4 @@ Real TauSolver::tauDist(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v) 
     return L2Dist(utmp, vtmp);
 }
 
-}  // namespace channelflow
+}  // namespace chflow

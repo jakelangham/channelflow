@@ -6,8 +6,8 @@
 #include "channelflow/chebyshev.h"
 
 using namespace std;
-using namespace cfbasics;
-using namespace channelflow;
+
+using namespace chflow;
 
 int main() {
     bool save = false;

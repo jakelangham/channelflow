@@ -10,7 +10,6 @@
 #include <type_traits>
 
 using namespace std;
-using namespace cfbasics;
 
 namespace {
 /**
@@ -52,7 +51,7 @@ T parse_enum_value(std::istream& is, ParseFn parse, T default_value) {
 }
 }  // namespace
 
-namespace channelflow {
+namespace chflow {
 
 int getBodyforcefromLine(int taskid, std::ifstream& is) {
     int val = 0;
@@ -995,4 +994,4 @@ ostream& operator<<(ostream& os, const DNSFlags& flags) {
     return os;
 }
 
-}  // namespace channelflow
+}  // namespace chflow

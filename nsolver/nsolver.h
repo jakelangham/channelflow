@@ -32,4 +32,4 @@
 #include "nsolver/newton.h"
 #include "nsolver/newtonalgorithm.h"
 
-#endif                // NSOLVER_H
+#endif  // NSOLVER_H

@@ -18,7 +18,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/flowfield.h"
 
-namespace channelflow {
+namespace chflow {
 
 // innerProduct(f,g) == Int f g*  dx dy dz   (/(Lx Ly Lz) if normalize==true)
 // L2Norm2(f)  == Int ||f||^2  dx dy dz      (/(Lx Ly Lz) if normalize==true)
@@ -31,99 +31,99 @@ namespace channelflow {
 // L2Dist2(f,g) == L2Norm2(f-g)
 // etc.
 
-cfbasics::Real L1Norm(const FlowField& f, bool normalize = true);
-cfbasics::Real L1Dist(const FlowField& f, const FlowField& g, bool normalize = true);
-cfbasics::Real LinfNorm(const FlowField& f);
-cfbasics::Real LinfDist(const FlowField& f, const FlowField& g);
+Real L1Norm(const FlowField& f, bool normalize = true);
+Real L1Dist(const FlowField& f, const FlowField& g, bool normalize = true);
+Real LinfNorm(const FlowField& f);
+Real LinfDist(const FlowField& f, const FlowField& g);
 
-cfbasics::Real L2Norm(const FlowField& f, bool normalize = true);
-cfbasics::Real L2Norm2(const FlowField& f, bool normalize = true);
-cfbasics::Real L2Dist(const FlowField& f, const FlowField& g, bool normalize = true);
-cfbasics::Real L2Dist2(const FlowField& f, const FlowField& g, bool normalize = true);
+Real L2Norm(const FlowField& f, bool normalize = true);
+Real L2Norm2(const FlowField& f, bool normalize = true);
+Real L2Dist(const FlowField& f, const FlowField& g, bool normalize = true);
+Real L2Dist2(const FlowField& f, const FlowField& g, bool normalize = true);
 
-cfbasics::Real chebyNorm(const FlowField& f, bool normalize = true);
-cfbasics::Real chebyNorm2(const FlowField& f, bool normalize = true);
-cfbasics::Real chebyDist(const FlowField& f, const FlowField& g, bool normalize = true);
-cfbasics::Real chebyDist2(const FlowField& f, const FlowField& g, bool normalize = true);
+Real chebyNorm(const FlowField& f, bool normalize = true);
+Real chebyNorm2(const FlowField& f, bool normalize = true);
+Real chebyDist(const FlowField& f, const FlowField& g, bool normalize = true);
+Real chebyDist2(const FlowField& f, const FlowField& g, bool normalize = true);
 
-cfbasics::Real bcNorm(const FlowField& f, bool normalize = true);
-cfbasics::Real bcNorm2(const FlowField& f, bool normalize = true);
-cfbasics::Real bcDist(const FlowField& f, const FlowField& g, bool normalize = true);
-cfbasics::Real bcDist2(const FlowField& f, const FlowField& g, bool normalize = true);
+Real bcNorm(const FlowField& f, bool normalize = true);
+Real bcNorm2(const FlowField& f, bool normalize = true);
+Real bcDist(const FlowField& f, const FlowField& g, bool normalize = true);
+Real bcDist2(const FlowField& f, const FlowField& g, bool normalize = true);
 
-cfbasics::Real divNorm(const FlowField& f, bool normalize = true);
-cfbasics::Real divNorm2(const FlowField& f, bool normalize = true);
-cfbasics::Real divDist(const FlowField& f, const FlowField& g, bool normalize = true);
-cfbasics::Real divDist2(const FlowField& f, const FlowField& g, bool normalize = true);
+Real divNorm(const FlowField& f, bool normalize = true);
+Real divNorm2(const FlowField& f, bool normalize = true);
+Real divDist(const FlowField& f, const FlowField& g, bool normalize = true);
+Real divDist2(const FlowField& f, const FlowField& g, bool normalize = true);
 
 // Restrict sums in norm computation to |kx|<=kxmax, |kz|<=kzmax,
-cfbasics::Real L2Norm(const FlowField& f, int kxmax, int kzmax, bool normalize = true);
-cfbasics::Real L2Norm2(const FlowField& f, int kxmax, int kzmax, bool normalize = true);
-cfbasics::Real L2Dist(const FlowField& f, const FlowField& g, int kxmax, int kzmax, bool normalize = true);
-cfbasics::Real L2Dist2(const FlowField& f, const FlowField& g, int kxmax, int kzmax, bool normalize = true);
-cfbasics::Real L2InnerProduct(const FlowField& f, const FlowField& g, int kxmax, int kzmax, bool normalize = true);
+Real L2Norm(const FlowField& f, int kxmax, int kzmax, bool normalize = true);
+Real L2Norm2(const FlowField& f, int kxmax, int kzmax, bool normalize = true);
+Real L2Dist(const FlowField& f, const FlowField& g, int kxmax, int kzmax, bool normalize = true);
+Real L2Dist2(const FlowField& f, const FlowField& g, int kxmax, int kzmax, bool normalize = true);
+Real L2InnerProduct(const FlowField& f, const FlowField& g, int kxmax, int kzmax, bool normalize = true);
 
 // Vector  vectorL1Dist(const FlowField& f, const FlowField& v);
 // Complex innerProduct(const FlowField& f, const FlowField& v);
-cfbasics::Real L2InnerProduct(const FlowField& f, const FlowField& g, bool normalize = true);
+Real L2InnerProduct(const FlowField& f, const FlowField& g, bool normalize = true);
 
-cfbasics::Real dissipation(const FlowField& f, bool normalize = true);     // 1/(LxLyLz) int_V |curl u|^2 dV
-cfbasics::Real wallshear(const FlowField& f, bool normalize = true);       // |wallshearLower| + |wallshearUpper|
-cfbasics::Real wallshearLower(const FlowField& f, bool normalize = true);  // 1/(2LxLz)  int_lower_wall du/dy dx dz
-cfbasics::Real wallshearUpper(const FlowField& f, bool normalize = true);  // 1/(2LxLz)  int_upper_wall du/dy dx dz
+Real dissipation(const FlowField& f, bool normalize = true);     // 1/(LxLyLz) int_V |curl u|^2 dV
+Real wallshear(const FlowField& f, bool normalize = true);       // |wallshearLower| + |wallshearUpper|
+Real wallshearLower(const FlowField& f, bool normalize = true);  // 1/(2LxLz)  int_lower_wall du/dy dx dz
+Real wallshearUpper(const FlowField& f, bool normalize = true);  // 1/(2LxLz)  int_upper_wall du/dy dx dz
 
-cfbasics::Real L2Norm2_3d(const FlowField& f, bool normalize = true);  // L2Norm2 of all kx!=0 modes
-cfbasics::Real L2Norm3d(const FlowField& f, bool normalize = true);    // L2Norm  of all kx!=0 modes
+Real L2Norm2_3d(const FlowField& f, bool normalize = true);  // L2Norm2 of all kx!=0 modes
+Real L2Norm3d(const FlowField& f, bool normalize = true);    // L2Norm  of all kx!=0 modes
 
-cfbasics::cfarray<cfbasics::Real> truncerr(const FlowField& f);
+cfarray<Real> truncerr(const FlowField& f);
 
-cfbasics::Real min_x_L2Dist(const FlowField& u0, const FlowField& u1, cfbasics::Real tol = 1e-3);
+Real min_x_L2Dist(const FlowField& u0, const FlowField& u1, Real tol = 1e-3);
 
 // ====================================================================
 // Note: these were previously defaulted to normalize=false 2006-03-02
-cfbasics::Complex L2InnerProduct(const FlowField& f, const BasisFunc& phi, bool normalize = true);
+Complex L2InnerProduct(const FlowField& f, const BasisFunc& phi, bool normalize = true);
 
-cfbasics::Real L2InnerProduct(const FlowField& f, const RealProfile& phi, bool normalize = true);
+Real L2InnerProduct(const FlowField& f, const RealProfile& phi, bool normalize = true);
 
-inline cfbasics::Real L2IP(const FlowField& f, const FlowField& g, bool normalize = true) {
+inline Real L2IP(const FlowField& f, const FlowField& g, bool normalize = true) {
     return L2InnerProduct(f, g, normalize);
 }
 
-inline cfbasics::Real L2IP(const FlowField& f, const FlowField& g, int kxmax, int kzmax, bool normalize = true) {
+inline Real L2IP(const FlowField& f, const FlowField& g, int kxmax, int kzmax, bool normalize = true) {
     return L2InnerProduct(f, g, kxmax, kzmax, normalize);
 }
 
-inline cfbasics::Complex L2IP(const FlowField& f, const BasisFunc& phi, bool normalize = true) {
+inline Complex L2IP(const FlowField& f, const BasisFunc& phi, bool normalize = true) {
     return L2InnerProduct(f, phi, normalize);
 }
 
-inline cfbasics::Real L2IP(const FlowField& f, const RealProfile& phi, bool normalize = true) {
+inline Real L2IP(const FlowField& f, const RealProfile& phi, bool normalize = true) {
     return L2InnerProduct(f, phi, normalize);
 }
 
 // ====================================================================
-cfbasics::Real L2InnerProduct(const RealProfileNG& e, const FlowField& u, bool normalize = true);
+Real L2InnerProduct(const RealProfileNG& e, const FlowField& u, bool normalize = true);
 
-inline cfbasics::Real L2InnerProduct(const FlowField& u, const RealProfileNG& e, bool normalize = true) {
+inline Real L2InnerProduct(const FlowField& u, const RealProfileNG& e, bool normalize = true) {
     return L2InnerProduct(e, u, normalize);
 }
 
-inline cfbasics::Real L2IP(const RealProfileNG& e, const FlowField& u, bool normalize = true) {
+inline Real L2IP(const RealProfileNG& e, const FlowField& u, bool normalize = true) {
     return L2InnerProduct(e, u, normalize);
 }
-inline cfbasics::Real L2IP(const FlowField& u, const RealProfileNG& e, bool normalize = true) {
+inline Real L2IP(const FlowField& u, const RealProfileNG& e, bool normalize = true) {
     return L2InnerProduct(e, u, normalize);
 }
 
 // The following functions assume an orthonormal basis.
-void field2coeff(const std::vector<RealProfile>& basis, const FlowField& u, cfbasics::cfarray<cfbasics::Real>& a);
-void coeff2field(const std::vector<RealProfile>& basis, const cfbasics::cfarray<cfbasics::Real>& a, FlowField& u);
+void field2coeff(const std::vector<RealProfile>& basis, const FlowField& u, cfarray<Real>& a);
+void coeff2field(const std::vector<RealProfile>& basis, const cfarray<Real>& a, FlowField& u);
 
-void field2coeff(const std::vector<BasisFunc>& basis, const FlowField& u, cfbasics::cfarray<cfbasics::Complex>& a);
-void coeff2field(const std::vector<BasisFunc>& basis, const cfbasics::cfarray<cfbasics::Complex>& a, FlowField& u);
+void field2coeff(const std::vector<BasisFunc>& basis, const FlowField& u, cfarray<Complex>& a);
+void coeff2field(const std::vector<BasisFunc>& basis, const cfarray<Complex>& a, FlowField& u);
 
-void field2coeff(const std::vector<RealProfileNG>& basis, const FlowField& u, std::vector<cfbasics::Real>& a);
-void coeff2field(const std::vector<RealProfileNG>& basis, const std::vector<cfbasics::Real>& a, FlowField& u);
+void field2coeff(const std::vector<RealProfileNG>& basis, const FlowField& u, std::vector<Real>& a);
+void coeff2field(const std::vector<RealProfileNG>& basis, const std::vector<Real>& a, FlowField& u);
 
 void swap(FlowField& f, FlowField& v);  // exchange data of two flow fields.
 
@@ -178,17 +178,16 @@ void diff(const FlowField& f, FlowField& df, int nx, int ny, int nz);
 void ydiffOld(const FlowField& f, FlowField& dfdy, int n = 1);
 void ydiffOnce(const FlowField& f, FlowField& dfdy);
 
-void grad(const FlowField& f, FlowField& grad_f);    // grad f, 1d->3d or 3d->9d
-void d_dx(const FlowField& f, FlowField& ddx_f);     // SlicesHack d_dz f, 3d
-void d_dz(const FlowField& f, FlowField& ddz_f);     // SlicesHack d_dz f, 3d
-void lapl(const FlowField& f, FlowField& lapl_f);    // lapl f
-void curl(const FlowField& f, FlowField& curl_f);    // del cross f
-void norm(const FlowField& f, FlowField& norm_f);    // ||f||
-void norm2(const FlowField& f, FlowField& norm2_f);  // ||f||^2
-void div(const FlowField& f, FlowField& divf, const cfbasics::fieldstate finalstate = cfbasics::Spectral);  // del dot f
+void grad(const FlowField& f, FlowField& grad_f);                                       // grad f, 1d->3d or 3d->9d
+void d_dx(const FlowField& f, FlowField& ddx_f);                                        // SlicesHack d_dz f, 3d
+void d_dz(const FlowField& f, FlowField& ddz_f);                                        // SlicesHack d_dz f, 3d
+void lapl(const FlowField& f, FlowField& lapl_f);                                       // lapl f
+void curl(const FlowField& f, FlowField& curl_f);                                       // del cross f
+void norm(const FlowField& f, FlowField& norm_f);                                       // ||f||
+void norm2(const FlowField& f, FlowField& norm2_f);                                     // ||f||^2
+void div(const FlowField& f, FlowField& divf, const fieldstate finalstate = Spectral);  // del dot f
 
-void cross(const FlowField& f, const FlowField& g, FlowField& f_cross_g,
-           const cfbasics::fieldstate finalstate = cfbasics::Spectral);
+void cross(const FlowField& f, const FlowField& g, FlowField& f_cross_g, const fieldstate finalstate = Spectral);
 void outer(const FlowField& f, const FlowField& g, FlowField& fg);  // fi gj ei ej
 void dot(const FlowField& f, const FlowField& g, FlowField& f_dot_g);
 void energy(const FlowField& u, FlowField& e);
@@ -226,16 +225,12 @@ void Qcriterion(const FlowField& u, FlowField& Q);
 // Linearized f = dU/dy v ex + du/dx U
 // Linearized f = (curl ubase)   x u + (curl u) x  ubase
 
-void rotationalNL(const FlowField& u, FlowField& f, FlowField& tmp,
-                  const cfbasics::fieldstate finalstate = cfbasics::Spectral);
-void convectionNL(const FlowField& u, FlowField& f, FlowField& tmp,
-                  const cfbasics::fieldstate finalstate = cfbasics::Spectral);
-void divergenceNL(const FlowField& u, FlowField& f, FlowField& tmp,
-                  const cfbasics::fieldstate finalstate = cfbasics::Spectral);
-void skewsymmetricNL(const FlowField& u, FlowField& f, FlowField& tmp,
-                     const cfbasics::fieldstate finalstate = cfbasics::Spectral);
+void rotationalNL(const FlowField& u, FlowField& f, FlowField& tmp, const fieldstate finalstate = Spectral);
+void convectionNL(const FlowField& u, FlowField& f, FlowField& tmp, const fieldstate finalstate = Spectral);
+void divergenceNL(const FlowField& u, FlowField& f, FlowField& tmp, const fieldstate finalstate = Spectral);
+void skewsymmetricNL(const FlowField& u, FlowField& f, FlowField& tmp, const fieldstate finalstate = Spectral);
 void linearizedNL(const FlowField& u, const ChebyCoeff& U, const ChebyCoeff& Wbase, FlowField& f,
-                  const cfbasics::fieldstate finalstate = cfbasics::Spectral);
+                  const fieldstate finalstate = Spectral);
 
 // Adjoint terms
 // u+ is the adjoint velocity
@@ -245,7 +240,7 @@ void linearizedNL(const FlowField& u, const ChebyCoeff& U, const ChebyCoeff& Wba
 // adjointTerms f = + (u + U) grad u+ - u+ grad^T (u + U)		tmp = grad u	tmpadj = grad^T(u + U)
 
 void adjointTerms(const FlowField& u, FlowField& u_dir, FlowField& f, FlowField& tmp, FlowField& tmpadj,
-                  const cfbasics::fieldstate finalstate = cfbasics::Spectral);
+                  const fieldstate finalstate = Spectral);
 
 // Perturbation terms
 // u+ is the adjoint velocity
@@ -256,51 +251,51 @@ void adjointTerms(const FlowField& u, FlowField& u_dir, FlowField& f, FlowField&
 // U)
 
 void perturbationTermsLin(const FlowField& u, FlowField& u_nlin, FlowField& f, FlowField& tmp, FlowField& tmppert,
-                          const cfbasics::fieldstate finalstate = cfbasics::Spectral);
+                          const fieldstate finalstate = Spectral);
 
 // perturbationTermsNLin f = + u grad u + u grad (u_ecs + U) + (u_ecs + U) grad u 		tmp = grad u	tmppert
 // = grad(u_ecs + U)
 
 void perturbationTermsNLin(const FlowField& u, FlowField& u_nlin, FlowField& f, FlowField& tmp, FlowField& tmppert,
-                           const cfbasics::fieldstate finalstate = cfbasics::Spectral);
+                           const fieldstate finalstate = Spectral);
 
 void linearAboutFieldNL(const FlowField& u, const FlowField& ubase, const ChebyCoeff& U, FlowField& f, FlowField& tmp,
-                        FlowField& tmp2, const cfbasics::fieldstate finalstate = cfbasics::Spectral);
+                        FlowField& tmp2, const fieldstate finalstate = Spectral);
 
 void linearizedNL(const FlowField& u_, const FlowField& ubtot, const FlowField& grad_ubtot, FlowField& f,
-                  FlowField& tmp, const cfbasics::fieldstate finalstate = cfbasics::Spectral);
+                  FlowField& tmp, const fieldstate finalstate = Spectral);
 
-void assignOrrSommField(FlowField& u, FlowField& P, cfbasics::Real t, cfbasics::Real Reynolds, cfbasics::Complex omega,
-                        const ComplexChebyCoeff& ueig, const ComplexChebyCoeff& veig, const ComplexChebyCoeff& peig);
+void assignOrrSommField(FlowField& u, FlowField& P, Real t, Real Reynolds, Complex omega, const ComplexChebyCoeff& ueig,
+                        const ComplexChebyCoeff& veig, const ComplexChebyCoeff& peig);
 
 void dotgrad(const FlowField& u, const FlowField& v, FlowField& u_dotgrad_v, FlowField& tmp);
 void dotgradScalar(const FlowField& u, const FlowField& s, FlowField& u_dotgrad_s, FlowField& tmp);
 FlowField dotgrad(const FlowField& u, const FlowField& v, FlowField& tmp);
 
-void randomUprofile(ComplexChebyCoeff& u, cfbasics::Real mag, cfbasics::Real spectralDecay);
-void randomVprofile(ComplexChebyCoeff& v, cfbasics::Real mag, cfbasics::Real spectralDecay);
-void randomProfile(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, int kx, int kz, cfbasics::Real Lx,
-                   cfbasics::Real Lz, cfbasics::Real mag, cfbasics::Real spectralDecay);
+void randomUprofile(ComplexChebyCoeff& u, Real mag, Real spectralDecay);
+void randomVprofile(ComplexChebyCoeff& v, Real mag, Real spectralDecay);
+void randomProfile(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, int kx, int kz, Real Lx, Real Lz,
+                   Real mag, Real spectralDecay);
 
-void chebyUprofile(ComplexChebyCoeff& u, int n, cfbasics::Real decay);
-void chebyVprofile(ComplexChebyCoeff& v, int n, cfbasics::Real decay);
+void chebyUprofile(ComplexChebyCoeff& u, int n, Real decay);
+void chebyVprofile(ComplexChebyCoeff& v, int n, Real decay);
 void chebyProfile(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, int un, int vn, int kx, int kz,
-                  cfbasics::Real Lx, cfbasics::Real Lz, cfbasics::Real decay);
+                  Real Lx, Real Lz, Real decay);
 
 FlowField extractRolls(const FlowField& u);
 
-cfbasics::Real Ecf(const FlowField& u);
-cfbasics::Real L2Norm_uvw(const FlowField& u, const bool ux, const bool uy, const bool uz);
+Real Ecf(const FlowField& u);
+Real L2Norm_uvw(const FlowField& u, const bool ux, const bool uy, const bool uz);
 
-cfbasics::Real getdPdx(const FlowField& u, cfbasics::Real nu);
-cfbasics::Real getdPdz(const FlowField& u, cfbasics::Real nu);
-cfbasics::Real getUbulk(const FlowField& u);
-cfbasics::Real getWbulk(const FlowField& u);
+Real getdPdx(const FlowField& u, Real nu);
+Real getdPdz(const FlowField& u, Real nu);
+Real getUbulk(const FlowField& u);
+Real getWbulk(const FlowField& u);
 
-std::string fieldstats_t(const FlowField& u, cfbasics::Real t);  // return some information about u
-std::string fieldstatsheader_t(const std::string tname = "t");   // header for fieldstats
-std::string fieldstats(const FlowField& u);                      // return some information about u
-std::string fieldstatsheader();                                  // header for fieldstats
+std::string fieldstats_t(const FlowField& u, Real t);           // return some information about u
+std::string fieldstatsheader_t(const std::string tname = "t");  // header for fieldstats
+std::string fieldstats(const FlowField& u);                     // return some information about u
+std::string fieldstatsheader();                                 // header for fieldstats
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif

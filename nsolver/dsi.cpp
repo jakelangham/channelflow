@@ -12,10 +12,10 @@
 #include "nsolver/dsi.h"
 
 using namespace std;
-using namespace cfbasics;
+
 using namespace Eigen;
 
-namespace nsolver {
+namespace chflow {
 
 DSI::DSI() : os_(&cout) {}
 
@@ -25,8 +25,8 @@ DSI::DSI(ostream* os) : os_(os) {}
 
 VectorXd DSI::eval(const VectorXd& x0, const VectorXd& x1, bool symopt) {
     throw runtime_error(
-        "You are trying to call nsolver::DSI::eval(x0,x1), which is not present for the DSI implementation you are "
-        "using. nsolver::DSI::eval(x0,x1) is required for multiShooting.");
+        "You are trying to call DSI::eval(x0,x1), which is not present for the DSI implementation you are "
+        "using. DSI::eval(x0,x1) is required for multiShooting.");
 }
 
 void DSI::save(const VectorXd& x, const string filebase, const string outdir, const bool fieldsonly) {
@@ -91,20 +91,20 @@ VectorXd DSI::Jacobian(const VectorXd& x, const VectorXd& dx, const VectorXd& Gx
 
 VectorXd DSI::xdiff(const VectorXd& a) {
     throw runtime_error(
-        "You are trying to call nsolver::DSI::xdiff(), which is not present for the DSI implementation you are using.");
+        "You are trying to call DSI::xdiff(), which is not present for the DSI implementation you are using.");
 }
 VectorXd DSI::zdiff(const VectorXd& a) {
     throw runtime_error(
-        "You are trying to call nsolver::DSI::zdiff(), which is not present for the DSI implementation you are using.");
+        "You are trying to call DSI::zdiff(), which is not present for the DSI implementation you are using.");
 }
 VectorXd DSI::tdiff(const VectorXd& a, Real epsDt) {
     throw runtime_error(
-        "You are trying to call nsolver::DSI::tdiff(), which is not present for the DSI implementation you are using.");
+        "You are trying to call DSI::tdiff(), which is not present for the DSI implementation you are using.");
 }
 Real DSI::tph_observable(VectorXd& x) {
     throw runtime_error(
-        "You are trying to call nsolver::DSI::tph_observable(), which is not present for the DSI implementation you "
+        "You are trying to call DSI::tph_observable(), which is not present for the DSI implementation you "
         "are using (required to be used for tphasehack).");
 }
 
-}  // namespace nsolver
+}  // namespace chflow

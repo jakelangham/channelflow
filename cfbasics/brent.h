@@ -24,7 +24,11 @@
 #ifndef NSOLVER_BRENT_H
 #define NSOLVER_BRENT_H
 
-namespace cfbasics {
+#include <functional>
+
+#include <cfbasics/cfbasics.h>
+
+namespace chflow {
 
 class Brent {
    public:
@@ -208,6 +212,6 @@ inline bool Brent::converged(Real epsabs, Real epsrel) {
     return false;
 }
 
-}  // namespace cfbasics
+}  // namespace chflow
 
 #endif

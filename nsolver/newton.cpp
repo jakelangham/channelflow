@@ -16,10 +16,10 @@
 #include "nsolver/newton.h"
 
 using namespace std;
-using namespace cfbasics;
+
 using namespace Eigen;
 
-namespace nsolver {
+namespace chflow {
 
 ArclengthConstraint::ArclengthConstraint() : yLast_(VectorXd(1)), muRef_(0), ds_(0) {}
 
@@ -159,4 +159,4 @@ void Newton::setArclengthConstraint(ArclengthConstraint* newAC) {
 
 MultishootingDSI* Newton::getMultishootingDSI() { return msDSI_; }
 
-}  // namespace nsolver
+}  // namespace chflow

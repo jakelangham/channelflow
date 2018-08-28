@@ -6,9 +6,8 @@
 #include "channelflow/nse.h"
 
 using namespace std;
-using namespace cfbasics;
 
-namespace channelflow {
+namespace chflow {
 
 void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, FlowField& f, FlowField& tmp,
                     DNSFlags& flags) {
@@ -460,8 +459,8 @@ void NSE::linear(const vector<FlowField>& infields, vector<FlowField>& outfields
                     Real Ly = b_ - a_;
                     diff(uk_, Ruk_);
                     diff(wk_, Rwk_);
-                    Real dPdxAct = cfbasics::Re(Ruk_.eval_b() - Ruk_.eval_a()) / Ly;
-                    Real dPdzAct = cfbasics::Re(Rwk_.eval_b() - Rwk_.eval_a()) / Ly;
+                    Real dPdxAct = Re(Ruk_.eval_b() - Ruk_.eval_a()) / Ly;
+                    Real dPdzAct = Re(Rwk_.eval_b() - Rwk_.eval_a()) / Ly;
                     ChebyCoeff Ubasey = diff(Ubase_);
                     ChebyCoeff Wbasey = diff(Wbase_);
                     if (Ubase_.length() != 0)
@@ -557,10 +556,10 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                 (outfields[0].Nz() % 2 == 0 && kz == kzmax && kx == 0) ||
                 (outfields[0].Nx() % 2 == 0 && outfields[0].Nz() % 2 == 0 && kx == kxmax && kz == kzmax)) {
                 for (int ny = 0; ny < Nyd_; ++ny) {
-                    outfields[0].cmplx(mx, ny, mz, 0) = Complex(cfbasics::Re(uk_[ny]), 0.0);
-                    outfields[0].cmplx(mx, ny, mz, 1) = Complex(cfbasics::Re(vk_[ny]), 0.0);
-                    outfields[0].cmplx(mx, ny, mz, 2) = Complex(cfbasics::Re(wk_[ny]), 0.0);
-                    outfields[1].cmplx(mx, ny, mz, 0) = Complex(cfbasics::Re(Pk_[ny]), 0.0);
+                    outfields[0].cmplx(mx, ny, mz, 0) = Complex(Re(uk_[ny]), 0.0);
+                    outfields[0].cmplx(mx, ny, mz, 1) = Complex(Re(vk_[ny]), 0.0);
+                    outfields[0].cmplx(mx, ny, mz, 2) = Complex(Re(wk_[ny]), 0.0);
+                    outfields[1].cmplx(mx, ny, mz, 0) = Complex(Re(Pk_[ny]), 0.0);
                 }
             }
             // The normal case, for general kx,kz
@@ -928,4 +927,4 @@ void changeBaseFlow(const ChebyCoeff& ubase0, const FlowField& ufluc0, const Flo
     q1.makeState(q0xzstate, q0ystate);
 }
 
-}  // namespace channelflow
+}  // namespace chflow

@@ -16,8 +16,8 @@
 #include "channelflow/utilfuncs.h"
 
 using namespace std;
-using namespace cfbasics;
-namespace channelflow {
+
+namespace chflow {
 
 BasisFunc::BasisFunc() : Nd_(0), Ny_(0), kx_(0), kz_(0), Lx_(0), Lz_(0), a_(0), b_(0), state_(Spectral), u_(0) {}
 
@@ -100,7 +100,7 @@ void BasisFunc::save(const string& filebase, fieldstate savestate) const {
 
     for (int ny = 0; ny < Ny_; ++ny) {
         for (int n = 0; n < Nd_; ++n)
-            os << cfbasics::Re(u_[n][ny]) << sp << cfbasics::Im(u_[n][ny]) << sp;
+            os << Re(u_[n][ny]) << sp << Im(u_[n][ny]) << sp;
         os << '\n';
     }
     os.close();
@@ -2087,4 +2087,4 @@ BasisFunc& BasisFunc::operator*=(const FieldSymmetry& sigma) {
     return *this;
 }
 
-}  // namespace channelflow
+}  // namespace chflow

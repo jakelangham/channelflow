@@ -8,13 +8,13 @@
  */
 
 #include "channelflow/bandedtridiag.h"
+
 #include <fstream>
 #include <iomanip>
 
 using namespace std;
-using namespace cfbasics;
 
-namespace channelflow {
+namespace chflow {
 
 const Real EPSILON = 1e-13;
 
@@ -49,11 +49,6 @@ BandedTridiag::BandedTridiag(const string& filebase) : M_(0), Mbar_(-1), a_(0), 
     ifstream is;
     string filename = ifstreamOpen(is, filebase, ".asc");
 
-    // cout << "BandedTridiag::BandedTridiag(string& filebase)" << endl;
-    // string filename(filebase);
-    // filename += string(".asc");
-    // ifstream is(filename.c_str());
-
     // Read in header. Form is "% N U" for a banded tridiag with 8 non-zero elems,
     // U==0 => UL decomp has not been performed. U==1 indicates it has.
     char c;
@@ -68,8 +63,6 @@ BandedTridiag::BandedTridiag(const string& filebase) : M_(0), Mbar_(-1), a_(0), 
     int ul;
     is >> ul;
     UL_ = (ul == 0) ? false : true;
-
-    // cout << "M, UL == " << M_ << ' ' << UL_ << endl;
 
     a_ = new Real[4 * M_ - 2];
     int n;  // FOR-SCOPE BUG
@@ -237,34 +230,6 @@ void BandedTridiag::ULdecomp() {
     UL_ = true;
 }
 
-/***************************************
-// Solve Ax=b given UL=A, via Uy=b, then Lx=y.
-void BandedTridiag::ULsolveStrided(Vector& b, int offset, int stride) const {
-  assert(UL_ == true);
-  assert(offset == 0 || offset == 1);
-  assert(stride == 1 || stride == 2);
-
-  int i,j;
-  int Mb=M_-1;
-
-  // Solve Uy=b by backsubstitution, iterating last row to zeroth.
-
-  // Last row needs no calculation due to sparsity structure.
-  // b[Nb] = b[Nb];           // row  M-1
-  for (i=Mb-1; i>0; --i)      // rows M-2 through 1
-    b[offset + i*stride] -= updiag(i)*b[offset + stride*(i+1)];
-  for (j=i+1; j<M_; ++j)       // row 0
-    b[offset] -= band(j)*b[offset + stride*j];
-
-  // Solve Lx=y by forward substitution
-  b[offset] /= diag(0);              // row  0
-  for (i=1; i<M_; ++i) {
-    assert(diag(i) != 0.0);  // rows 1 through M-1
-    (b[offset + stride*i] -= lodiag(i)*b[offset + stride*(i-1)]) /= diag(i);
-  }
-}
-*****************************************/
-
 // Solve Ax=b given UL=A, via Uy=b, then Lx=y.
 void BandedTridiag::ULsolveStrided(Vector& b, int offset, int stride) const {
     assert(UL_ == true);
@@ -403,4 +368,4 @@ void BandedTridiag::save(const string& filebase) const {
     return;
 }
 
-}  // namespace channelflow
+}  // namespace chflow

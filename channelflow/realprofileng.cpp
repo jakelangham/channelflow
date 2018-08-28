@@ -9,9 +9,8 @@
 #include <iostream>
 
 using namespace std;
-using namespace cfbasics;
 
-namespace channelflow {
+namespace chflow {
 
 RealProfileNG::RealProfileNG(const int jx, const int jz, const int Nd, const int Ny, const Real Lx, const Real Lz,
                              const Real a, const Real b, const fieldstate state)
@@ -605,4 +604,4 @@ void RealProfileNG::makeState(const fieldstate s, const ChebyTransform& t) {
             "Spectral nor Physical");
 }
 
-}  // namespace channelflow
+}  // namespace chflow

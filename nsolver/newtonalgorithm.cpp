@@ -9,10 +9,10 @@
 #include "mpi.h"
 #endif
 using namespace std;
-using namespace cfbasics;
+
 using namespace Eigen;
 
-namespace nsolver {
+namespace chflow {
 
 NewtonSearchFlags::NewtonSearchFlags(SolutionType solntype_,
                                      bool xrelative_,  // new
@@ -305,7 +305,7 @@ const vector<string> NewtonSearchFlags::getFlagList() {
     return flagList;
 }
 
-NewtonAlgorithm::NewtonAlgorithm(nsolver::NewtonSearchFlags searchflags_)
+NewtonAlgorithm::NewtonAlgorithm(NewtonSearchFlags searchflags_)
     : Newton(searchflags_.logstream, searchflags_.outdir, searchflags_.epsSearch),
       searchflags(searchflags_),
       os(0),
@@ -315,19 +315,19 @@ NewtonAlgorithm::NewtonAlgorithm(nsolver::NewtonSearchFlags searchflags_)
       delta_(0.0),
       rx_(0.0) {
     os = searchflags.logstream;
-    *msDSI_ = MultishootingDSI(searchflags.nShot, searchflags.solntype == cfbasics::PeriodicOrbit,
-                               searchflags.xrelative, searchflags.zrelative, searchflags.TRef, searchflags.axRef,
-                               searchflags.azRef, searchflags.fixtphase);
+    *msDSI_ = MultishootingDSI(searchflags.nShot, searchflags.solntype == PeriodicOrbit, searchflags.xrelative,
+                               searchflags.zrelative, searchflags.TRef, searchflags.axRef, searchflags.azRef,
+                               searchflags.fixtphase);
 }
 
 void NewtonAlgorithm::setLogstream(ostream* os_) {
-    nsolver::Newton::setLogstream(os_);
+    Newton::setLogstream(os_);
     searchflags.logstream = os_;
     os = os_;
 }
 
 void NewtonAlgorithm::setOutdir(string od) {
-    nsolver::Newton::setOutdir(od);
+    Newton::setOutdir(od);
     searchflags.outdir = od;
 }
 
@@ -570,7 +570,7 @@ VectorXd NewtonAlgorithm::solve(DSI& dsiG, const VectorXd& y0, Real& gx) {
             };
 
             // iteratively solve the system with Bi-conjucate gradient stabilized method
-            nsolver::BiCGStabL<VectorXd> bicgstab(A, Gx, searchflags.lBiCGStab, NSolver);
+            BiCGStabL<VectorXd> bicgstab(A, Gx, searchflags.lBiCGStab, NSolver);
             int nSolver;
             for (nSolver = 0; nSolver < NSolver; nSolver++) {
                 *os << "Newt,BiCGStab(" << bicgstab.l() << ") step: " << nNewton << "," << nSolver << " ";
@@ -1556,4 +1556,4 @@ int NewtonAlgorithm::hookstep(VectorXd& dxH, VectorXd& GxH, const VectorXd& x, c
 
 // ======================================================================
 
-}  // namespace nsolver
+}  // namespace chflow

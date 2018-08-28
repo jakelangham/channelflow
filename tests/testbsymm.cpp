@@ -7,7 +7,7 @@
 #include "channelflow/symmetry.h"
 
 using namespace std;
-using namespace channelflow;
+using namespace chflow;
 
 int main(int argc, char** argv) {
     BasisFlags basisflags;

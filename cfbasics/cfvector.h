@@ -20,7 +20,7 @@
 #include <iomanip>
 #include <vector>
 
-namespace cfbasics {
+namespace chflow {
 
 template <class T>
 struct FFTAllocator {
@@ -444,5 +444,5 @@ inline std::ostream& operator<<(std::ostream& os, const Vector& a) {
     return os;
 }
 
-}  // namespace cfbasics
+}  // namespace chflow
 #endif

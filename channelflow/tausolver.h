@@ -15,7 +15,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/helmholtz.h"
 
-namespace channelflow {
+namespace chflow {
 
 // Class for solving 7.3.18-7.3.20 of Canuto & Hussaini
 //      nu u''_jk(y) - lambda u_jk(y) - grad P_jk = -R_jk,
@@ -116,5 +116,5 @@ class TauSolver {
     Real tauDist(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v) const;
 };
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif

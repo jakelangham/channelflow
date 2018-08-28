@@ -16,8 +16,7 @@
 #include <sys/time.h>
 
 using namespace std;
-using namespace channelflow;
-using namespace cfbasics;
+using namespace chflow;
 
 enum Attractor { NoAttractor, Laminar, Turbulent };
 

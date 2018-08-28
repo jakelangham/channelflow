@@ -11,28 +11,45 @@
 #include "nsolver/nsolver.h"
 
 using namespace std;
-using namespace cfbasics;
 using namespace Eigen;
+using namespace ::testing;
 
-namespace nsolver {
+namespace chflow {
+namespace test {
 class exampleDSI : public DSI {
    public:
     exampleDSI();
+
     VectorXd eval(const VectorXd& x) override;
+
     VectorXd eval(const VectorXd& x1, const VectorXd& x2, bool sig) override;
+
     VectorXd xdiff(const VectorXd& x) override;
+
     VectorXd zdiff(const VectorXd& x) override;
+
     VectorXd tdiff(const VectorXd& x, Real epsDt) override;
+
     Real extractT(const VectorXd& x) override;
+
     Real extractXshift(const VectorXd& x) override;
+
     Real extractZshift(const VectorXd& x) override;
+
     Real observable(VectorXd& x) override;
+
     void phaseShift(MatrixXd& y) override;
+
     Real tph_observable(VectorXd& x) override;
+
     Real DSIL2Norm(const VectorXd& x) override;
+
     void save(const VectorXd& x, const std::string filebase, const std::string outdir, const bool fieldsonly) override;
+
     VectorXd getsaveData();
+
     string stats(const VectorXd& x) override;
+
     pair<string, string> stats_minmax(const VectorXd& x) override;
 
     VectorXd saveData_;  // to test save; the first elements of a given vector if fieldsonly otherwise the last element
@@ -109,14 +126,6 @@ pair<string, string> exampleDSI::stats_minmax(const VectorXd& x) {
     return minmax;
 }
 
-}  // namespace nsolver
-
-namespace channelflowtest {
-
-using namespace std;
-using namespace nsolver;
-using namespace ::testing;
-
 #ifdef HAVE_MPI
 class MPIEnvironment : public ::testing::Environment {
    public:
@@ -159,6 +168,7 @@ class msDSITest : public ::testing::Test {
         y(8, 1) = 7.5;
         y(9, 1) = 8.0;
     }
+
     ~msDSITest() {}
 
     MultishootingDSI msDSI;
@@ -399,5 +409,5 @@ TEST_F(msDSITest, MS_statsminmax) {
     str = msDSI.stats_minmax(x).first;
     EXPECT_EQ(str, "x:012345614000");
 }
-
-}  // namespace channelflowtest
+}  // namespace test
+}  // namespace chflow

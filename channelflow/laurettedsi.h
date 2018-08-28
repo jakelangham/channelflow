@@ -16,7 +16,7 @@
 #include "channelflow/utilfuncs.h"
 #include "nsolver/nsolver.h"
 
-namespace channelflow {
+namespace chflow {
 
 /** \file laurettedsi.h
  * This is an implementation of an algorithm to search for fixed points
@@ -94,9 +94,9 @@ class LauretteDSI : public cfDSI {
     LauretteDSI(FlowField& u, DNSFlags& flags, Real dt, bool xrel, bool zrel, FieldSymmetry sigma);
     virtual ~LauretteDSI();
     Eigen::VectorXd eval(const Eigen::VectorXd& x);
-    virtual Eigen::VectorXd Jacobian(const Eigen::VectorXd& x, const Eigen::VectorXd& dx, const Eigen::VectorXd& Gx, const cfbasics::Real& epsDx,
-                              bool centdiff, int& fcount);
-    virtual void updateMu(cfbasics::Real mu);
+    virtual Eigen::VectorXd Jacobian(const Eigen::VectorXd& x, const Eigen::VectorXd& dx, const Eigen::VectorXd& Gx,
+                                     const Real& epsDx, bool centdiff, int& fcount);
+    virtual void updateMu(Real mu);
 
     Eigen::VectorXd Q(const Eigen::VectorXd& w);
 
@@ -113,4 +113,4 @@ class LauretteDSI : public cfDSI {
     std::unique_ptr<EulerDNS> alg;
 };
 
-}  // namespace channelflow
+}  // namespace chflow

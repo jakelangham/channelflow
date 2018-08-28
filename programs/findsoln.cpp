@@ -11,9 +11,8 @@
 #include "nsolver/nsolver.h"
 
 using namespace std;
-using namespace cfbasics;
-using namespace channelflow;
 using namespace Eigen;
+using namespace chflow;
 
 int main(int argc, char* argv[]) {
     cfMPI_Init(&argc, &argv);
@@ -27,10 +26,10 @@ int main(int argc, char* argv[]) {
          * of the algorithm.
          */
 
-        unique_ptr<nsolver::Newton> N;
-        nsolver::NewtonSearchFlags searchflags(args);
+        unique_ptr<Newton> N;
+        NewtonSearchFlags searchflags(args);
         searchflags.save(searchflags.outdir);
-        N = unique_ptr<nsolver::Newton>(new nsolver::NewtonAlgorithm(searchflags));
+        N = unique_ptr<Newton>(new NewtonAlgorithm(searchflags));
 
         DNSFlags dnsflags(args, searchflags.laurette);
         TimeStep dt(dnsflags);
@@ -80,7 +79,7 @@ int main(int argc, char* argv[]) {
         VectorXd x;
         VectorXd yvec;
         MatrixXd y;
-        nsolver::MultishootingDSI* msDSI = N->getMultishootingDSI();
+        MultishootingDSI* msDSI = N->getMultishootingDSI();
         dsi->makeVector(u, sigma, dnsflags.T, x_singleShot);
         msDSI->setDSI(*dsi, x_singleShot.size());
         if (msinit) {

@@ -14,10 +14,10 @@
 
 #include <stdexcept>
 using namespace std;
-using namespace cfbasics;
+
 using namespace Eigen;
 
-namespace nsolver {
+namespace chflow {
 
 ContinuationFlags::ContinuationFlags()
     : arclength(false),
@@ -619,4 +619,4 @@ Real continuation(DSI& dsiG, Newton& newton, cfarray<VectorXd> y, cfarray<Real> 
     }
 }
 
-}  // namespace nsolver
+}  // namespace chflow

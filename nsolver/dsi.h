@@ -11,7 +11,7 @@
 #include "cfbasics/arglist.h"
 #include "cfbasics/cfbasics.h"
 
-namespace nsolver {
+namespace chflow {
 
 /*==================================================================================*/
 /*               Base class for vector-valued functions                             */
@@ -55,15 +55,14 @@ class DSI {
     virtual void saveEigenvec(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, const std::string label1,
                               const std::string label2, const std::string outdir);
 
-    virtual Eigen::VectorXd quadraticInterpolate_vector(const cfbasics::cfarray<Eigen::VectorXd>& xn,
-                                                        const cfbasics::cfarray<cfbasics::Real>& s,
-                                                        cfbasics::Real snew);
+    virtual Eigen::VectorXd quadraticInterpolate_vector(const cfarray<Eigen::VectorXd>& xn, const cfarray<Real>& s,
+                                                        Real snew);
     /** Norm(x) */
-    virtual cfbasics::Real DSIL2Norm(const Eigen::VectorXd& x);
+    virtual Real DSIL2Norm(const Eigen::VectorXd& x);
 
-    virtual cfbasics::Real extractT(const Eigen::VectorXd& x);
-    virtual cfbasics::Real extractXshift(const Eigen::VectorXd& x);
-    virtual cfbasics::Real extractZshift(const Eigen::VectorXd& x);
+    virtual Real extractT(const Eigen::VectorXd& x);
+    virtual Real extractXshift(const Eigen::VectorXd& x);
+    virtual Real extractZshift(const Eigen::VectorXd& x);
 
     /** Give a string that contains various (physical) properties computed from x, E.g. different norms.
      * This string may be used by programs (such as continuation) to save information the state to
@@ -79,12 +78,12 @@ class DSI {
      * handling of parameter updates is done in this function. Implementations should know
      * what the parameter mu means and update the ODE accordingly.
      */
-    virtual void updateMu(cfbasics::Real mu) { mu_ = mu; }
+    virtual void updateMu(Real mu) { mu_ = mu; }
     virtual void saveParameters(std::string searchdir) {}
     virtual void saveResults(std::string searchdir) {}
-    virtual cfbasics::Real mu() const { return mu_; }
+    virtual Real mu() const { return mu_; }
     virtual std::string printMu() { return ""; }
-    virtual cfbasics::Real observable(Eigen::VectorXd& x) { return 0; }
+    virtual Real observable(Eigen::VectorXd& x) { return 0; }
     virtual void phaseShift(Eigen::MatrixXd& y) {}
     virtual void phaseShift(Eigen::VectorXd& x) {}
 
@@ -105,7 +104,7 @@ class DSI {
      * \return J_x dot dx
      */
     virtual Eigen::VectorXd Jacobian(const Eigen::VectorXd& x, const Eigen::VectorXd& dx, const Eigen::VectorXd& Gx,
-                                     const cfbasics::Real& epsDx, bool centdiff, int& fcount);
+                                     const Real& epsDx, bool centdiff, int& fcount);
 
     /** \brief compute derivative of vector along x axis.
      * Used in enforcing orthogonality when searching for travelling waves drifting in x.
@@ -129,9 +128,9 @@ class DSI {
      * \param[in] a compute da/dt
      * \return da/dt
      */
-    virtual Eigen::VectorXd tdiff(const Eigen::VectorXd& a, cfbasics::Real epsDt);
+    virtual Eigen::VectorXd tdiff(const Eigen::VectorXd& a, Real epsDt);
 
-    virtual cfbasics::Real tph_observable(Eigen::VectorXd& x);
+    virtual Real tph_observable(Eigen::VectorXd& x);
 
     void setOs(std::ostream* newos) { os_ = newos; }
 
@@ -147,10 +146,10 @@ class DSI {
     DSI(DSI& D);  // DSI objects may not be copied!
 
    protected:
-    cfbasics::Real mu_;
+    Real mu_;
 
     std::ostream* os_;
 };
 
-}  // namespace nsolver
+}  // namespace chflow
 #endif

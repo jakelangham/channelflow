@@ -32,8 +32,8 @@
 // If the three integration methods are identical, an == al == ark.
 
 using namespace std;
-using namespace cfbasics;
-using namespace channelflow;
+
+using namespace chflow;
 
 int main(int argc, char* argv[]) {
     Real maxerr = 1e-7;

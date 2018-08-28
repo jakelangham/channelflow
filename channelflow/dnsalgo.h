@@ -21,7 +21,7 @@
 #include "channelflow/nse.h"
 #include "channelflow/symmetry.h"
 
-namespace channelflow {
+namespace chflow {
 
 // DNSAlgorithm is a base class for classes representing time-stepping
 // algorithms for the Navier-Stokes equations, using a Fourier x Chebyshev
@@ -44,21 +44,21 @@ class DNSAlgorithm {
     virtual void project();                                           // project onto symm subspace (a member of flags)
     virtual void operator*=(const std::vector<FieldSymmetry>& symm);  // apply symmetry operator
     // virtual void reset() = 0;					// flush state, prepare for new integration
-    virtual void reset_dt(cfbasics::Real dt) = 0;                       // PURE VIRT, somewhat expensive
+    virtual void reset_dt(Real dt) = 0;                       // PURE VIRT, somewhat expensive
     virtual bool push(const std::vector<FlowField>& fields);  // push u onto u[j] stack, t += dt
     virtual bool full() const;                                // have enough init data?
 
-    void reset_time(cfbasics::Real t);
+    void reset_time(Real t);
     void reset_nse(std::shared_ptr<NSE> nse);
 
     int order() const;       // err should scale as dt^order
     int Ninitsteps() const;  // number of steps needed to initialize
 
-    cfbasics::Real dt() const;
-    cfbasics::Real CFL(FlowField& u) const;
-    cfbasics::Real time() const;
+    Real dt() const;
+    Real CFL(FlowField& u) const;
+    Real time() const;
 
-    cfbasics::cfarray<FieldSymmetry> symmetries(int ifield) const;
+    cfarray<FieldSymmetry> symmetries(int ifield) const;
 
     const DNSFlags& flags() const;
     TimeStepMethod timestepping() const;
@@ -74,12 +74,12 @@ class DNSAlgorithm {
     int numfields_;
     int Ninitsteps_;  // number of initialization steps required
 
-    cfbasics::Real t_;  // time in convective units
+    Real t_;  // time in convective units
 
-    std::vector<cfbasics::Real> lambda_t_;  // time stepping factors for implicit solver
+    std::vector<Real> lambda_t_;  // time stepping factors for implicit solver
     std::shared_ptr<NSE> nse_;    // copy of pointer to navier-stokes equations of channelflow
     // defined and space-discretized in separate NSE class, ptr is given at construction
-    std::vector<cfbasics::cfarray<FieldSymmetry>> symmetries_;
+    std::vector<cfarray<FieldSymmetry>> symmetries_;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,7 +99,7 @@ class MultistepDNS : public DNSAlgorithm {
     virtual void advance(std::vector<FlowField>& fields, int nSteps = 1);
     virtual void project();
     virtual void operator*=(const std::vector<FieldSymmetry>& symm);
-    virtual void reset_dt(cfbasics::Real dt);
+    virtual void reset_dt(Real dt);
     virtual bool push(const std::vector<FlowField>& fields);  // for initialization
     virtual bool full() const;                                // have enough init data?
     // virtual void reset();       // flush state, prepare for new integration
@@ -109,11 +109,11 @@ class MultistepDNS : public DNSAlgorithm {
     virtual void printStack() const;
 
    protected:
-    cfbasics::Real eta_;                                // new field coeff for implicit term, equals a0 in Peyret
-    cfbasics::cfarray<cfbasics::Real> alpha_;                     // coefficients of field history
-    cfbasics::cfarray<cfbasics::Real> beta_;                      // coefficients of nonlin. field history
-    cfbasics::cfarray<std::vector<FlowField>> fields_;  // u[j] == u at t-j*dt for multistep algorithms
-    cfbasics::cfarray<std::vector<FlowField>> nonlf_;   // f[j] == f at t-j*dt for multistep algorithms (nonlinear term)
+    Real eta_;                                // new field coeff for implicit term, equals a0 in Peyret
+    cfarray<Real> alpha_;                     // coefficients of field history
+    cfarray<Real> beta_;                      // coefficients of nonlin. field history
+    cfarray<std::vector<FlowField>> fields_;  // u[j] == u at t-j*dt for multistep algorithms
+    cfarray<std::vector<FlowField>> nonlf_;   // f[j] == f at t-j*dt for multistep algorithms (nonlinear term)
 
     int countdown_;
 };
@@ -129,16 +129,16 @@ class RungeKuttaDNS : public DNSAlgorithm {
     ~RungeKuttaDNS();
 
     virtual void advance(std::vector<FlowField>& fields, int nSteps = 1);
-    virtual void reset_dt(cfbasics::Real dt);
+    virtual void reset_dt(Real dt);
 
     virtual DNSAlgorithm* clone(const std::shared_ptr<NSE>& nse) const;  // new copy of *this
    protected:
     int Nsubsteps_;
     std::vector<FlowField> Qj1_;  // Q_{j-1} (Q at previous substep)
     std::vector<FlowField> Qj_;   // Q_j     (Q at current  substep)
-    cfbasics::cfarray<cfbasics::Real> A_;             // Q_{j+1} = A_j Q_j + N(u_j)
-    cfbasics::cfarray<cfbasics::Real> B_;             // u_{j+1} = u_j + dt B_j Q_j + dt C_j (L u_j + L u_{j+1})
-    cfbasics::cfarray<cfbasics::Real> C_;
+    cfarray<Real> A_;             // Q_{j+1} = A_j Q_j + N(u_j)
+    cfarray<Real> B_;             // u_{j+1} = u_j + dt B_j Q_j + dt C_j (L u_j + L u_{j+1})
+    cfarray<Real> C_;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -156,7 +156,7 @@ class CNABstyleDNS : public DNSAlgorithm {
     virtual void advance(std::vector<FlowField>& fields, int nSteps = 1);
     virtual void project();
     virtual void operator*=(const std::vector<FieldSymmetry>& symm);  // apply symmetry operator
-    virtual void reset_dt(cfbasics::Real dt);
+    virtual void reset_dt(Real dt);
     virtual bool push(const std::vector<FlowField>& fields);  // push u onto u[j] stack, t += dt for initial steps
     virtual bool full() const;                                // have enough init data?
     virtual void printStack() const;
@@ -168,11 +168,11 @@ class CNABstyleDNS : public DNSAlgorithm {
     bool full_;
     std::vector<FlowField> fj1_;  // f_{j-1} (nonlinear term f at previous substep)
     std::vector<FlowField> fj_;   // f_j     (nonlinear term f at current  substep)
-    cfbasics::cfarray<cfbasics::Real> alpha_;         // u_{j+1} = u_j + dt L (alpha_j u_j + beta_j u_{j+1})
-    cfbasics::cfarray<cfbasics::Real> beta_;          //           + dt gamma_j N(u_j) + dt zeta N(u_{j-1})
-    cfbasics::cfarray<cfbasics::Real> gamma_;
-    cfbasics::cfarray<cfbasics::Real> zeta_;
+    cfarray<Real> alpha_;         // u_{j+1} = u_j + dt L (alpha_j u_j + beta_j u_{j+1})
+    cfarray<Real> beta_;          //           + dt gamma_j N(u_j) + dt zeta N(u_{j-1})
+    cfarray<Real> gamma_;
+    cfarray<Real> zeta_;
 };
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif

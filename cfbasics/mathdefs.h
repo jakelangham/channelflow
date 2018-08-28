@@ -10,6 +10,8 @@
 #ifndef CHANNELFLOW_MATHDEFS_H
 #define CHANNELFLOW_MATHDEFS_H
 
+#include "channelflow/config.h"
+
 #include <arpa/inet.h>
 #include <assert.h>
 #include <math.h>
@@ -24,14 +26,11 @@
 #include <iostream>
 #include <string>
 
-#include "channelflow/config.h"
-
-// #define HAVE_MPI
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
-namespace cfbasics {
+namespace chflow {
 
 #ifndef HAVE_DRAND48
 #define drand48() rand() / (double(RAND_MAX));
@@ -339,5 +338,5 @@ inline std::istream& operator>>(std::istream& is, fieldstate& s) {
 //#define assert(expr) (if(!expr) {cout << "Assertion failed. "<<endl; abort();})
 //#endif
 
-}  // namespace cfbasics
+}  // namespace chflow
 #endif /* MATHDEFS_H */

@@ -15,10 +15,9 @@
 #include "channelflow/poissonsolver.h"
 
 using namespace std;
-using namespace cfbasics;
 using namespace Eigen;
 
-namespace channelflow {
+namespace chflow {
 
 cfDSI::cfDSI() {}
 
@@ -103,7 +102,7 @@ void cfDSI::save(const VectorXd& x, const string filebase, const string outdir, 
             if (xrelative_ || zrelative_ || !sigma.isIdentity())
                 sigma.save(outdir + "sigma" + filebase);
             if (Tsearch_)
-                cfbasics::save(T, outdir + "T" + filebase);
+                chflow::save(T, outdir + "T" + filebase);
             ofstream fout((outdir + "fieldconverge.asc").c_str(), ios::app);
             long pos = fout.tellp();
             if (pos == 0)
@@ -189,7 +188,7 @@ pair<string, string> cfDSI::stats_minmax(const VectorXd& x) {
 string cfDSI::statsHeader() { return fieldstatsheader_t(cPar2s(cPar_)); }
 
 void cfDSI::updateMu(Real mu) {
-    nsolver::DSI::updateMu(mu);
+    DSI::updateMu(mu);
 
     if (cPar_ == continuationParameter::Re) {
         dnsflags_.nu = 1. / mu;
@@ -609,9 +608,9 @@ VectorXd cfDSI::xdiff(const VectorXd& a) {
     vector2field(a, u);
     VectorXd dadx(a.size());
     dadx.setZero();
-    u = channelflow::xdiff(u);
+    u = chflow::xdiff(u);
     field2vector(u, dadx);
-    dadx *= 1. / cfbasics::L2Norm(dadx);
+    dadx *= 1. / L2Norm(dadx);
     return dadx;
 }
 
@@ -620,9 +619,9 @@ VectorXd cfDSI::zdiff(const VectorXd& a) {
     vector2field(a, u);
     VectorXd dadx(a.size());
     dadx.setZero();
-    u = channelflow::zdiff(u);
+    u = chflow::zdiff(u);
     field2vector(u, dadx);
-    dadx *= 1. / cfbasics::L2Norm(dadx);
+    dadx *= 1. / L2Norm(dadx);
     return dadx;
 }
 
@@ -634,7 +633,7 @@ VectorXd cfDSI::tdiff(const VectorXd& a, Real epsDt) {
     edudtf -= u;
     VectorXd dadt(a.size());
     field2vector(edudtf, dadt);
-    dadt *= 1. / cfbasics::L2Norm(dadt);
+    dadt *= 1. / L2Norm(dadt);
     return dadt;
 }
 
@@ -885,7 +884,7 @@ void f(const FlowField& u, Real& T, PoincareCondition* h, FlowField& f_u, const 
 
 // Is this function maybe obsolete? (FR)
 Real GMRESHookstep_vector(FlowField& u, Real& T, FieldSymmetry& sigma, PoincareCondition* hpoincare,
-                          const nsolver::NewtonSearchFlags& searchflags, DNSFlags& dnsflags, TimeStep& dt, Real& CFL,
+                          const NewtonSearchFlags& searchflags, DNSFlags& dnsflags, TimeStep& dt, Real& CFL,
                           Real Unormalize) {
     Real residual = 0;
     ostream* os = searchflags.logstream;  // a short name for ease of use
@@ -915,7 +914,7 @@ Real GMRESHookstep_vector(FlowField& u, Real& T, FieldSymmetry& sigma, PoincareC
 
     if (u.taskid() == 0) {
         sigma.save(searchflags.outdir + "sigmabest");
-        cfbasics::save(T, searchflags.outdir + "Tbest");
+        save(T, searchflags.outdir + "Tbest");
     }
     return residual;
 }
@@ -933,4 +932,4 @@ vector<Real> fieldstats_vector(const FlowField& u) {
     return stats;
 }
 
-}  // namespace channelflow
+}  // namespace chflow

@@ -18,8 +18,8 @@
 // Or start U and u from zero and check convergence onto utot = 1-y^2
 
 using namespace std;
-using namespace cfbasics;
-using namespace channelflow;
+
+using namespace chflow;
 
 int main(int argc, char* argv[]) {
     Real err = 0.0;

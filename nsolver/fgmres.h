@@ -8,7 +8,7 @@
 
 #include "cfbasics/cfbasics.h"
 
-namespace nsolver {
+namespace chflow {
 
 /*==================================================================================*/
 /*            Class FGMRES                                                           */
@@ -19,14 +19,14 @@ class FGMRES {
 
    public:
     FGMRES();
-    FGMRES(const Eigen::VectorXd& b, int Niterations, cfbasics::Real minCondition = 1e-13);
+    FGMRES(const Eigen::VectorXd& b, int Niterations, Real minCondition = 1e-13);
 
     const Eigen::VectorXd& testVector() const;
     void iterate(const Eigen::VectorXd& testvec, const Eigen::VectorXd& A_testvec);
 
     const Eigen::VectorXd& solution() const;  // current best approx to soln x of Ax=b
     const Eigen::VectorXd& guess() const;
-    cfbasics::Real residual() const;  // |Ax-b|/|b|
+    Real residual() const;  // |Ax-b|/|b|
 
     int n() const;
     int Niter() const;
@@ -35,17 +35,17 @@ class FGMRES {
     Eigen::MatrixXd Zn() const;  // Qn  = M x n     submatrix of Q
     Eigen::MatrixXd AZn() const;
     Eigen::MatrixXd Vn() const;        // Qn1 = M x (n+1) submatrix of Q
-    void resetV();              // reset Qn to size(b)
+    void resetV();                     // reset Qn to size(b)
     const Eigen::MatrixXd& V() const;  // Q is large, so avoid copying it
 
-    Eigen::VectorXd solve(const Eigen::VectorXd& bprime, cfbasics::Real& residual);
+    Eigen::VectorXd solve(const Eigen::VectorXd& bprime, Real& residual);
     Eigen::VectorXd b();
 
    private:
     int M_;      // dimension of vector space
     int Niter_;  // max number of iterations
     int n_;      // current iteration number
-    cfbasics::Real condition_;
+    Real condition_;
 
     Eigen::MatrixXd H_;   // Hessenberg Matrix
     Eigen::MatrixXd V_;   // Orthogonalaized basis
@@ -55,8 +55,8 @@ class FGMRES {
     Eigen::VectorXd v_;
     Eigen::VectorXd qn_;
     Eigen::VectorXd xn_;
-    cfbasics::Real bnorm_;
-    cfbasics::Real residual_;
+    Real bnorm_;
+    Real residual_;
 };
-}  // namespace nsolver
+}  // namespace chflow
 #endif

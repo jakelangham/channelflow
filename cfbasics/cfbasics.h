@@ -32,7 +32,7 @@
 
 extern const char* g_GIT_SHA1;
 
-namespace cfbasics {
+namespace chflow {
 
 enum HookstepPhase { ConstantDelta, ReducingDelta, IncreasingDelta, Finished };
 enum ResidualImprovement { Unacceptable, Poor, Ok, Good, Accurate, NegaCurve };
@@ -1275,6 +1275,6 @@ inline void sort_by_abs(Vector& Lambda, Matrix& V) {
     Lambda = P.transpose() * Lambda;
 }
 
-}  // namespace cfbasics
+}  // namespace chflow
 
 #endif  // CFBASICS

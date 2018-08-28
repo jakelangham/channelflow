@@ -11,13 +11,12 @@
 #include "gtest/gtest.h"
 #include "nsolver/nsolver.h"
 
-namespace channelflowtest {
 using namespace std;
-using namespace cfbasics;
-using namespace nsolver;
 using namespace Eigen;
 using namespace ::testing;
 
+namespace chflow {
+namespace test {
 // A Arnoldi object with some reasonable settings
 class ArnoldiTest : public ::testing::Test {
    protected:
@@ -36,6 +35,7 @@ class ArnoldiTest : public ::testing::Test {
         }
         // M = MatrixXd::Random(size,size);
     }
+
     Arnoldi A;
     int size = 100;
     int iter = 99;
@@ -86,5 +86,5 @@ TEST_F(ArnoldiTest, iterate) {
     diff = L2Dist(t1, t2);
     EXPECT_NEAR(diff, 0.0, eps);
 }
-
-}  // end namespace channelflowtest
+}  // namespace test
+}  // namespace chflow

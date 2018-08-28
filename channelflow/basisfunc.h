@@ -14,7 +14,7 @@
 #include "cfbasics/mathdefs.h"
 #include "channelflow/chebyshev.h"
 
-namespace channelflow {
+namespace chflow {
 
 class FieldSymmetry;
 
@@ -22,18 +22,17 @@ class BasisFunc {
    public:
     BasisFunc();
     BasisFunc(const std::string& filebase);
-    BasisFunc(int Nd, int Ny, int kx, int kz, cfbasics::Real Lx, cfbasics::Real Lz, cfbasics::Real a, cfbasics::Real b,
-              cfbasics::fieldstate s = cfbasics::Spectral);
+    BasisFunc(int Nd, int Ny, int kx, int kz, Real Lx, Real Lz, Real a, Real b, fieldstate s = Spectral);
     BasisFunc(int Ny, const BasisFunc& f);
 
     BasisFunc(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w, int kx, int kz,
-              cfbasics::Real Lx, cfbasics::Real Lz);
+              Real Lx, Real Lz);
 
-    void save(const std::string& filebase, cfbasics::fieldstate s = cfbasics::Physical) const;
+    void save(const std::string& filebase, fieldstate s = Physical) const;
     void binaryDump(std::ostream& os) const;
     void binaryLoad(std::istream& is);
 
-    void randomize(cfbasics::Real magn, cfbasics::Real decay, BC aBC, BC bBC);
+    void randomize(Real magn, Real decay, BC aBC, BC bBC);
     void interpolate(const BasisFunc& f);
     void reflect(const BasisFunc& f);
 
@@ -41,17 +40,17 @@ class BasisFunc {
     inline int Ny() const;
     inline int kx() const;
     inline int kz() const;
-    inline cfbasics::Real Lx() const;
-    inline cfbasics::Real Lz() const;
-    inline cfbasics::Real a() const;
-    inline cfbasics::Real b() const;
-    inline cfbasics::fieldstate state() const;
+    inline Real Lx() const;
+    inline Real Lz() const;
+    inline Real a() const;
+    inline Real b() const;
+    inline fieldstate state() const;
 
     void reconfig(const BasisFunc& f);  // set to same geom params, zero value
     void resize(int Ny, int Nd);
-    void setBounds(cfbasics::Real Lx, cfbasics::Real Lz, cfbasics::Real a, cfbasics::Real b);
+    void setBounds(Real Lx, Real Lz, Real a, Real b);
     void setkxkz(int kx, int kz);
-    void setState(cfbasics::fieldstate s);
+    void setState(fieldstate s);
 
     void setToZero();
     void conjugate();
@@ -61,13 +60,13 @@ class BasisFunc {
     void ichebyfft();
     void makeSpectral();
     void makePhysical();
-    void makeState(cfbasics::fieldstate s);
+    void makeState(fieldstate s);
 
     void chebyfft(const ChebyTransform& t);
     void ichebyfft(const ChebyTransform& t);
     void makeSpectral(const ChebyTransform& t);
     void makePhysical(const ChebyTransform& t);
-    void makeState(cfbasics::fieldstate s, const ChebyTransform& t);
+    void makeState(fieldstate s, const ChebyTransform& t);
 
     const ComplexChebyCoeff& u() const;
     const ComplexChebyCoeff& v() const;
@@ -86,22 +85,22 @@ class BasisFunc {
     BasisFunc& operator*=(const BasisFunc& g);
     BasisFunc& operator+=(const BasisFunc& g);
     BasisFunc& operator-=(const BasisFunc& g);
-    BasisFunc& operator*=(cfbasics::Real c);
-    BasisFunc& operator*=(cfbasics::Complex c);  // gcc-2.95 can't handle thi
+    BasisFunc& operator*=(Real c);
+    BasisFunc& operator*=(Complex c);  // gcc-2.95 can't handle thi
 
-    cfbasics::Real bcNorm(BC aBC, BC bBC) const;
+    Real bcNorm(BC aBC, BC bBC) const;
 
    protected:
     int Nd_;
     int Ny_;
     int kx_;
     int kz_;
-    cfbasics::Real Lx_;
-    cfbasics::Real Lz_;
-    cfbasics::Real a_;
-    cfbasics::Real b_;
-    cfbasics::fieldstate state_;
-    cfbasics::cfarray<ComplexChebyCoeff> u_;
+    Real Lx_;
+    Real Lz_;
+    Real a_;
+    Real b_;
+    fieldstate state_;
+    cfarray<ComplexChebyCoeff> u_;
 };
 
 class BasisFlags {
@@ -115,12 +114,12 @@ class BasisFlags {
 
 // Construct a basis for (kx,kz) Fourier subspace of 3d velocity fields on
 // the given domain, up to order-Ny polynomials in y.
-std::vector<BasisFunc> complexBasisKxKz(int Ny, int kx, int kz, cfbasics::Real Lx, cfbasics::Real Lz, cfbasics::Real a,
-                                        cfbasics::Real b, const BasisFlags& flags);
+std::vector<BasisFunc> complexBasisKxKz(int Ny, int kx, int kz, Real Lx, Real Lz, Real a, Real b,
+                                        const BasisFlags& flags);
 
 // Construct a basis for -kxmax<=kx<=kxmax, 0<=kz<=kzmax, order Ny polynomials
-std::vector<BasisFunc> complexBasis(int Ny, int kxmax, int kzmax, cfbasics::Real Lx, cfbasics::Real Lz,
-                                    cfbasics::Real a, cfbasics::Real b, const BasisFlags& flags);
+std::vector<BasisFunc> complexBasis(int Ny, int kxmax, int kzmax, Real Lx, Real Lz, Real a, Real b,
+                                    const BasisFlags& flags);
 
 void orthonormalize(std::vector<BasisFunc>& f);
 
@@ -148,33 +147,33 @@ BasisFunc conjugate(const BasisFunc& f);
 // Real LinfNorm(const BasisFunc& f);
 // Real LinfDist(const BasisFunc& f, const BasisFunc& g);
 
-cfbasics::Real L2Norm(const BasisFunc& f, bool normalize = true);
-cfbasics::Real L2Norm2(const BasisFunc& f, bool normalize = true);
-cfbasics::Real L2Dist(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
-cfbasics::Real L2Dist2(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
-cfbasics::Complex L2InnerProduct(const BasisFunc& f0, const BasisFunc& f1, bool normalize = true);
+Real L2Norm(const BasisFunc& f, bool normalize = true);
+Real L2Norm2(const BasisFunc& f, bool normalize = true);
+Real L2Dist(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
+Real L2Dist2(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
+Complex L2InnerProduct(const BasisFunc& f0, const BasisFunc& f1, bool normalize = true);
 
-cfbasics::Real chebyNorm(const BasisFunc& f, bool normalize = true);
-cfbasics::Real chebyNorm2(const BasisFunc& f, bool normalize = true);
-cfbasics::Real chebyDist(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
-cfbasics::Real chebyDist2(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
-cfbasics::Complex chebyInnerProduct(const BasisFunc& f0, const BasisFunc& f1, bool normalize = true);
+Real chebyNorm(const BasisFunc& f, bool normalize = true);
+Real chebyNorm2(const BasisFunc& f, bool normalize = true);
+Real chebyDist(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
+Real chebyDist2(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
+Complex chebyInnerProduct(const BasisFunc& f0, const BasisFunc& f1, bool normalize = true);
 
-cfbasics::Real norm(const BasisFunc& f, NormType n, bool normalize = true);
-cfbasics::Real norm2(const BasisFunc& f, NormType n, bool normalize = true);
-cfbasics::Real dist(const BasisFunc& f, const BasisFunc& g, NormType n, bool nrmlz = true);
-cfbasics::Real dist2(const BasisFunc& f, const BasisFunc& g, NormType n, bool nrmlz = true);
-cfbasics::Complex innerProduct(const BasisFunc& f0, const BasisFunc& f1, NormType n, bool normalize = true);
+Real norm(const BasisFunc& f, NormType n, bool normalize = true);
+Real norm2(const BasisFunc& f, NormType n, bool normalize = true);
+Real dist(const BasisFunc& f, const BasisFunc& g, NormType n, bool nrmlz = true);
+Real dist2(const BasisFunc& f, const BasisFunc& g, NormType n, bool nrmlz = true);
+Complex innerProduct(const BasisFunc& f0, const BasisFunc& f1, NormType n, bool normalize = true);
 
-cfbasics::Real bcNorm(const BasisFunc& f, bool normalize = true);
-cfbasics::Real bcNorm2(const BasisFunc& f, bool normalize = true);
-cfbasics::Real bcDist(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
-cfbasics::Real bcDist2(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
+Real bcNorm(const BasisFunc& f, bool normalize = true);
+Real bcNorm2(const BasisFunc& f, bool normalize = true);
+Real bcDist(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
+Real bcDist2(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
 
-cfbasics::Real divNorm(const BasisFunc& f, bool normalize = true);
-cfbasics::Real divNorm2(const BasisFunc& f, bool normalize = true);
-cfbasics::Real divDist(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
-cfbasics::Real divDist2(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
+Real divNorm(const BasisFunc& f, bool normalize = true);
+Real divNorm2(const BasisFunc& f, bool normalize = true);
+Real divDist(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
+Real divDist2(const BasisFunc& f, const BasisFunc& g, bool normalize = true);
 
 BasisFunc xdiff(const BasisFunc& f);
 BasisFunc ydiff(const BasisFunc& f);
@@ -210,15 +209,15 @@ inline int BasisFunc::Nd() const { return Nd_; }
 inline int BasisFunc::Ny() const { return Ny_; }
 inline int BasisFunc::kx() const { return kx_; }
 inline int BasisFunc::kz() const { return kz_; }
-inline cfbasics::Real BasisFunc::Lx() const { return Lx_; }
-inline cfbasics::Real BasisFunc::Lz() const { return Lz_; }
-inline cfbasics::Real BasisFunc::a() const { return a_; }
-inline cfbasics::Real BasisFunc::b() const { return b_; }
-inline cfbasics::fieldstate BasisFunc::state() const { return state_; }
+inline Real BasisFunc::Lx() const { return Lx_; }
+inline Real BasisFunc::Lz() const { return Lz_; }
+inline Real BasisFunc::a() const { return a_; }
+inline Real BasisFunc::b() const { return b_; }
+inline fieldstate BasisFunc::state() const { return state_; }
 
 // helper function for emulating 2-tensors with 9d fields
 inline int i3j(int i, int j) { return 3 * i + j; }
 
-}  // namespace channelflow
+}  // namespace chflow
 
 #endif

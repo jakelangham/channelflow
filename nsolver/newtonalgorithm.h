@@ -16,7 +16,7 @@
 #include "nsolver/gmres.h"
 #include "nsolver/newton.h"
 
-namespace nsolver {
+namespace chflow {
 //   /*==================================================================================*/
 //   /*            function  GMRESHookstep and friends                                   */
 //   /*==================================================================================*/
@@ -58,63 +58,61 @@ namespace nsolver {
 
 class NewtonSearchFlags {
    public:
-    cfbasics::SolverMethod solver = cfbasics::SolverGMRES;
-    cfbasics::OptimizationMethod optimization = cfbasics::Hookstep;
-    cfbasics::SolutionType solntype;
+    SolverMethod solver = SolverGMRES;
+    OptimizationMethod optimization = Hookstep;
+    SolutionType solntype;
     bool xrelative;  // new
     bool zrelative;  // new
-    cfbasics::Real epsSearch;
-    cfbasics::Real epsKrylov;
-    cfbasics::Real epsDx;
-    cfbasics::Real epsDt;
-    cfbasics::Real epsSolver;
-    cfbasics::Real epsSolverF;
+    Real epsSearch;
+    Real epsKrylov;
+    Real epsDx;
+    Real epsDt;
+    Real epsSolver;
+    Real epsSolverF;
     bool centdiff;
     int Nnewton;
     int Nsolver;
     int Nhook;
-    cfbasics::Real delta;
-    cfbasics::Real deltaMin;
-    cfbasics::Real deltaMax;
-    cfbasics::Real deltaFuzz;
-    cfbasics::Real lambdaMin;
-    cfbasics::Real lambdaMax;
-    cfbasics::Real lambdaRequiredReduction;
-    cfbasics::Real improvReq;
-    cfbasics::Real improvOk;
-    cfbasics::Real improvGood;
-    cfbasics::Real improvAcc;
+    Real delta;
+    Real deltaMin;
+    Real deltaMax;
+    Real deltaFuzz;
+    Real lambdaMin;
+    Real lambdaMax;
+    Real lambdaRequiredReduction;
+    Real improvReq;
+    Real improvOk;
+    Real improvGood;
+    Real improvAcc;
     int lBiCGStab;
     int nShot;
     bool fixtphase;
-    cfbasics::Real TRef;
-    cfbasics::Real axRef;
-    cfbasics::Real azRef;
-    cfbasics::Real gRatio;
+    Real TRef;
+    Real axRef;
+    Real azRef;
+    Real gRatio;
     std::string outdir;
     std::ostream* logstream;
     bool verbose;
     bool orbit;
     bool laurette;
 
-    NewtonSearchFlags(cfbasics::SolutionType solntype = cfbasics::Equilibrium, bool xrelative = false, bool zrelative = false,
-                      cfbasics::Real epsSearch = 1e-13, cfbasics::Real epsKrylov = 1e-14, cfbasics::Real epsDx = 1e-7,
-                      cfbasics::Real epsDt = 1e-5, cfbasics::Real epsSolver = 1e-3, cfbasics::Real epsSolverF = 0.05,
-                      bool centdiff = false, int Nnewton = 20, int Ngmres = 500, int Nhook = 20,
-                      cfbasics::Real delta = 1e-2, cfbasics::Real deltaMin = 1e-12, cfbasics::Real deltaMax = 1e-1,
-                      cfbasics::Real deltaFuzz = 1e-6, cfbasics::Real lambdaMin = 0.2, cfbasics::Real lambdaMax = 1.5,
-                      cfbasics::Real lambdaRequiredReduction = 0.5, cfbasics::Real improvReq = 1e-3,
-                      cfbasics::Real improvOk = 1e-1, cfbasics::Real improvGood = 0.75, cfbasics::Real improvAcc = 1e-1,
-                      int lBiCGStab = 2, int nShot = 1, bool fixtphase = false, cfbasics::Real TRef = 1.0,
-                      cfbasics::Real axRef = 1.0, cfbasics::Real azRef = 1.0, cfbasics::Real gRatio = 10.0,
+    NewtonSearchFlags(SolutionType solntype = Equilibrium, bool xrelative = false, bool zrelative = false,
+                      Real epsSearch = 1e-13, Real epsKrylov = 1e-14, Real epsDx = 1e-7, Real epsDt = 1e-5,
+                      Real epsSolver = 1e-3, Real epsSolverF = 0.05, bool centdiff = false, int Nnewton = 20,
+                      int Ngmres = 500, int Nhook = 20, Real delta = 1e-2, Real deltaMin = 1e-12, Real deltaMax = 1e-1,
+                      Real deltaFuzz = 1e-6, Real lambdaMin = 0.2, Real lambdaMax = 1.5,
+                      Real lambdaRequiredReduction = 0.5, Real improvReq = 1e-3, Real improvOk = 1e-1,
+                      Real improvGood = 0.75, Real improvAcc = 1e-1, int lBiCGStab = 2, int nShot = 1,
+                      bool fixtphase = false, Real TRef = 1.0, Real axRef = 1.0, Real azRef = 1.0, Real gRatio = 10.0,
                       std::string outdir = "./", std::ostream* logstream = &std::cout, bool laurette = false);
 
-    NewtonSearchFlags(cfbasics::ArgList& args);
-    cfbasics::SolverMethod string2solver(std::string);
+    NewtonSearchFlags(ArgList& args);
+    SolverMethod string2solver(std::string);
     std::string solver2string() const;
-    cfbasics::OptimizationMethod string2optimization(std::string);
+    OptimizationMethod string2optimization(std::string);
     std::string optimization2string() const;
-    cfbasics::SolutionType string2solntype(std::string s) const;
+    SolutionType string2solntype(std::string s) const;
     std::string solntype2string() const;
     void save(const std::string& outdir = "") const;
     void load(int taskid, const std::string indir);
@@ -129,19 +127,18 @@ class NewtonSearchFlags {
  *
  * \return fixed point/one point on periodic orbit
  */
-Eigen::VectorXd hookstepSearch(DSI& dsiG, const Eigen::VectorXd& x0, const NewtonSearchFlags& searchflags,
-                               cfbasics::Real& gx);
+Eigen::VectorXd hookstepSearch(DSI& dsiG, const Eigen::VectorXd& x0, const NewtonSearchFlags& searchflags, Real& gx);
 
 class NewtonAlgorithm : public Newton {
    public:
     NewtonAlgorithm(NewtonSearchFlags searchflags);
-    virtual Eigen::VectorXd solve(DSI& dsi, const Eigen::VectorXd& x, cfbasics::Real& residual);
+    virtual Eigen::VectorXd solve(DSI& dsi, const Eigen::VectorXd& x, Real& residual);
     NewtonSearchFlags searchflags;
 
     virtual void setLogstream(std::ostream* os);
     virtual void setOutdir(std::string od);
 
-    Eigen::MatrixXd jacobi(const Eigen::VectorXd& x, const cfbasics::Real epsilon, const bool centerdiff, int& fcount);
+    Eigen::MatrixXd jacobi(const Eigen::VectorXd& x, const Real epsilon, const bool centerdiff, int& fcount);
 
    private:
     int linear(Eigen::VectorXd& dxOpt, Eigen::VectorXd& GxOpt, const Eigen::VectorXd& x);
@@ -155,10 +152,10 @@ class NewtonAlgorithm : public Newton {
     // required for Hookstep algorithm
     std::unique_ptr<GMRES> gmres_;
     std::unique_ptr<FGMRES> fgmres_;
-    cfbasics::Real delta_;
-    cfbasics::Real rx_;  // Dennis & Schnabel residual r(x) = 1/2 ||f(x)||^2
+    Real delta_;
+    Real rx_;  // Dennis & Schnabel residual r(x) = 1/2 ||f(x)||^2
 };
 
-}  // namespace nsolver
+}  // namespace chflow
 
 #endif

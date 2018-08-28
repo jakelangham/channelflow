@@ -14,9 +14,8 @@
 
 using namespace std;
 using namespace Eigen;
-using namespace cfbasics;
 
-namespace channelflow {
+namespace chflow {
 
 /**
  * Write date, hostname, pid and cwd to file.
@@ -116,11 +115,11 @@ void FieldSeries::interpolate(FlowField& f, Real t) const {
                 for (lint mx = mxlocmin; mx < mxlocmax; ++mx)
                     for (lint mz = mzlocmin; mz < mzlocmax; ++mz) {
                         for (int n = 0; n < N; ++n)
-                            fn[n] = cfbasics::Re(f_[n].cmplx(mx, ny, mz, i));
+                            fn[n] = Re(f_[n].cmplx(mx, ny, mz, i));
                         Real a = polyInterp(fn, t_, t);
 
                         for (int n = 0; n < N; ++n)
-                            fn[n] = cfbasics::Im(f_[n].cmplx(mx, ny, mz, i));
+                            fn[n] = Im(f_[n].cmplx(mx, ny, mz, i));
                         Real b = polyInterp(fn, t_, t);
 
                         f.cmplx(mx, ny, mz, i) = Complex(a, b);
@@ -906,4 +905,4 @@ vector<ChebyCoeff> baseFlow(int Ny, Real a, Real b, DNSFlags& flags, string Unam
     return baseflow;
 }
 
-}  // namespace channelflow
+}  // namespace chflow

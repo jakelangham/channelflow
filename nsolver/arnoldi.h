@@ -7,7 +7,7 @@
 
 #include "cfbasics/cfbasics.h"
 
-namespace nsolver {
+namespace chflow {
 
 /*==================================================================================*/
 /*            Class Arnoldi                                                         */
@@ -25,7 +25,7 @@ namespace nsolver {
 class Arnoldi {
    public:
     Arnoldi();
-    Arnoldi(const Eigen::VectorXd& b, int Niterations, cfbasics::Real minCondition = 1e-13);
+    Arnoldi(const Eigen::VectorXd& b, int Niterations, Real minCondition = 1e-13);
 
     const Eigen::VectorXd& testVector() const;        // get test vector q
     virtual void iterate(const Eigen::VectorXd& Aq);  // tell Arnoldi the value of Aq
@@ -45,7 +45,7 @@ class Arnoldi {
     int M_;      // dimension of linear operator (A is M x M)
     int Niter_;  // number of Arnoldi iterations
     int n_;      // current iteration number
-    cfbasics::Real condition_;
+    Real condition_;
 
     Eigen::MatrixXd H_;
     Eigen::MatrixXd Q_;
@@ -60,5 +60,5 @@ class Arnoldi {
     virtual void eigencalc();
 };
 
-}  // namespace nsolver
+}  // namespace chflow
 #endif

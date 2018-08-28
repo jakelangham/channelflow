@@ -10,10 +10,10 @@
 #include "channelflow/periodicfunc.h"
 #include "gtest/gtest.h"
 
-namespace channelflowtest {
 using namespace std;
-using namespace cfbasics;
-using namespace channelflow;
+
+namespace chflow {
+namespace test {
 
 /// A physical periodic function with 10 points and p[i]==i
 class PeriodicFuncPhysicalTest : public ::testing::Test {
@@ -179,5 +179,5 @@ TEST_F(PeriodicFuncSineTest, SpectralTransform) {
         EXPECT_NEAR(p0[i], p[i], eps);
     }
 }
-
-}  // end namespace channelflowtest
+}  // namespace test
+}  // namespace chflow

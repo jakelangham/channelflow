@@ -22,7 +22,7 @@
  * vector component.
  */
 
-namespace nsolver {
+namespace chflow {
 
 class ArclengthConstraint {
    public:
@@ -39,30 +39,30 @@ class ArclengthConstraint {
      * \param[in] yLast the last known solution (including mu at last position)
      * \param[in] muRef reference value of mu, mu is scaled by this when computing arclength
      */
-    ArclengthConstraint(const Eigen::VectorXd& yLast, cfbasics::Real ds = 0, cfbasics::Real muRef = 1.);
+    ArclengthConstraint(const Eigen::VectorXd& yLast, Real ds = 0, Real muRef = 1.);
 
     /** \brief compute pseudo arclength squared
      * \param[in] y current guess vector, including mu at last position
      * \return pseudo arclength: L2Dist2(x-xLast) + (mu-muLast)^2
      */
-    cfbasics::Real arclength2(const Eigen::VectorXd& y);
+    Real arclength2(const Eigen::VectorXd& y);
 
     /** \brief compute pseudo arclength
      * \param[in] y current guess vector, including mu at last position
      * \return pseudo arclength: sqrt(L2Dist2(x-xLast) + (mu-muLast)^2)
      */
-    cfbasics::Real arclength(const Eigen::VectorXd& y);
+    Real arclength(const Eigen::VectorXd& y);
 
     /** \brief compute difference between pseudo arclength and desired value
      * \param[in] y current guess vector
      * \return arclength - ds^2
      */
-    cfbasics::Real arclengthDiff(const Eigen::VectorXd& y);
+    Real arclengthDiff(const Eigen::VectorXd& y);
 
     /// Getter function for target arclength distance
-    cfbasics::Real ds();
+    Real ds();
     /// Setter for target arclength distance
-    void setDs(cfbasics::Real newDs);
+    void setDs(Real newDs);
 
     void setYLast(const Eigen::VectorXd& yLast);
 
@@ -75,18 +75,18 @@ class ArclengthConstraint {
     void notUse();
 
     /// Extract parameter from vector
-    cfbasics::Real muFromVector(const Eigen::VectorXd& y);
+    Real muFromVector(const Eigen::VectorXd& y);
 
     /// Combine vector x and parameter mu into one larger vector
-    Eigen::VectorXd makeVector(const Eigen::VectorXd& x, cfbasics::Real mu);
+    Eigen::VectorXd makeVector(const Eigen::VectorXd& x, Real mu);
 
     Eigen::VectorXd extractVector(const Eigen::VectorXd& y);
 
    private:
     bool use_ = false;
     Eigen::VectorXd yLast_;
-    cfbasics::Real muRef_;
-    cfbasics::Real ds_;
+    Real muRef_;
+    Real ds_;
 };
 
 /** Interface class for Newton algorithms. The solve function returns a VectorXd that
@@ -94,7 +94,7 @@ class ArclengthConstraint {
  */
 class Newton {
    public:
-    Newton(std::ostream* logstream_ = &std::cout, std::string outdir_ = "./", cfbasics::Real epsSearch = 1e-12);
+    Newton(std::ostream* logstream_ = &std::cout, std::string outdir_ = "./", Real epsSearch = 1e-12);
 
     virtual ~Newton() {
         if (!isACset)
@@ -108,18 +108,18 @@ class Newton {
      * \param[out] residual the final search residual
      * \return the root (or the last try)
      */
-    virtual Eigen::VectorXd solve(DSI& dsi, const Eigen::VectorXd& x, cfbasics::Real& residual) = 0;
+    virtual Eigen::VectorXd solve(DSI& dsi, const Eigen::VectorXd& x, Real& residual) = 0;
     virtual void setLogstream(std::ostream* os) { logstream = os; }
     virtual void setOutdir(std::string od) { outdir = od; }
     virtual std::string getOutdir() { return outdir; }
-    virtual void setEpsSearch(cfbasics::Real es) { epsSearch_ = es; }
-    virtual cfbasics::Real epsSearch() { return epsSearch_; }
+    virtual void setEpsSearch(Real es) { epsSearch_ = es; }
+    virtual Real epsSearch() { return epsSearch_; }
     virtual std::ostream* getLogstream() { return logstream; }
     bool getConvergence() { return success; }
 
     Eigen::VectorXd evalWithAC(const Eigen::VectorXd& y, int& fcount);
     Eigen::VectorXd jacobianWithAC(const Eigen::VectorXd& y, const Eigen::VectorXd& dy, const Eigen::VectorXd& Gy,
-                                   const cfbasics::Real& epsDx, bool centdiff, int& fcount);
+                                   const Real& epsDx, bool centdiff, int& fcount);
 
     void setArclengthConstraint(ArclengthConstraint* newAC);
     MultishootingDSI* getMultishootingDSI();
@@ -127,7 +127,7 @@ class Newton {
    protected:
     std::ostream* logstream;  ///< Replaces cout
     std::string outdir;       ///< save files and further information here
-    cfbasics::Real epsSearch_;          ///< solve tries to find x such that L2(f(x)) < epsSearch
+    Real epsSearch_;          ///< solve tries to find x such that L2(f(x)) < epsSearch
     bool success;
     bool isACset = false;  // to know if setArclengthConstraint is called and the pointer is pointing to an object whcih
                            // is not allocated in this class
@@ -136,5 +136,5 @@ class Newton {
     MultishootingDSI* msDSI_;
 };
 
-}  // namespace nsolver
+}  // namespace chflow
 #endif

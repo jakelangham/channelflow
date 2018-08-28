@@ -15,8 +15,6 @@
 #ifdef HAVE_MPI
 #include <fftw3-mpi.h>
 #include <mpi.h>
-#else
-using cfbasics::MPI_Comm;
 #endif
 
 #ifdef DEBUG
@@ -32,7 +30,7 @@ using cfbasics::MPI_Comm;
 #define debug(msg)
 #endif
 
-namespace channelflow {
+namespace chflow {
 
 // Define a couple of global functions that deal with MPI specific stuff
 int cfMPI_Init(int* argc, char*** argv);  // Replaces MPI_Init and mutes output on ranks other than 0
@@ -120,6 +118,6 @@ class CfMPI_single : public CfMPI {
     }
 };
 
-}  // namespace channelflow
+}  // namespace chflow
 
 #endif  // CFMPI_H

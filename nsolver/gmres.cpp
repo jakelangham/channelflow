@@ -5,10 +5,10 @@
 #include "gmres.h"
 
 using namespace std;
-using namespace cfbasics;
+
 using namespace Eigen;
 
-namespace nsolver {
+namespace chflow {
 
 /*==================================================================================*/
 /*            Class GMRES                                                           */
@@ -166,4 +166,4 @@ MatrixXd GMRES::Qn() const { return Q_.block(0, 0, M_, n_); }
 MatrixXd GMRES::Qn1() const { return Q_.block(0, 0, M_, n_ + 1); }
 const MatrixXd& GMRES::Q() const { return Q_; }
 void GMRES::resetQ() { Q_.conservativeResize(NoChange, 1); }
-}  // namespace nsolver
+}  // namespace chflow

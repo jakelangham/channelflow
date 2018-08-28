@@ -6,12 +6,9 @@
 #include "channelflow/bandedtridiag.h"
 
 using namespace std;
-using namespace channelflow;
+using namespace chflow;
 
 int main() {
-
-    using cfbasics::Vector;
-
     bool save = false;
     bool verbose = true;
 

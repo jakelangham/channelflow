@@ -7,11 +7,8 @@
 
 using namespace std;
 using namespace Eigen;
-using namespace cfbasics;
 
-namespace channelflow {
-using nsolver::BiCGStab;
-using nsolver::GMRES;
+namespace chflow {
 
 LauretteDSI::LauretteDSI(FlowField& u, DNSFlags& flags, Real dt, bool xrel, bool zrel, FieldSymmetry sigma)
     : cfDSI(flags, sigma, NULL, TimeStep(), false, xrel, zrel, false, false, u, &cout),
@@ -103,8 +100,8 @@ VectorXd LauretteDSI::Jacobian(const VectorXd& x, const VectorXd& dx, const Vect
     return xt;
 }
 
-void LauretteDSI::updateMu(cfbasics::Real mu) {
-    channelflow::cfDSI::updateMu(mu);  // this updates dnsflags
+void LauretteDSI::updateMu(Real mu) {
+    cfDSI::updateMu(mu);  // this updates dnsflags
     ChebyCoeff Ubase(laminarProfile(dnsflags_.nu, dnsflags_.constraint, dnsflags_.dPdx, dnsflags_.Ubulk,
                                     dnsflags_.Vsuck, fieldsdt_[0].a(), fieldsdt_[0].b(), dnsflags_.ulowerwall,
                                     dnsflags_.uupperwall, fieldsdt_[0].Ny()));
@@ -329,6 +326,4 @@ VectorXd LauretteDSI::Q(const VectorXd& x) {
     return result;
 }
 
-}  // namespace channelflow
-
-using cfbasics::Re;
+}  // namespace chflow

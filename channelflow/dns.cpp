@@ -9,10 +9,9 @@
 
 #include "channelflow/dns.h"
 
-namespace channelflow {
-
 using namespace std;
-using namespace cfbasics;
+
+namespace chflow {
 
 DNS::DNS() : main_nse_(0), init_nse_(0), main_algorithm_(0), init_algorithm_(0) {}
 
@@ -704,4 +703,4 @@ bool DNSPoincare::advanceToSection(FlowField& u, FlowField& p, int nSteps, int c
 // END EXPERIMENTAL CODE
 // *******************************************************************************************
 
-}  // namespace channelflow
+}  // namespace chflow

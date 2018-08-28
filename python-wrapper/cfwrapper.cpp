@@ -16,7 +16,7 @@
 using namespace std;
 using namespace boost::python;
 
-namespace channelflow {
+namespace chflow {
 
 /*** Access functions for FlowField values ***/
 Real FlowField_get_val(FlowField& self, boost::python::tuple t) {

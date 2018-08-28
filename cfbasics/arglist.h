@@ -10,17 +10,18 @@
 #ifndef BASICS_ARGLIST_H
 #define BASICS_ARGLIST_H
 
-#include <unistd.h>
+#include "cfbasics/cfarray.h"
+#include "cfbasics/cfbasics.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include "cfbasics/cfarray.h"
-#include "cfbasics/cfbasics.h"
+#include <unistd.h>
 
-namespace cfbasics {
+namespace chflow {
 
 // A simple way to get flexible command-line args for chflow programs
 // Scales as N^2 with # args, so don't use for hundreds of args.
@@ -521,5 +522,5 @@ inline void ArgList::save(const std::string& outdir) const {
     }
 }
 
-}  // namespace cfbasics
+}  // namespace chflow
 #endif

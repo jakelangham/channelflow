@@ -14,9 +14,8 @@
 #include "utilfuncs.h"
 
 using namespace std;
-using namespace cfbasics;
 
-namespace channelflow {
+namespace chflow {
 
 Real bcNorm2(const FlowField& f, bool normalize) {
     assert(f.xzstate() == Spectral);
@@ -758,10 +757,10 @@ Real L2InnerProduct(const FlowField& u, const RealProfile& f, bool normalize) {
     Complex ip = L2InnerProduct(uprofile, f.psi, normalize);
     switch (f.sign()) {
         case Minus:
-            rtn = 2 * cfbasics::Im(ip);
+            rtn = 2 * Im(ip);
             break;
         case Plus:
-            rtn = 2 * cfbasics::Re(ip);
+            rtn = 2 * Re(ip);
             break;
     }
     return rtn;
@@ -3969,11 +3968,11 @@ string fieldstats_t(const FlowField& u, Real t) {
     return s.str();
 }
 
-Real min_x_L2Dist(const FlowField& u0, const FlowField& u1, cfbasics::Real tol) {
+Real min_x_L2Dist(const FlowField& u0, const FlowField& u1, Real tol) {
     Real ax = optPhaseShiftx(u0, u1, -0.5, 0.5, tol);
     FieldSymmetry s(ax, 0);
     FlowField v = s * u1;
     return L2Dist(u0, v);
 }
 
-}  // namespace channelflow
+}  // namespace chflow

@@ -8,9 +8,8 @@
 #include "channelflow/dnsalgo.h"
 
 using namespace std;
-using namespace cfbasics;
 
-namespace channelflow {
+namespace chflow {
 
 DNSAlgorithm::~DNSAlgorithm() {}
 
@@ -699,4 +698,4 @@ void CNABstyleDNS::advance(vector<FlowField>& fields, int Nsteps) {
     return;
 }
 
-}  // namespace channelflow
+}  // namespace chflow

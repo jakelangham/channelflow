@@ -7,7 +7,7 @@
 #include "arnoldi.h"
 #include "cfbasics/cfbasics.h"
 
-namespace nsolver {
+namespace chflow {
 
 /*==================================================================================*/
 /*            Class Lanczos                                                         */
@@ -25,7 +25,7 @@ namespace nsolver {
 class Lanczos : public Arnoldi {
    public:
     Lanczos();
-    Lanczos(const Eigen::VectorXd& b, int Niterations, cfbasics::Real minCondition = 1e-13);
+    Lanczos(const Eigen::VectorXd& b, int Niterations, Real minCondition = 1e-13);
 
     void iterate(const Eigen::VectorXd& Aq) override;  // tell Lanczos the value of Aq
 
@@ -35,5 +35,5 @@ class Lanczos : public Arnoldi {
     void eigencalc() override;
 };
 
-}  // namespace nsolver
+}  // namespace chflow
 #endif

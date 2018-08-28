@@ -26,7 +26,7 @@
 #include "channelflow/utilfuncs.h"
 #include "nsolver/nsolver.h"
 
-namespace channelflow {
+namespace chflow {
 
 enum class continuationParameter {
     T,
@@ -52,16 +52,13 @@ enum class continuationParameter {
 };
 
 Real GMRESHookstep_vector(FlowField& u, FieldSymmetry& sigma, PoincareCondition* h,
-                          const nsolver::NewtonSearchFlags& searchflags, DNSFlags& dnsflags, TimeStep& dt, Real& CFL,
+                          const NewtonSearchFlags& searchflags, DNSFlags& dnsflags, TimeStep& dt, Real& CFL,
                           Real Unormalize);
-
-// Real meandissipation (const FlowField& uarg, Real T, DNSFlags dnsflags,
-//                       const TimeStep& dtarg, SolutionType solntype);
 
 // converts the string from "fieldstats" in diffops to a vector of Reals
 std::vector<Real> fieldstats_vector(const FlowField& u);
 
-class cfDSI : public nsolver::DSI {
+class cfDSI : public DSI {
    public:
     /** \brief default constructor */
     cfDSI();
@@ -83,7 +80,7 @@ class cfDSI : public nsolver::DSI {
     std::string stats(const Eigen::VectorXd& x) override;
     std::pair<std::string, std::string> stats_minmax(const Eigen::VectorXd& x) override;
     std::string statsHeader() override;
-    void makeVector(const channelflow::FlowField& u, const FieldSymmetry& sigma, const Real T, Eigen::VectorXd& x);
+    void makeVector(const FlowField& u, const FieldSymmetry& sigma, const Real T, Eigen::VectorXd& x);
     void extractVector(const Eigen::VectorXd& x, FlowField& u, FieldSymmetry& sigma, Real& T);
     void toVector(const std::vector<FlowField>& u, const FieldSymmetry& sigma, const Real T, Eigen::VectorXd& x){};
 
@@ -163,6 +160,6 @@ void G(const FlowField& u, Real& T, PoincareCondition* h, const FieldSymmetry& s
        const DNSFlags& flags, const TimeStep& dt, bool Tnormalize, Real Unormalize, int& fcount, Real& CFL,
        std::ostream& os = std::cout);
 
-}  // namespace channelflow
+}  // namespace chflow
 
 #endif

@@ -12,8 +12,8 @@
 // nonlinearity methods.
 
 using namespace std;
-using namespace cfbasics;
-using namespace channelflow;
+
+using namespace chflow;
 
 int main(int argc, char* argv[]) {
     const bool save = false;

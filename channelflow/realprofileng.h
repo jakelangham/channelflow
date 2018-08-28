@@ -12,7 +12,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/symmetry.h"
 
-namespace channelflow {
+namespace chflow {
 
 /**
  * Represents a vector field on the xz-periodic domain [0, Lx] x [a,b] x [0,Lz]
@@ -26,12 +26,10 @@ namespace channelflow {
  */
 class RealProfileNG {
    public:
-    RealProfileNG(const int jx, const int jz, const int Nd, const int Ny, const cfbasics::Real Lx,
-                  const cfbasics::Real Lz, const cfbasics::Real a, const cfbasics::Real b,
-                  const cfbasics::fieldstate state = cfbasics::Spectral);
+    RealProfileNG(const int jx, const int jz, const int Nd, const int Ny, const Real Lx, const Real Lz, const Real a,
+                  const Real b, const fieldstate state = Spectral);
 
-    RealProfileNG(const std::vector<ChebyCoeff> u, const int jx, const int jz, const cfbasics::Real Lx,
-                  const cfbasics::Real Lz);
+    RealProfileNG(const std::vector<ChebyCoeff> u, const int jx, const int jz, const Real Lx, const Real Lz);
 
     RealProfileNG();
 
@@ -41,15 +39,15 @@ class RealProfileNG {
     inline int jz() const;
     inline int Nd() const;
     inline int Ny() const;
-    inline cfbasics::Real Lx() const;
-    inline cfbasics::Real Lz() const;
-    inline cfbasics::Real a() const;
-    inline cfbasics::Real b() const;
-    inline cfbasics::fieldstate state() const;
+    inline Real Lx() const;
+    inline Real Lz() const;
+    inline Real a() const;
+    inline Real b() const;
+    inline fieldstate state() const;
     inline void setJx(int jx);
     inline void setJz(int jz);
     RealProfileNG& operator=(const RealProfileNG&);
-    RealProfileNG& operator*=(const cfbasics::Real c);
+    RealProfileNG& operator*=(const Real c);
     RealProfileNG& operator+=(const RealProfileNG& e);
     RealProfileNG& operator-=(const RealProfileNG& e);
     RealProfileNG& operator*=(const FieldSymmetry& s);
@@ -61,31 +59,31 @@ class RealProfileNG {
     // True if on some geometry and in same state
     bool congruent(const RealProfileNG& e) const;
 
-    void makeSpectral();                           // if Physical, transform to Spectral
-    void makePhysical();                           // if Spectral, transform to Physical
-    void makeState(const cfbasics::fieldstate s);  // if state != s, transform to state s
+    void makeSpectral();                 // if Physical, transform to Spectral
+    void makePhysical();                 // if Spectral, transform to Physical
+    void makeState(const fieldstate s);  // if state != s, transform to state s
 
     void makeSpectral(const ChebyTransform& t);
     void makePhysical(const ChebyTransform& t);
-    void makeState(const cfbasics::fieldstate s, const ChebyTransform& t);
+    void makeState(const fieldstate s, const ChebyTransform& t);
 
     // When converting to a FlowField
     // Gives the appropriate normalization factor for the (+kx,kz) fourier mode
-    cfbasics::Complex normalization_p(const int d) const;
+    Complex normalization_p(const int d) const;
 
     // Gives the appropriate normalization factor for the (-kx,kz) fourier mode
-    cfbasics::Complex normalization_m(const int d) const;
+    Complex normalization_m(const int d) const;
 
    private:
-    cfbasics::fieldstate state_;
+    fieldstate state_;
     int jx_;
     int jz_;
     int Nd_;
     int Ny_;
-    cfbasics::Real Lx_;
-    cfbasics::Real Lz_;
-    cfbasics::Real a_;
-    cfbasics::Real b_;
+    Real Lx_;
+    Real Lz_;
+    Real a_;
+    Real b_;
 
    public:
     std::vector<ChebyCoeff> u_;
@@ -104,26 +102,26 @@ inline int RealProfileNG::jx() const { return jx_; }
 inline int RealProfileNG::jz() const { return jz_; }
 inline int RealProfileNG::Nd() const { return Nd_; }
 inline int RealProfileNG::Ny() const { return Ny_; }
-inline cfbasics::Real RealProfileNG::Lx() const { return Lx_; }
-inline cfbasics::Real RealProfileNG::Lz() const { return Lz_; }
-inline cfbasics::Real RealProfileNG::a() const { return a_; }
-inline cfbasics::Real RealProfileNG::b() const { return b_; }
-inline cfbasics::fieldstate RealProfileNG::state() const { return state_; }
+inline Real RealProfileNG::Lx() const { return Lx_; }
+inline Real RealProfileNG::Lz() const { return Lz_; }
+inline Real RealProfileNG::a() const { return a_; }
+inline Real RealProfileNG::b() const { return b_; }
+inline fieldstate RealProfileNG::state() const { return state_; }
 inline void RealProfileNG::setJx(int jx) { jx_ = jx; }
 inline void RealProfileNG::setJz(int jz) { jz_ = jz; }
 
-cfbasics::Real L2InnerProduct(const RealProfileNG& e1, const RealProfileNG& e2, const bool normalize = true);
-cfbasics::Real L2Norm2(const RealProfileNG& e, bool normalize = true);
-inline cfbasics::Real L2Norm(const RealProfileNG& e, bool normalize = true) { return sqrt(L2Norm2(e, normalize)); }
+Real L2InnerProduct(const RealProfileNG& e1, const RealProfileNG& e2, const bool normalize = true);
+Real L2Norm2(const RealProfileNG& e, bool normalize = true);
+inline Real L2Norm(const RealProfileNG& e, bool normalize = true) { return sqrt(L2Norm2(e, normalize)); }
 
-std::vector<RealProfileNG> realBasisNG(const int Ny, const int kxmax, const int kzmax, const cfbasics::Real Lx,
-                                       const cfbasics::Real Lz, const cfbasics::Real a, const cfbasics::Real b);
+std::vector<RealProfileNG> realBasisNG(const int Ny, const int kxmax, const int kzmax, const Real Lx, const Real Lz,
+                                       const Real a, const Real b);
 
 void orthonormalize(std::vector<RealProfileNG>& basis);
 
 // Remove all elements from basis which are not symmetric under all members of s, to a given tolerence
 void selectSymmetries(std::vector<RealProfileNG>& basis, const std::vector<FieldSymmetry>& s,
-                      const cfbasics::Real tolerance = 1e-13);
-}  // namespace channelflow
+                      const Real tolerance = 1e-13);
+}  // namespace chflow
 
 #endif

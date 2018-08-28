@@ -8,7 +8,7 @@
 
 #include "cfbasics/cfbasics.h"
 
-namespace nsolver {
+namespace chflow {
 
 class BiCGStab {
     // usage to solve A*x = b
@@ -37,16 +37,16 @@ class BiCGStab {
     Eigen::VectorXd step3(Eigen::VectorXd& As);
 
     Eigen::VectorXd solution();
-    cfbasics::Real residual();
+    Real residual();
 
    private:
     Eigen::VectorXd r, r0;
-    cfbasics::Real r0_sqnorm, rhs_sqnorm;
-    cfbasics::Real rho, alpha, w, rho_old, beta;
+    Real r0_sqnorm, rhs_sqnorm;
+    Real rho, alpha, w, rho_old, beta;
     Eigen::VectorXd v, p, kt, ks, s, t, x, solution_;
-    cfbasics::Real residual_;
+    Real residual_;
 };
 
-}  // namespace nsolver
+}  // namespace chflow
 
 #endif

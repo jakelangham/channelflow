@@ -14,7 +14,7 @@
 #include "channelflow/bandedtridiag.h"
 #include "channelflow/chebyshev.h"
 
-namespace channelflow {
+namespace chflow {
 
 // HelmholtzSolver solves the 1d Helmholtz eqn:  u'' - lambda u = f on [a,b]
 // with Dirichlet or Neuman boundary conditions at a and b
@@ -67,5 +67,5 @@ class HelmholtzSolver {
 inline int HelmholtzSolver::beta(int n) const { return (n > N_ - 2) ? 0 : 1; }
 inline int HelmholtzSolver::c(int n) const { return (n == 0 || n == N_) ? 2 : 1; }
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif
