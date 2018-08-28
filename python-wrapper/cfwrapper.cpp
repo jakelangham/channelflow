@@ -116,4 +116,4 @@ BOOST_PYTHON_MODULE(libpycf) {
     def("curl", &curl_wrapped);
 }
 
-}  // namespace channelflow
+}  // namespace chflow
