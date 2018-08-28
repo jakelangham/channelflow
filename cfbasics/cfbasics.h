@@ -153,7 +153,7 @@ inline Real polynomialInterpolate(const cfarray<Real>& fn, const cfarray<Real>& 
 
 // secantSearch and bisectSearch:
 // Find root of f(x) between a and b to tolerance feps from polynomial
-// interpolant of {fn = f(xn)} I.e. rtn x st abs(f(x)) < feps and a <= x <= b.
+// interpolant of {fn = f(xn)} I.e. rtn x st std::abs(f(x)) < feps and a <= x <= b.
 inline Real secantSearch(Real a, Real b, cfarray<Real>& fn, const cfarray<Real>& xn, Real feps = 1e-14,
                          int maxsteps = 50);
 
@@ -1002,7 +1002,7 @@ inline void solve(const Eigen::MatrixXd& Ut, const Eigen::VectorXd& D, const Eig
     Eigen::VectorXd bh = Ut * b;
     const Real eps = 1e-12;
     for (int i = 0; i < D.size(); ++i) {
-        if (abs(D(i)) > eps)
+        if (std::abs(D(i)) > eps)
             bh(i) *= 1.0 / D(i);
         else
             bh(i) = 0.0;
@@ -1044,13 +1044,13 @@ inline Real polyInterp(const cfarray<Real>& fa, const cfarray<Real>& xa, Real x)
     cfarray<Real> C(N);
     cfarray<Real> D(N);
 
-    Real xdiff = abs(x - xa[0]);
+    Real xdiff = std::abs(x - xa[0]);
     Real xdiff2 = 0.0;
     Real df;
 
     int i_closest = 0;
     for (int i = 0; i < N; ++i) {
-        if ((xdiff2 = abs(x - xa[i])) < xdiff) {
+        if ((xdiff2 = std::abs(x - xa[i])) < xdiff) {
             i_closest = i;
             xdiff = xdiff2;
         }
@@ -1089,7 +1089,7 @@ inline Real secantSearch(Real a, Real b, cfarray<Real>& fn, const cfarray<Real>&
     for (int n = 0; n < maxsteps; ++n) {
         c = a - fa * (b - a) / (fb - fa);
         fc = polyInterp(fn, xn, c);
-        if (abs(fc) < feps)
+        if (std::abs(fc) < feps)
             break;
         if (fc * fa > 0) {
             a = c;
@@ -1113,7 +1113,7 @@ inline Real bisectSearch(Real a, Real b, cfarray<Real>& fn, const cfarray<Real>&
     for (int n = 0; n < maxsteps; ++n) {
         c = 0.5 * (a + b);
         fc = polyInterp(fn, xn, c);
-        if (abs(fc) < feps)
+        if (std::abs(fc) < feps)
             break;
         if (fc * fa > 0) {
             a = c;
@@ -1145,7 +1145,7 @@ inline bool isconst(cfarray<Real> f, Real eps) {
     Real f0 = f[0];
     bool rtn = true;
     for (int n = 0; n < f.length(); ++n)
-        if (abs(f[n] - f0) > eps) {
+        if (std::abs(f[n] - f0) > eps) {
             rtn = false;
             break;
         }

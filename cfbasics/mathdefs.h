@@ -13,13 +13,13 @@
 #include "channelflow/config.h"
 
 #include <arpa/inet.h>
-#include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#include <stddef.h>
+#include <cassert>
+#include <cmath>
 #include <complex>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
