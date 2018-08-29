@@ -70,19 +70,19 @@ For detailed information about functionalities and specific options refer to the
 | &nbsp;|&nbsp;|
 |:---|:---|
 |**addfields** | creates a linear combination of flowfields or adds a base flow (from file or creates it specifying DNSflags) to a flowfield |
-|**changegrid**| interpolates a given flowfield ont a different grid with specified geometry |
-|**diffops**| Applies a differential operation to a given FlowField <br/> (derivatives; gradient; laplacian; curl; divergence; Q criterion; energy operator; pointwise norm; stramwise average)|
-|**extrapolatefield**| Quadratic extrapolation of a FlowField u(mu) from three given flowfields and mu parameters|
-|**fieldconvert**| Converts flowfield formats in NetCDF, hdf5, binary (in both directions) and from NetCDF, hdf5, binary to vtk or asci.|
-|**fieldprops**| Prints informations about a given FlowField <br/> ( geometry; norms; symmetries; mean constraints; mean, spectral, dynamical and wall properties; statistics; mean velocity profile)|
-|**findsymmetries**| Finds the symmetries satisfied by a given FlowField|
-|**L2op**| Computes the L2 distance or the inner product between two given FlowFields|
-|**optphaseshift**| Computes the optimal phase shift between the first input FlowField and all the other input FlowFields|
-|**perturbfield**| Random perturbation of a  given FlowField with another field u with zero divergence and Dirichlet BCs|
-|**pressure**| Computes the pressure field of a given FlowField with given DNSFlags|
-|**randomfield**| Constructs a random field with zero divergence and Dirichlet BCs |
-|**symmetrize**| Translates a FlowField to maximize (or minimize) its shift-reflect and/or shift-rotate symmetry|
-|**symmetryop**| Apply a symmetry operation to a given FlowField|
+|**changegrid**| interpolates a given flowfield onto a different grid with specified geometry |
+|**diffops**| applies a differential operation to a given FlowField <br/> (derivatives; gradient; laplacian; curl; divergence; Q criterion; energy operator; pointwise norm; streamwise average)|
+|**extrapolatefield**| quadratic extrapolation of a FlowField u(mu) from three given flowfields and mu parameters|
+|**fieldconvert**| converts flowfield formats in NetCDF, hdf5, binary (in both directions) and from NetCDF, hdf5, binary to vtk or asci.|
+|**fieldprops**| prints informations about a given FlowField <br/> ( geometry; norms; symmetries; mean constraints; mean, spectral, dynamical and wall properties; statistics; mean velocity profile)|
+|**findsymmetries**| finds the symmetries satisfied by a given FlowField|
+|**L2op**| computes the L2 distance or the inner product between two given FlowFields|
+|**optphaseshift**| computes the optimal phase shift between the first input FlowField and all the other input FlowFields|
+|**perturbfield**| random perturbation of a  given FlowField with another field u with zero divergence and Dirichlet BCs|
+|**pressure**| computes the pressure field of a given FlowField |
+|**randomfield**| constructs a random field with zero divergence and Dirichlet BCs |
+|**symmetrize**| translates a FlowField to maximize (or minimize) its shift-reflect and/or shift-rotate symmetry|
+|**symmetryop**| apply a symmetry operation to a given FlowField|
 
 
 
@@ -95,6 +95,6 @@ The Bug report shall be carried out using the [Issues] feature of GitHub.
 ## Authors
 (Coming soon)
 
-## Licence
-[Licence](./LICENCE)
+## License
+Channelflow is released under the [GNU GPL version 2](./LICENSE)
 
