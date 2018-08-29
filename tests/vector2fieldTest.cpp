@@ -8,7 +8,8 @@
 #include "channelflow/flowfield.h"
 
 using namespace std;
-using namespace channelflow;
+using namespace Eigen;
+using namespace chflow;
 
 // Test if vector2field and field2vector doesn't alter either vector or flowfield
 int main(int argc, char* argv[]) {

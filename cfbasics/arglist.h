@@ -10,19 +10,18 @@
 #ifndef BASICS_ARGLIST_H
 #define BASICS_ARGLIST_H
 
-#include <unistd.h>
+#include "cfbasics/cfarray.h"
+#include "cfbasics/cfbasics.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include "cfbasics/cfarray.h"
-#include "cfbasics/cfbasics.h"
+#include <unistd.h>
 
-using namespace std;
-
-namespace cfbasics {
+namespace chflow {
 
 // A simple way to get flexible command-line args for chflow programs
 // Scales as N^2 with # args, so don't use for hundreds of args.
@@ -79,7 +78,7 @@ class ArgList {
 
 // If s is numeric, convert to real using atof
 // If s is alpha, try to open file s.asc
-inline Real arg2real(const string& s) {
+inline Real arg2real(const std::string& s) {
     Real rtn;
     if (fileExists(s))
         load(rtn, s);
@@ -90,12 +89,12 @@ inline Real arg2real(const string& s) {
 
 inline ArgList::ArgList() : args_(), used_(), helpmode_(false), errormode_(false) {}
 
-inline ArgList::ArgList(int argc, char* argv[], const string& purpose)
+inline ArgList::ArgList(int argc, char* argv[], const std::string& purpose)
     : args_(argc), used_(argc), helpmode_(false), errormode_(false) {
-    string h0("-h");
-    string h1("--help");
+    std::string h0("-h");
+    std::string h1("--help");
     for (int i = 0; i < argc; ++i) {
-        args_[i] = string(argv[i]);
+        args_[i] = std::string(argv[i]);
         if (args_[i] == h0 || args_[i] == h1) {
             helpmode_ = true;
             used_[i] = true;
@@ -103,7 +102,7 @@ inline ArgList::ArgList(int argc, char* argv[], const string& purpose)
             used_[i] = false;
     }
     if (helpmode_) {
-        cerr << argv[0] << " : \n\t" << purpose << endl << endl;
+        std::cerr << argv[0] << " : \n\t" << purpose << std::endl << std::endl;
     }
     used_[0] = true;
 }
@@ -122,20 +121,14 @@ inline int ArgList::remaining() const {
 
 inline void ArgList::section(const str& name, const str& description) const {
     if (helpmode_) {
-        cerr << endl << name << ":" << endl;
+        std::cerr << std::endl << name << ":" << std::endl;
         if (description.size() > 0) {
-            cerr << description << endl;
+            std::cerr << description << std::endl;
         }
     }
 }
 
-// TobiasHack
 inline std::vector<std::string> ArgList::remainingatend() {
-    //   if (helpmode_) {
-    //     printhelp(position, name, helpstr);
-    //     return 0.0;
-    //   }
-
     int n = args_.length() - 1;
     while (n > 0 && used_[n] == false)
         n--;
@@ -152,30 +145,30 @@ inline std::vector<std::string> ArgList::remainingatend() {
 // The magic setw constants are a quick and dirty way to line up the columns
 // nicely as long as the strings aren't too long. If you want to reimplement
 // formatting more intelligently, please do!
-inline void ArgList::printhelp(int position, const std::string& name, const string& helpstr) {
-    cerr.setf(ios::left);
-    cerr << "  ";
-    cerr << setw(17) << name;
-    cerr << setw(48) << string("(trailing arg " + i2s(position) + ")");
-    cerr.unsetf(ios::left);
-    cerr << helpstr << endl;
+inline void ArgList::printhelp(int position, const std::string& name, const std::string& helpstr) {
+    std::cerr.setf(std::ios::left);
+    std::cerr << "  ";
+    std::cerr << std::setw(17) << name;
+    std::cerr << std::setw(48) << std::string("(trailing arg " + i2s(position) + ")");
+    std::cerr.unsetf(std::ios::left);
+    std::cerr << helpstr << std::endl;
 }
 
-inline void ArgList::printhelp(const string& sopt, const string& lopt, const string& type, const string& defalt,
-                               const string& helpstr) {
-    cerr.setf(ios::left);
-    cerr << "  " << setw(8) << sopt << "  ";
-    cerr << setw(20) << lopt << setw(10) << type;
+inline void ArgList::printhelp(const std::string& sopt, const std::string& lopt, const std::string& type,
+                               const std::string& defalt, const std::string& helpstr) {
+    std::cerr.setf(std::ios::left);
+    std::cerr << "  " << std::setw(8) << sopt << "  ";
+    std::cerr << std::setw(20) << lopt << std::setw(10) << type;
 
     if (defalt.length() != 0)
-        cerr << "  default == " << setw(12) << defalt;
+        std::cerr << "  default == " << std::setw(12) << defalt;
     else
-        cerr << setw(25) << "";
-    cerr.unsetf(ios::left);
-    cerr << helpstr << endl;
+        std::cerr << std::setw(25) << "";
+    std::cerr.unsetf(std::ios::left);
+    std::cerr << helpstr << std::endl;
 }
 
-inline bool ArgList::getflag(const string& sopt, const string& lopt, const string& helpstr) {
+inline bool ArgList::getflag(const std::string& sopt, const std::string& lopt, const std::string& helpstr) {
     if (helpmode_) {
         printhelp(sopt, lopt, "", "", helpstr);
         return false;
@@ -193,7 +186,7 @@ inline bool ArgList::getflag(const string& sopt, const string& lopt, const strin
     return b;
 }
 
-inline bool ArgList::getbool(const string& sopt, const string& lopt, const string& helpstr) {
+inline bool ArgList::getbool(const std::string& sopt, const std::string& lopt, const std::string& helpstr) {
     bool b = false;
 
     int N = args_.length();
@@ -206,8 +199,8 @@ inline bool ArgList::getbool(const string& sopt, const string& lopt, const strin
             else if (n < N - 1 && args_[n + 1] == "false")
                 b = false;
             else {
-                cerr << "error : option " << sopt << " or " << lopt << " should be followed by 'true' or 'false'."
-                     << endl;
+                std::cerr << "error : option " << sopt << " or " << lopt << " should be followed by 'true' or 'false'."
+                          << std::endl;
                 exit(1);
             }
             used_[n] = true;
@@ -219,16 +212,13 @@ inline bool ArgList::getbool(const string& sopt, const string& lopt, const strin
         printhelp(sopt, lopt, "<bool>", "", helpstr);
         return b;
     } else if (!found) {
-        // helpmode_ = true;
         errormode_ = true;
-        cerr << "Missing required argument: " << sopt << " or " << lopt << endl;
-        // printhelp(sopt, lopt, "<bool>", "", helpstr);
-        // exit(1);
+        std::cerr << "Missing required argument: " << sopt << " or " << lopt << std::endl;
     }
     return b;
 }
 
-inline int ArgList::getint(const string& sopt, const string& lopt, const string& helpstr) {
+inline int ArgList::getint(const std::string& sopt, const std::string& lopt, const std::string& helpstr) {
     int i = 0;
     bool found = false;
     int N = args_.length();
@@ -238,7 +228,8 @@ inline int ArgList::getint(const string& sopt, const string& lopt, const string&
             if (n < N - 1)
                 i = atoi(args_[n + 1].c_str());
             else {
-                cerr << "error : option " << sopt << " or " << lopt << " should be followed by an integer." << endl;
+                std::cerr << "error : option " << sopt << " or " << lopt << " should be followed by an integer."
+                          << std::endl;
                 exit(1);
             }
             used_[n] = true;
@@ -250,16 +241,13 @@ inline int ArgList::getint(const string& sopt, const string& lopt, const string&
         printhelp(sopt, lopt, "<int>", "", helpstr);
         return i;
     } else if (!found) {
-        // helpmode_ = true;
         errormode_ = true;
-        cerr << "Missing required argument: " << sopt << " or " << lopt << endl;
-        // printhelp(sopt, lopt, "<int>", "", helpstr);
-        // exit(1);
+        std::cerr << "Missing required argument: " << sopt << " or " << lopt << std::endl;
     }
     return i;
 }
 
-inline Real ArgList::getreal(const string& sopt, const string& lopt, const string& helpstr) {
+inline Real ArgList::getreal(const std::string& sopt, const std::string& lopt, const std::string& helpstr) {
     Real r = 0.0;
 
     int N = args_.length();
@@ -271,7 +259,8 @@ inline Real ArgList::getreal(const string& sopt, const string& lopt, const strin
                 // r = atof(args_[n+1].c_str());
                 r = arg2real(args_[n + 1].c_str());
             else {
-                cerr << "error : option " << sopt << " or " << lopt << " should be followed by a real number." << endl;
+                std::cerr << "error : option " << sopt << " or " << lopt << " should be followed by a real number."
+                          << std::endl;
                 exit(1);
             }
             used_[n] = true;
@@ -284,17 +273,17 @@ inline Real ArgList::getreal(const string& sopt, const string& lopt, const strin
         return r;
     } else if (!found) {
         errormode_ = true;
-        cerr << "Missing required argument: " << sopt << " or " << lopt << endl;
+        std::cerr << "Missing required argument: " << sopt << " or " << lopt << std::endl;
     }
     return r;
 }
 
-inline string ArgList::getpath(const string& sopt, const string& lopt, const string& helpstr) {
+inline std::string ArgList::getpath(const std::string& sopt, const std::string& lopt, const std::string& helpstr) {
     return pathfix(getstr(sopt, lopt, helpstr));
 }
 
-inline string ArgList::getstr(const string& sopt, const string& lopt, const string& helpstr) {
-    string s("");
+inline std::string ArgList::getstr(const std::string& sopt, const std::string& lopt, const std::string& helpstr) {
+    std::string s("");
 
     bool found = false;
     int N = args_.length();
@@ -302,9 +291,10 @@ inline string ArgList::getstr(const string& sopt, const string& lopt, const stri
         if (args_[n] == sopt || args_[n] == lopt) {
             found = true;
             if (n < N - 1)
-                s = string(args_[n + 1]);
+                s = std::string(args_[n + 1]);
             else {
-                cerr << "error : option " << sopt << " or " << lopt << " should be followed by a string." << endl;
+                std::cerr << "error : option " << sopt << " or " << lopt << " should be followed by a string."
+                          << std::endl;
                 exit(1);
             }
             used_[n] = true;
@@ -316,19 +306,17 @@ inline string ArgList::getstr(const string& sopt, const string& lopt, const stri
         printhelp(sopt, lopt, "<string>", "", helpstr);
         return s;
     } else if (!found) {
-        // helpmode_ = true;
         errormode_ = true;
-        cerr << "Missing required argument: " << sopt << " or " << lopt << endl;
-        // printhelp(sopt, lopt, "<string>", "", helpstr);
-        // exit(1);
+        std::cerr << "Missing required argument: " << sopt << " or " << lopt << std::endl;
     }
     return s;
 }
 
-inline bool ArgList::getbool(const string& sopt, const string& lopt, bool defalt, const string& helpstr) {
+inline bool ArgList::getbool(const std::string& sopt, const std::string& lopt, bool defalt,
+                             const std::string& helpstr) {
     bool b = defalt;
     if (helpmode_) {
-        printhelp(sopt, lopt, "<bool>", string(b ? "true" : "false"), helpstr);
+        printhelp(sopt, lopt, "<bool>", std::string(b ? "true" : "false"), helpstr);
         return b;
     }
 
@@ -340,8 +328,8 @@ inline bool ArgList::getbool(const string& sopt, const string& lopt, bool defalt
             else if (n < N - 1 && args_[n + 1] == "false")
                 b = false;
             else {
-                cerr << "error : option " << sopt << " or " << lopt << " should be followed by 'true' or 'false'."
-                     << endl;
+                std::cerr << "error : option " << sopt << " or " << lopt << " should be followed by 'true' or 'false'."
+                          << std::endl;
                 exit(1);
             }
             used_[n] = true;
@@ -352,7 +340,7 @@ inline bool ArgList::getbool(const string& sopt, const string& lopt, bool defalt
     return b;
 }
 
-inline int ArgList::getint(const string& sopt, const string& lopt, int defalt, const string& helpstr) {
+inline int ArgList::getint(const std::string& sopt, const std::string& lopt, int defalt, const std::string& helpstr) {
     int i = defalt;
     if (helpmode_) {
         printhelp(sopt, lopt, "<int>", i2s(defalt), helpstr);
@@ -364,7 +352,8 @@ inline int ArgList::getint(const string& sopt, const string& lopt, int defalt, c
             if (n < N - 1)
                 i = atoi(args_[n + 1].c_str());
             else {
-                cerr << "error : option " << sopt << " or " << lopt << " should be followed by an integer." << endl;
+                std::cerr << "error : option " << sopt << " or " << lopt << " should be followed by an integer."
+                          << std::endl;
                 exit(1);
             }
             used_[n] = true;
@@ -375,7 +364,8 @@ inline int ArgList::getint(const string& sopt, const string& lopt, int defalt, c
     return i;
 }
 
-inline Real ArgList::getreal(const string& sopt, const string& lopt, Real defalt, const string& helpstr) {
+inline Real ArgList::getreal(const std::string& sopt, const std::string& lopt, Real defalt,
+                             const std::string& helpstr) {
     Real r = defalt;
     if (helpmode_) {
         printhelp(sopt, lopt, "<real>", r2s(defalt), helpstr);
@@ -389,7 +379,8 @@ inline Real ArgList::getreal(const string& sopt, const string& lopt, Real defalt
                 // r = atof(args_[n+1].c_str());
                 r = arg2real(args_[n + 1].c_str());
             else {
-                cerr << "error : option " << sopt << " or " << lopt << " should be followed by a real number." << endl;
+                std::cerr << "error : option " << sopt << " or " << lopt << " should be followed by a real number."
+                          << std::endl;
                 exit(1);
             }
             used_[n] = true;
@@ -400,12 +391,14 @@ inline Real ArgList::getreal(const string& sopt, const string& lopt, Real defalt
     return r;
 }
 
-inline string ArgList::getpath(const string& sopt, const string& lopt, const string& defalt, const string& helpstr) {
+inline std::string ArgList::getpath(const std::string& sopt, const std::string& lopt, const std::string& defalt,
+                                    const std::string& helpstr) {
     return pathfix(getstr(sopt, lopt, defalt, helpstr));
 }
 
-inline string ArgList::getstr(const string& sopt, const string& lopt, const string& defalt, const string& helpstr) {
-    string s(defalt);
+inline std::string ArgList::getstr(const std::string& sopt, const std::string& lopt, const std::string& defalt,
+                                   const std::string& helpstr) {
+    std::string s(defalt);
     if (helpmode_) {
         printhelp(sopt, lopt, "<string>", defalt, helpstr);
         return defalt;
@@ -414,9 +407,10 @@ inline string ArgList::getstr(const string& sopt, const string& lopt, const stri
     for (int n = N - 1; n >= 1; --n) {
         if (args_[n] == sopt || args_[n] == lopt) {
             if (n < N - 1)
-                s = string(args_[n + 1]);
+                s = std::string(args_[n + 1]);
             else {
-                cerr << "error : option " << sopt << " or " << lopt << " should be followed by a string." << endl;
+                std::cerr << "error : option " << sopt << " or " << lopt << " should be followed by a string."
+                          << std::endl;
                 exit(1);
             }
             used_[n] = true;
@@ -427,33 +421,33 @@ inline string ArgList::getstr(const string& sopt, const string& lopt, const stri
     return s;
 }
 
-inline string ArgList::getstr(int position, const std::string& name, const string& helpstr) {
+inline std::string ArgList::getstr(int position, const std::string& name, const std::string& helpstr) {
     if (helpmode_) {
         printhelp(position, name, helpstr);
-        return string();
+        return std::string();
     }
 
     int n = args_.length() - position;
     if (n < 1 || used_[n]) {
-        cerr << "error : " << name << " is required as the " << position
-             << "th trailing argument (counting backwards from end of arglist)" << endl;
+        std::cerr << "error : " << name << " is required as the " << position
+                  << "th trailing argument (counting backwards from end of arglist)" << std::endl;
         ;
         exit(1);
     }
     if (args_[n][0] == '-') {
-        cerr << "error : should have a filename for " << position << "th trailing argument, ";
-        cerr << "not option " << args_[n] << endl;
+        std::cerr << "error : should have a filename for " << position << "th trailing argument, ";
+        std::cerr << "not option " << args_[n] << std::endl;
         exit(1);
     }
     used_[n] = true;
     return args_[n];
 }
 
-inline string ArgList::getpath(int position, const std::string& name, const string& helpstr) {
+inline std::string ArgList::getpath(int position, const std::string& name, const std::string& helpstr) {
     return pathfix(getstr(position, name, helpstr));
 }
 
-inline Real ArgList::getreal(int position, const std::string& name, const string& helpstr) {
+inline Real ArgList::getreal(int position, const std::string& name, const std::string& helpstr) {
     if (helpmode_) {
         printhelp(position, name, helpstr);
         return 0.0;
@@ -461,50 +455,43 @@ inline Real ArgList::getreal(int position, const std::string& name, const string
 
     int n = args_.length() - position;
     if (n < 1 || used_[n]) {
-        cerr << "error : " << name << " is required as the " << position
-             << "th trailing argument (counting backwards from end of arglist)" << endl;
+        std::cerr << "error : " << name << " is required as the " << position
+                  << "th trailing argument (counting backwards from end of arglist)" << std::endl;
         ;
         exit(1);
     }
-    /***********************8
-    if (args_[n][0] == '-') {
-      cerr << "error : should have a Real for " << position << "th trailing argument, ";
-      cerr << "not option " << args_[n] << endl;
-      exit(1);
-    }
-    ******************************/
     used_[n] = true;
-    // return atof(args_[n].c_str());
     return arg2real(args_[n].c_str());
 }
 
 inline void ArgList::check() {
     for (int n = 0; n < used_.length(); ++n) {
         if (!used_[n]) {
-            cerr << "error : unrecognized/repeated option/value " << args_[n] << endl;
+            std::cerr << "error : unrecognized/repeated option/value " << args_[n] << std::endl;
             errormode_ = true;
         }
     }
     if (errormode_) {
-        cerr << "Error in specifying program arguments. Please rerun program with -h option " << endl;
-        cerr << "and review the argument specifications. Exiting." << endl;
+        std::cerr << "Error in specifying program arguments. Please rerun program with -h option " << std::endl;
+        std::cerr << "and review the argument specifications. Exiting." << std::endl;
         exit(1);
-    } else if (helpmode_)
+    } else if (helpmode_) {
         exit(0);
+    }
 }
 
 inline void ArgList::save() const { this->save("./"); }
 
-inline void ArgList::save(const string& outdir) const {
+inline void ArgList::save(const std::string& outdir) const {
     if (mpirank() == 0) {
         // Look for output directory and save command-line to outdir/argv[0].args
-        string arg0 = args_[0];
-        string exec;
+        std::string arg0 = args_[0];
+        std::string exec;
         int slashpos = arg0.find_last_of('/');
         if (slashpos == -1) {
             exec = arg0;
         } else {
-            exec = string(arg0, slashpos + 1, arg0.length());
+            exec = std::string(arg0, slashpos + 1, arg0.length());
         }
         int extpos = exec.find(".x");
         if (extpos == -1)
@@ -512,18 +499,18 @@ inline void ArgList::save(const string& outdir) const {
         if (extpos == -1)
             extpos = exec.length();
 
-        string arse = string(exec, 0, extpos) + ".args";
-        string afile = outdir + arse;
+        std::string arse = std::string(exec, 0, extpos) + ".args";
+        std::string afile = outdir + arse;
         ::mkdir(outdir.c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
-        ofstream as(afile.c_str(), ios::app);
+        std::ofstream as(afile.c_str(), std::ios::app);
 
         // Four statements, and two types, and two possible memory leaks to get the current time.
         // Ain't C wonderful?
         time_t now;
-        time(&now);               // get the calendar time
-        tm* t = localtime(&now);  // convert to local (memory leak?)
-        string s(asctime(t));     // memory leak?
-        s.erase(s.length() - 1);  // remove ridiculous newline from asctime output
+        time(&now);                 // get the calendar time
+        tm* t = localtime(&now);    // convert to local (memory leak?)
+        std::string s(asctime(t));  // memory leak?
+        s.erase(s.length() - 1);    // remove ridiculous newline from asctime output
         as << s << '\t';
 
         // get process ID. equally wonderful
@@ -531,9 +518,9 @@ inline void ArgList::save(const string& outdir) const {
 
         for (int n = 0; n < args_.length(); ++n)
             as << args_[n] << ' ';
-        as << endl;
+        as << std::endl;
     }
 }
 
-}  // namespace cfbasics
+}  // namespace chflow
 #endif

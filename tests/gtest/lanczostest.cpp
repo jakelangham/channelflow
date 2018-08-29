@@ -11,11 +11,12 @@
 #include "gtest/gtest.h"
 #include "nsolver/nsolver.h"
 
-namespace channelflowtest {
 using namespace std;
-using namespace nsolver;
+using namespace Eigen;
 using namespace ::testing;
 
+namespace chflow {
+namespace test {
 // L Lanczos object with some reasonable settings
 class LanczosTest : public ::testing::Test {
    protected:
@@ -35,6 +36,7 @@ class LanczosTest : public ::testing::Test {
         M = MatrixXd(size, size);
         M = tmp + tmp.transpose();
     }
+
     Lanczos L;
     int size = 100;
     int iter = 99;
@@ -85,5 +87,5 @@ TEST_F(LanczosTest, iterate) {
     diff = L2Dist(t1, t2);
     EXPECT_NEAR(diff, 0.0, eps);
 }
-
-}  // end namespace channelflowtest
+}  // namespace test
+}  // namespace chflow

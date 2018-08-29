@@ -9,7 +9,7 @@
 #include "channelflow/laurettedsi.h"
 
 using namespace std;
-using namespace channelflow;
+using namespace chflow;
 
 Real test_linearization(FlowField& u, DNSFlags flags) {
     cout << "This test checks that the linearized operator eulerdns.advance(u, p, 1, U) which\n"
@@ -24,7 +24,7 @@ Real test_linearization(FlowField& u, DNSFlags flags) {
     ChebyCoeff Wbase = laminarProfile(flags.nu, flags.constraint, flags.dPdz, flags.Wbulk, flags.Vsuck, u.a(), u.b(),
                                       flags.wlowerwall, flags.wupperwall, u.Ny());
     flags.timestepping = FEBE;
-    flags.nonlinearity = channelflow::Rotational;
+    flags.nonlinearity = Rotational;
     EulerDNS alg(u, Ubase, Wbase, flags);
     FlowField p = FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
 

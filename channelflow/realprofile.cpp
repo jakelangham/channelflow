@@ -11,9 +11,8 @@
 #include "cfbasics/mathdefs.h"
 
 using namespace std;
-using namespace cfbasics;
 
-namespace channelflow {
+namespace chflow {
 
 RealProfile::RealProfile() : psi(), sign_(Plus) {}
 
@@ -30,81 +29,6 @@ RealProfile::RealProfile(const BasisFunc& phi, Sign sign) : psi(phi), sign_(sign
 
 RealProfile::RealProfile(int Nd, int Ny, int kx, int kz, Real Lx, Real Lz, Real a, Real b, Sign sig, fieldstate stat)
     : psi(Nd, Ny, kx, kz, Lx, Lz, a, b, stat), sign_(sig) {}
-
-/********************************
-RealProfile::RealProfile(int Ny, int kx, int kz, Real Lx, Real Lz,
-                         Real a, Real b, Sign sig, fieldstate stat)
-  :
-  psi(Ny, kx, kz, Lx, Lz, a, b, stat),
-  sign_(sig)
-{}
-
-***********************************/
-/*************************************************************************
-// Implement later. Will have to output Re/Im (psi +/- psi^*) for Matlab,
-// and psi as complex preceded with Matlab comment marker for reconstitution
-RealProfile::RealProfile(const string& filebase)
-:
-  sign_(Zero),
-  psi()
-{
-  ifstream is;
-  ifstreamOpen(is, filebase, ".asc");
-  if (!is) {
-    cerr << "RealProfile::RealProfile(filebase) : can't open file "
-         << filebase << " or " << (filebase+".asc") << endl;
-    exit(1);
-  }
-  char c;
-  is >> c;
-  if (c != '%') {
-    cerr << "RealProfile::RealProfile(filebase): bad header in file " << filename << endl;
-    assert(false);
-  }
-  is >> Nd_
-     >> Ny_
-     >> kx_
-     >> kz_
-     >> Lx_
-     >> Lz_
-     >> a_
-     >> b_
-  >> state_;
-  u_.resize(Nd_);
-  for (int n=0; n<Nd_; ++n) {
-    u_[n].resize(Ny_);
-    u_[n].setBounds(a_,b_);
-    u_[n].setState(state_);
-  }
-
-  Real r;
-  Real i;
-  for (int ny=0; ny<Ny_; ++ny)
-    for (int n=0; n<Nd_; ++n) {
-      is >> r >> i;
-      u_[n].set(ny,Complex(r,i));
-    }
-}
-********************************************/
-
-/***************
-RealProfile::RealProfile(istream& is)
-  :
-  Ny_(0),
-  kx_(0),
-  kz_(0),
-  Lx_(0),
-  Lz_(0),
-  a_(0),
-  b_(0)
-  state_(Spectral),
-  u_(),
-  v_(),
-  w_()
-{
-  binaryLoad(is);
-}
-****************/
 
 RealProfile::RealProfile(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w, int kx,
                          int kz, Real Lx, Real Lz, Sign s)
@@ -333,7 +257,7 @@ Real L2Norm(const RealProfile& f, bool normalize) {
 
 Real L2Norm2(const RealProfile& f, bool normalize) {
     // INEFFICIENT
-    Real rtn = cfbasics::Re(L2Norm2(f.psi, normalize));
+    Real rtn = Re(L2Norm2(f.psi, normalize));
     if (f.psi.kx() == 0 && f.psi.kz() == 0)
         rtn *= 4;  // ||Psi + Psi*||^2
     else
@@ -375,7 +299,7 @@ Real L2InnerProduct(const RealProfile& f, const RealProfile& g, bool normalize) 
                 // f = a+a*
                 // g = b+b*
                 // (a+a*, b+b*) == (a,b) + (a,b*) + (a*,b) + (a*,b*)
-                ip = 2 * cfbasics::Re(x + y);
+                ip = 2 * Re(x + y);
 
             else
                 // f = a+a*
@@ -384,7 +308,7 @@ Real L2InnerProduct(const RealProfile& f, const RealProfile& g, bool normalize) 
                 //                  == [-(a,b) + (a,b*) - (a*,b) + (a*,b*)]/i
                 //                  == [-(a,b) + (a*,b*) + (a,b*) - (a*,b)]/i
                 //                  == -2 Im(a,b) + 2 Im(a,b*)
-                ip = 2 * cfbasics::Im(y - x);
+                ip = 2 * Im(y - x);
         } else if (asign == Minus) {
             if (bsign == Plus)
 
@@ -393,7 +317,7 @@ Real L2InnerProduct(const RealProfile& f, const RealProfile& g, bool normalize) 
                 // (a-a*, b+b*)/i == [(a,b) + (a,b*)  - (a*,b) - (a*,b*)]/i
                 //                == [(a,b) - (a*,b*) + (a,b*) - (a*,b) ]/i
                 //                == 2 Im(a,b) + 2 Im(a,b*)
-                ip = 2 * cfbasics::Im(x + y);
+                ip = 2 * Im(x + y);
             else
                 // f = (a-a*)/i
                 // g = (b-b*)/i
@@ -401,7 +325,7 @@ Real L2InnerProduct(const RealProfile& f, const RealProfile& g, bool normalize) 
                 //                      == [(a,b) - (a,b*)  - (a*,b) + (a*,b*)]
                 //                      == [(a,b) + (a*,b*) - (a,b*) - (a*,b)]
                 //                      == 2 Re(a,b) - 2 Re(a,b*)
-                ip = 2 * cfbasics::Re(x - y);
+                ip = 2 * Re(x - y);
         }
         // Double if cross-conjugate terms survive
         if (f.kx() == 0 && f.kz() == 0)
@@ -1033,4 +957,4 @@ istream& operator>>(istream& is, Sign& s) {
     return is;
 }
 
-}  // namespace channelflow
+}  // namespace chflow

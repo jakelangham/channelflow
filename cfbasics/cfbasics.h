@@ -32,10 +32,7 @@
 
 extern const char* g_GIT_SHA1;
 
-using namespace Eigen;
-using namespace std;
-
-namespace cfbasics {
+namespace chflow {
 
 enum HookstepPhase { ConstantDelta, ReducingDelta, IncreasingDelta, Finished };
 enum ResidualImprovement { Unacceptable, Poor, Ok, Good, Accurate, NegaCurve };
@@ -46,7 +43,7 @@ enum SolutionType { Equilibrium, PeriodicOrbit };
 // This enum is used for labeling diagnostic output data
 enum fEvalType { fEval, DfEval, HookstepEval };
 
-using Rn2Rnfunc = std::function<VectorXd(VectorXd)>;
+using Rn2Rnfunc = std::function<Eigen::VectorXd(Eigen::VectorXd)>;
 
 inline std::string r2s(Real r);
 inline std::string i2s(int n, int length = 0, char pad = '0');
@@ -95,31 +92,31 @@ inline void read(std::istream& os, fieldstate& s);
 
 // end mathdefs port
 
-inline void print(const MatrixXd& x);
-inline void print(const VectorXd& x);
-inline void save(const MatrixXd& A, const std::string& filebase);
-inline void save(const VectorXd& x, const std::string& filebase);
-inline void save(const VectorXcd& x, const std::string& filebase);
-inline void load(MatrixXd& A, const std::string& filebase);
-inline void load(VectorXd& x, const std::string& filebase);
-inline void load(VectorXcd& x, const std::string& filebase);
+inline void print(const Eigen::MatrixXd& x);
+inline void print(const Eigen::VectorXd& x);
+inline void save(const Eigen::MatrixXd& A, const std::string& filebase);
+inline void save(const Eigen::VectorXd& x, const std::string& filebase);
+inline void save(const Eigen::VectorXcd& x, const std::string& filebase);
+inline void load(Eigen::MatrixXd& A, const std::string& filebase);
+inline void load(Eigen::VectorXd& x, const std::string& filebase);
+inline void load(Eigen::VectorXcd& x, const std::string& filebase);
 inline Real getRealfromLine(int taskid, std::ifstream& is);
 inline int getIntfromLine(int taskid, std::ifstream& is);
-inline string getStringfromLine(int taskid, std::ifstream& is);
-inline void setToZero(MatrixXd& A);
-inline void setToZero(VectorXd& x);
+inline std::string getStringfromLine(int taskid, std::ifstream& is);
+inline void setToZero(Eigen::MatrixXd& A);
+inline void setToZero(Eigen::VectorXd& x);
 
-inline Real L2Norm(const VectorXd& x, int cutoff = 0);
-inline Real L2Norm(const VectorXcd& x, int cutoff = 0);
-inline Real L2Norm2(const VectorXd& x, int cutoff = 0);
-inline Real L2Norm2(const VectorXcd& x, int cutoff = 0);
-inline Real L2Dist(const VectorXd& x, const VectorXd& y, int cutoff = 0);
-inline Real L2Dist(const VectorXcd& x, const VectorXcd& y, int cutoff = 0);
-inline Real L2Dist2(const VectorXd& x, const VectorXd& y, int cutoff = 0);
-inline Real L2Dist2(const VectorXcd& x, const VectorXcd& y, int cutoff = 0);
+inline Real L2Norm(const Eigen::VectorXd& x, int cutoff = 0);
+inline Real L2Norm(const Eigen::VectorXcd& x, int cutoff = 0);
+inline Real L2Norm2(const Eigen::VectorXd& x, int cutoff = 0);
+inline Real L2Norm2(const Eigen::VectorXcd& x, int cutoff = 0);
+inline Real L2Dist(const Eigen::VectorXd& x, const Eigen::VectorXd& y, int cutoff = 0);
+inline Real L2Dist(const Eigen::VectorXcd& x, const Eigen::VectorXcd& y, int cutoff = 0);
+inline Real L2Dist2(const Eigen::VectorXd& x, const Eigen::VectorXd& y, int cutoff = 0);
+inline Real L2Dist2(const Eigen::VectorXcd& x, const Eigen::VectorXcd& y, int cutoff = 0);
 
-inline Real L2IP(const VectorXd& u, const VectorXd& v, int cutoff = 0);
-inline void operator*=(VectorXcd& x, Complex c);
+inline Real L2IP(const Eigen::VectorXd& u, const Eigen::VectorXd& v, int cutoff = 0);
+inline void operator*=(Eigen::VectorXcd& x, Complex c);
 
 inline void rename(const std::string& oldname, const std::string& newname);
 inline Real pythag(Real a, Real b);
@@ -129,15 +126,16 @@ inline std::ostream& operator<<(std::ostream& os, HookstepPhase p);
 inline std::ostream& operator<<(std::ostream& os, ResidualImprovement i);
 inline std::ostream& operator<<(std::ostream& os, SolutionType solntype);
 
-inline void rescale(VectorXd& x, const VectorXd& xscale);  // x -> x./xscale
-inline void unscale(VectorXd& x, const VectorXd& xscale);  // x -> x.*xscale
+inline void rescale(Eigen::VectorXd& x, const Eigen::VectorXd& xscale);  // x -> x./xscale
+inline void unscale(Eigen::VectorXd& x, const Eigen::VectorXd& xscale);  // x -> x.*xscale
 
-inline Real adjustDelta(Real delta, Real rescale, Real deltaMin, Real deltaMax, std::ostream& os = cout);
-inline Real adjustLambda(Real lambda, Real lambdaMin, Real lambdaMax, std::ostream& os = cout);
+inline Real adjustDelta(Real delta, Real rescale, Real deltaMin, Real deltaMax, std::ostream& os = std::cout);
+inline Real adjustLambda(Real lambda, Real lambdaMin, Real lambdaMax, std::ostream& os = std::cout);
 
-inline void solve(const MatrixXd& Ut, const VectorXd& D, const MatrixXd& C, const VectorXd& b, VectorXd& x);
+inline void solve(const Eigen::MatrixXd& Ut, const Eigen::VectorXd& D, const Eigen::MatrixXd& C,
+                  const Eigen::VectorXd& b, Eigen::VectorXd& x);
 
-inline Real align(const VectorXd& u, const VectorXd& v);
+inline Real align(const Eigen::VectorXd& u, const Eigen::VectorXd& v);
 
 // Measure execution time (wall-clock time) in seconds.
 // Returns seconds passed since first call
@@ -155,7 +153,7 @@ inline Real polynomialInterpolate(const cfarray<Real>& fn, const cfarray<Real>& 
 
 // secantSearch and bisectSearch:
 // Find root of f(x) between a and b to tolerance feps from polynomial
-// interpolant of {fn = f(xn)} I.e. rtn x st abs(f(x)) < feps and a <= x <= b.
+// interpolant of {fn = f(xn)} I.e. rtn x st std::abs(f(x)) < feps and a <= x <= b.
 inline Real secantSearch(Real a, Real b, cfarray<Real>& fn, const cfarray<Real>& xn, Real feps = 1e-14,
                          int maxsteps = 50);
 
@@ -193,12 +191,12 @@ inline void push(const T& t, cfarray<T>& cfarrayt);
 
 inline void openfile(std::ofstream& f, std::string filename, std::ios::openmode openflag = std::ios::out);
 
-inline bool checkFlagContent(std::ifstream& is, const vector<string>& flagList);
+inline bool checkFlagContent(std::ifstream& is, const std::vector<std::string>& flagList);
 // ++++++++++++++++++++++++++++++++++++++++++++
 // begin definitions
 // ++++++++++++++++++++++++++++++++++++++++++++
 
-inline void printout(const std::string& message, int taskid, bool newline = true, std::ostream& os = cout) {
+inline void printout(const std::string& message, int taskid, bool newline = true, std::ostream& os = std::cout) {
     if (taskid == 0) {
         os << message;
         if (newline)
@@ -207,7 +205,7 @@ inline void printout(const std::string& message, int taskid, bool newline = true
     }
 }
 
-inline void printout(const std::string& message, bool newline = true, std::ostream& os = cout) {
+inline void printout(const std::string& message, bool newline = true, std::ostream& os = std::cout) {
     int taskid = 0;
 #ifdef HAVE_MPI
     int initialized = 0;
@@ -220,7 +218,7 @@ inline void printout(const std::string& message, bool newline = true, std::ostre
 
 inline void printout(const std::string& message, std::ostream& os) { printout(message, true, os); }
 
-inline void printout(const std::stringstream& sstr, std::ostream& os = cout) { printout(sstr.str(), false, os); }
+inline void printout(const std::stringstream& sstr, std::ostream& os = std::cout) { printout(sstr.str(), false, os); }
 
 inline void printToFile(const std::string& message, const std::string& filename, bool newline = true) {
     int taskid = 0;
@@ -228,10 +226,10 @@ inline void printToFile(const std::string& message, const std::string& filename,
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
 #endif
     if (taskid == 0) {
-        std::ofstream f(filename.c_str(), ios::app);
+        std::ofstream f(filename.c_str(), std::ios::app);
         f << message;
         if (newline)
-            f << endl;
+            f << std::endl;
         f.close();
     }
 }
@@ -270,9 +268,8 @@ inline bool haveMPI() {
 #endif
 }
 
-inline void cferror(const string& message) {
-    //   cerr << message << endl;
-    cout << message << endl;
+inline void cferror(const std::string& message) {
+    std::cout << message << std::endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -281,27 +278,27 @@ inline void cferror(const string& message) {
 
 inline void cfpause() {
     if (mpirank() == 0) {
-        cout << "cfpause..." << flush;
+        std::cout << "cfpause..." << std::flush;
         char s[10];
-        cin.getline(s, 10);
+        std::cin.getline(s, 10);
     }
 }
 
-inline string r2s(Real r) {
+inline std::string r2s(Real r) {
     const int Nbuf = 32;
     char buff[Nbuf];
     sprintf(buff, "%g", r);
-    return string(buff);
+    return std::string(buff);
 }
 
-inline string i2s(int n, int length, char pad) {
+inline std::string i2s(int n, int length, char pad) {
     //   const int Nbuf = 32;
     //   char buff[Nbuf];
     //   sprintf (buff, "%d", n);
     //   return string (buff);
-    stringstream ss;
+    std::stringstream ss;
     ss << n;
-    string s = ss.str();
+    std::string s = ss.str();
     int l = s.length();
     for (int j = l; j < length; ++j) {
         s = pad + s;
@@ -310,10 +307,10 @@ inline string i2s(int n, int length, char pad) {
 }
 
 // Return filebase.extension unless filebase already includes .extension
-inline string appendSuffix(const string& filebase, const string& extension) {
+inline std::string appendSuffix(const std::string& filebase, const std::string& extension) {
     int Lbase = filebase.length();
     int Lext = extension.length();
-    string filename = filebase;
+    std::string filename = filebase;
     if (Lbase < Lext || filebase.substr(Lbase - Lext, Lext) != extension)
         filename += extension;
     return filename;
@@ -342,24 +339,12 @@ inline bool isReadable(const std::string& filename) {
     return rtn;
 }
 
-/*
-inline void error (const string& message) {
-//   cerr << message << endl;
-  if (mpirank () == 0)
-    cerr << message << endl;
-#ifdef HAVE_MPI
-  if (usempi ())
-    MPI_Finalize ();
-#endif
-  exit (-1);
-}
-*/
-
-inline string ifstreamOpen(ifstream& is, const string& filebase, const string& ext, ios_base::openmode mode) {
-    mode = mode | ios::in;
+inline std::string ifstreamOpen(std::ifstream& is, const std::string& filebase, const std::string& ext,
+                                std::ios_base::openmode mode) {
+    mode = mode | std::ios::in;
 
     // Try to open <filebase>
-    string filename = filebase;
+    std::string filename = filebase;
 
     is.open(filename.c_str(), mode);
 
@@ -379,36 +364,36 @@ inline string ifstreamOpen(ifstream& is, const string& filebase, const string& e
 
 // ====================================================================
 // Endian-independent binary IO code (i.e. this code is indpt of endianness)
-inline void write(ostream& os, bool b) {
+inline void write(std::ostream& os, bool b) {
     char c = (b) ? '1' : '0';
     os.write(&c, 1);  // sizeof(char) == 1
 }
 
-inline void read(istream& is, bool& b) {
+inline void read(std::istream& is, bool& b) {
     char c;
     is.read(&c, 1);
     b = (c == '0') ? false : true;
 }
 
-inline void write(ostream& os, fieldstate s) {
+inline void write(std::ostream& os, fieldstate s) {
     char c = (s == Spectral) ? 'S' : 'P';
     os.write(&c, 1);
 }
 
-inline void read(istream& is, fieldstate& s) {
+inline void read(std::istream& is, fieldstate& s) {
     char c;
     is.read(&c, 1);
     s = (c == 'S') ? Spectral : Physical;
 }
 
-inline void write(ostream& os, Complex z) {
+inline void write(std::ostream& os, Complex z) {
     Real x = Re(z);
     write(os, x);
     x = Im(z);
     write(os, x);
 }
 
-inline void read(istream& is, Complex& z) {
+inline void read(std::istream& is, Complex& z) {
     Real a, b;
     read(is, a);
     read(is, b);
@@ -418,10 +403,10 @@ inline void read(istream& is, Complex& z) {
 // Binary IO: native saved to big-endian format on disk.
 //
 // Cross-endian IO assumes 32-bit int.
-inline void write(ostream& os, int n) {
+inline void write(std::ostream& os, int n) {
     if (sizeof(int) != 4) {
-        cerr << "write(ostream& os, int n) :  channelflow binary IO assumes 32-bit int\n";
-        cerr << "The int on this platform is " << 8 * sizeof(int) << " bits" << endl;
+        std::cerr << "write(ostream& os, int n) :  channelflow binary IO assumes 32-bit int\n";
+        std::cerr << "The int on this platform is " << 8 * sizeof(int) << " bits" << std::endl;
         exit(1);
     }
 
@@ -429,10 +414,10 @@ inline void write(ostream& os, int n) {
     os.write((char*)&n, sizeof(int));
 }
 
-inline void read(istream& is, int& n) {
+inline void read(std::istream& is, int& n) {
     if (sizeof(int) != 4) {
-        cerr << "read(istream& is, int n) error: channelflow binary IO assumes 32-bit int.\n";
-        cerr << "The int on this platform is " << 8 * sizeof(int) << " bits" << endl;
+        std::cerr << "read(istream& is, int n) error: channelflow binary IO assumes 32-bit int.\n";
+        std::cerr << "The int on this platform is " << 8 * sizeof(int) << " bits" << std::endl;
         exit(1);
     }
 
@@ -441,18 +426,18 @@ inline void read(istream& is, int& n) {
 }
 
 // Linux has a bswap_64 function, but the following is more portable.
-inline void write(ostream& os, Real x) {
+inline void write(std::ostream& os, Real x) {
     if (sizeof(double) != 8) {
-        cerr << "write(ostream& os, Real x) error: channelflow binary IO assumes 64-bit double-precision floating "
-                "point.\n";
-        cerr << "The double on this platform is " << 8 * sizeof(Real) << " bits" << endl;
+        std::cerr << "write(ostream& os, Real x) error: channelflow binary IO assumes 64-bit double-precision floating "
+                     "point.\n";
+        std::cerr << "The double on this platform is " << 8 * sizeof(Real) << " bits" << std::endl;
         exit(1);
     }
 
     if (sizeof(int) != 4) {
-        cerr << "write(ostream& os, Real x) error: channelflow binary IO assumes 64-bit double-precision floating "
-                "point and 32-bit ints.\n";
-        cerr << "The int on this platform is " << 8 * sizeof(int) << " bits" << endl;
+        std::cerr << "write(ostream& os, Real x) error: channelflow binary IO assumes 64-bit double-precision floating "
+                     "point and 32-bit ints.\n";
+        std::cerr << "The int on this platform is " << 8 * sizeof(int) << " bits" << std::endl;
         exit(1);
     }
 
@@ -474,17 +459,19 @@ inline void write(ostream& os, Real x) {
 #endif
 }
 
-inline void read(istream& is, Real& x) {
+inline void read(std::istream& is, Real& x) {
     if (sizeof(double) != 8) {
-        cerr << "read(istream& is, Real x) error: nsolver binary IO assumes 64-bit double-precision floating point.\n";
-        cerr << "The double on this platform is " << 8 * sizeof(Real) << " bits" << endl;
+        std::cerr
+            << "read(istream& is, Real x) error: nsolver binary IO assumes 64-bit double-precision floating point.\n";
+        std::cerr << "The double on this platform is " << 8 * sizeof(Real) << " bits" << std::endl;
         exit(1);
     }
 
     if (sizeof(int) != 4) {
-        cerr << "write(ostream& os, Real x) error: nsolver binary IO assumes 64-bit double-precision floating point "
-                "and 32-bit ints.\n";
-        cerr << "The int on this platform is " << 8 * sizeof(int) << " bits" << endl;
+        std::cerr
+            << "write(ostream& os, Real x) error: nsolver binary IO assumes 64-bit double-precision floating point "
+               "and 32-bit ints.\n";
+        std::cerr << "The int on this platform is " << 8 * sizeof(int) << " bits" << std::endl;
         exit(1);
     }
 
@@ -506,26 +493,26 @@ inline void read(istream& is, Real& x) {
 #endif
 }
 
-inline void save(Real c, const string& filebase) {
+inline void save(Real c, const std::string& filebase) {
     int taskid = mpirank();
     if (taskid != 0) {
         return;
     }
-    string filename = appendSuffix(filebase, ".asc");
-    ofstream os(filename.c_str());
+    std::string filename = appendSuffix(filebase, ".asc");
+    std::ofstream os(filename.c_str());
     if (!os.good())
         cferror("save(Real, filebase) :  can't open file " + filename);
-    os << setprecision(17);
+    os << std::setprecision(17);
     os << c << '\n';  // format can be read by matlab.
 }
 
-inline void load(Real& c, const string& filebase) {
+inline void load(Real& c, const std::string& filebase) {
     int taskid = mpirank();
     if (taskid == 0) {
-        string filename = appendSuffix(filebase, ".asc");
-        ifstream is(filename.c_str());
+        std::string filename = appendSuffix(filebase, ".asc");
+        std::ifstream is(filename.c_str());
         if (!is.good()) {
-            cerr << "load(Real, filebase) :  can't open file " + filename << endl;
+            std::cerr << "load(Real, filebase) :  can't open file " + filename << std::endl;
             exit(1);
         }
         Real r = 0;
@@ -537,19 +524,15 @@ inline void load(Real& c, const string& filebase) {
 #endif
 }
 
-// end mathdefs port
-// things ported from channelflow/utilfuncs.cpp
-// end utilfuncs port
-
-inline void save(const MatrixXd& A, const string& filebase) {
+inline void save(const Eigen::MatrixXd& A, const std::string& filebase) {
     int taskid = mpirank();
 
     if (taskid != 0) {
         return;
     }
-    string filename = appendSuffix(filebase, ".asc");
-    ofstream os(filename.c_str());
-    os << setprecision(17);
+    std::string filename = appendSuffix(filebase, ".asc");
+    std::ofstream os(filename.c_str());
+    os << std::setprecision(17);
     os << "% " << A.rows() << ' ' << A.cols() << '\n';
     for (int i = 0; i < A.rows(); ++i) {
         for (int j = 0; j < A.cols(); ++j)
@@ -558,56 +541,56 @@ inline void save(const MatrixXd& A, const string& filebase) {
     }
 }
 
-inline void save(const VectorXd& x, const string& filebase) {
+inline void save(const Eigen::VectorXd& x, const std::string& filebase) {
     int taskid = mpirank();
 
     if (taskid != 0) {
         return;
     }
-    string filename = appendSuffix(filebase, ".asc");
-    ofstream os(filename.c_str());
-    os << setprecision(17);
+    std::string filename = appendSuffix(filebase, ".asc");
+    std::ofstream os(filename.c_str());
+    os << std::setprecision(17);
     os << "% " << x.size() << '\n';
     for (int i = 0; i < x.size(); ++i)
         os << x(i) << '\n';
 }
 
-inline void save(Complex c, const string& filebase) {
+inline void save(Complex c, const std::string& filebase) {
     int taskid = mpirank();
 
     if (taskid != 0) {
         return;
     }
-    string filename = appendSuffix(filebase, ".asc");
-    ofstream os(filename.c_str());
+    std::string filename = appendSuffix(filebase, ".asc");
+    std::ofstream os(filename.c_str());
     if (!os.good())
         cferror("save(Complex, filebase) :  can't open file " + filename);
-    os << setprecision(17);
+    os << std::setprecision(17);
     os << Re(c) << ' ' << Im(c) << '\n';  // format can be read by matlab.
 }
 
-inline void save(const VectorXcd& x, const string& filebase) {
+inline void save(const Eigen::VectorXcd& x, const std::string& filebase) {
     int taskid = mpirank();
 
     if (taskid != 0) {
         return;
     }
-    string filename = appendSuffix(filebase, ".asc");
-    ofstream os(filename.c_str());
-    os << setprecision(17);
+    std::string filename = appendSuffix(filebase, ".asc");
+    std::ofstream os(filename.c_str());
+    os << std::setprecision(17);
     os << "% " << x.size() << '\n';
     for (int i = 0; i < x.size(); ++i)
         os << Re(x(i)) << ' ' << Im(x(i)) << '\n';
 }
 
-inline void load(MatrixXd& A, const string& filebase) {
-    string filename = appendSuffix(filebase, ".asc");
-    ifstream is(filename.c_str());
+inline void load(Eigen::MatrixXd& A, const std::string& filebase) {
+    std::string filename = appendSuffix(filebase, ".asc");
+    std::ifstream is(filename.c_str());
     int M, N;
     char c;
     is >> c;
     if (c != '%') {
-        string message("load(Matrix&, filebase): bad header in file ");
+        std::string message("load(Matrix&, filebase): bad header in file ");
         message += filename;
         cferror(message);
     }
@@ -618,14 +601,14 @@ inline void load(MatrixXd& A, const string& filebase) {
             is >> A(i, j);
 }
 
-inline void load(VectorXd& x, const string& filebase) {
-    string filename = appendSuffix(filebase, ".asc");
-    ifstream is(filename.c_str());
+inline void load(Eigen::VectorXd& x, const std::string& filebase) {
+    std::string filename = appendSuffix(filebase, ".asc");
+    std::ifstream is(filename.c_str());
     int N;
     char c;
     is >> c;
     if (c != '%') {
-        string message("load(VectorXd&, filebase): bad header in file ");
+        std::string message("load(VectorXd&, filebase): bad header in file ");
         message += filename;
         cferror(message);
     }
@@ -635,14 +618,14 @@ inline void load(VectorXd& x, const string& filebase) {
         is >> x(i);
 }
 
-inline void load(VectorXcd& x, const string& filebase) {
-    string filename = appendSuffix(filebase, ".asc");
-    ifstream is(filename.c_str());
+inline void load(Eigen::VectorXcd& x, const std::string& filebase) {
+    std::string filename = appendSuffix(filebase, ".asc");
+    std::ifstream is(filename.c_str());
     int N;
     char c;
     is >> c;
     if (c != '%') {
-        string message("load(VectorXcd&, filebase): bad header in file ");
+        std::string message("load(VectorXcd&, filebase): bad header in file ");
         message += filename;
         cferror(message);
     }
@@ -658,7 +641,7 @@ inline void load(VectorXcd& x, const string& filebase) {
 inline Real getRealfromLine(int taskid, std::ifstream& is) {
     Real val = 0;
     if (taskid == 0) {
-        string line;
+        std::string line;
         getline(is, line, '%');
         line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
         val = atof(line.c_str());
@@ -674,7 +657,7 @@ inline Real getRealfromLine(int taskid, std::ifstream& is) {
 inline int getIntfromLine(int taskid, std::ifstream& is) {
     int val = 0;
     if (taskid == 0) {
-        string line;
+        std::string line;
         getline(is, line, '%');
         line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
         val = atoi(line.c_str());
@@ -687,10 +670,10 @@ inline int getIntfromLine(int taskid, std::ifstream& is) {
     return val;
 }
 
-string getStringfromLine(int taskid, std::ifstream& is) {
-    string val = "";
+std::string getStringfromLine(int taskid, std::ifstream& is) {
+    std::string val = "";
     if (taskid == 0) {
-        string line;
+        std::string line;
         getline(is, line, '%');
         line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
         val = line;
@@ -704,27 +687,27 @@ string getStringfromLine(int taskid, std::ifstream& is) {
     auto pnt = buffer.get();
     strcpy(pnt, val.c_str());
     MPI_Bcast(pnt, length, MPI_CHAR, 0, MPI_COMM_WORLD);
-    val = string(pnt);
+    val = std::string(pnt);
 #endif
     return val;
 }
 
-inline void setToZero(MatrixXd& A) {
+inline void setToZero(Eigen::MatrixXd& A) {
     for (int i = 0; i < A.rows(); ++i)
         for (int j = 0; j < A.cols(); ++j)
             A(i, j) = 0.0;
 }
 
-inline void setToZero(VectorXd& x) {
+inline void setToZero(Eigen::VectorXd& x) {
     for (int i = 0; i < x.size(); ++i)
         x(i) = 0.0;
 }
 
-inline Real L2Norm(const VectorXd& x, int cutoff) { return sqrt(L2Norm2(x, cutoff)); }
+inline Real L2Norm(const Eigen::VectorXd& x, int cutoff) { return sqrt(L2Norm2(x, cutoff)); }
 
-inline Real L2Norm(const VectorXcd& x, int cutoff) { return sqrt(L2Norm2(x, cutoff)); }
+inline Real L2Norm(const Eigen::VectorXcd& x, int cutoff) { return sqrt(L2Norm2(x, cutoff)); }
 
-inline Real L2Norm2(const VectorXd& x, int cutoff) {
+inline Real L2Norm2(const Eigen::VectorXd& x, int cutoff) {
     Real sum = 0.0;
     for (int i = 0; i < x.size() - cutoff; ++i)
         sum += x(i) * x(i);
@@ -735,7 +718,7 @@ inline Real L2Norm2(const VectorXd& x, int cutoff) {
     return sum;
 }
 
-inline Real L2Norm2(const VectorXcd& x, int cutoff) {
+inline Real L2Norm2(const Eigen::VectorXcd& x, int cutoff) {
     Real sum = 0.0;
     for (int i = 0; i < x.size() - cutoff; ++i)
         sum += abs2(x(i));
@@ -747,11 +730,15 @@ inline Real L2Norm2(const VectorXcd& x, int cutoff) {
     return sum;
 }
 
-inline Real L2Dist(const VectorXd& x, const VectorXd& y, int cutoff) { return sqrt(L2Dist2(x, y, cutoff)); }
+inline Real L2Dist(const Eigen::VectorXd& x, const Eigen::VectorXd& y, int cutoff) {
+    return sqrt(L2Dist2(x, y, cutoff));
+}
 
-inline Real L2Dist(const VectorXcd& x, const VectorXcd& y, int cutoff) { return sqrt(L2Dist2(x, y, cutoff)); }
+inline Real L2Dist(const Eigen::VectorXcd& x, const Eigen::VectorXcd& y, int cutoff) {
+    return sqrt(L2Dist2(x, y, cutoff));
+}
 
-inline Real L2Dist2(const VectorXd& x, const VectorXd& y, int cutoff) {
+inline Real L2Dist2(const Eigen::VectorXd& x, const Eigen::VectorXd& y, int cutoff) {
     assert(x.size() == y.size());
     Real sum = 0.0;
     for (int i = 0; i < x.size() - cutoff; ++i)
@@ -763,7 +750,7 @@ inline Real L2Dist2(const VectorXd& x, const VectorXd& y, int cutoff) {
     return sum;
 }
 
-inline Real L2Dist2(const VectorXcd& x, const VectorXcd& y, int cutoff) {
+inline Real L2Dist2(const Eigen::VectorXcd& x, const Eigen::VectorXcd& y, int cutoff) {
     assert(x.size() == y.size());
 
     Real sum = 0.0;
@@ -777,9 +764,9 @@ inline Real L2Dist2(const VectorXcd& x, const VectorXcd& y, int cutoff) {
     return sum;
 }
 
-inline Real L2IP(const VectorXd& u, const VectorXd& v, int cutoff) {
+inline Real L2IP(const Eigen::VectorXd& u, const Eigen::VectorXd& v, int cutoff) {
     if (u.size() != v.size()) {
-        cerr << "error in L2IP(VectorXd, VectorXd) : vector length mismatch" << endl;
+        std::cerr << "error in L2IP(VectorXd, VectorXd) : vector length mismatch" << std::endl;
         exit(1);
     }
     Real sum = 0.0;
@@ -793,7 +780,7 @@ inline Real L2IP(const VectorXd& u, const VectorXd& v, int cutoff) {
     return sum;
 }
 
-inline void operator*=(VectorXcd& x, Complex c) {
+inline void operator*=(Eigen::VectorXcd& x, Complex c) {
     for (int i = 0; i < x.size(); ++i)
         x(i) = x(i) * c;
 }
@@ -891,48 +878,48 @@ inline Real quadratic_extrapolate(const cfarray<Real>& f, const cfarray<Real>& m
 }
 
 /// Get the filename without path and without extension
-inline string getfilebase(string filename) {
+inline std::string getfilebase(std::string filename) {
     // remove path (if any)
     size_t pos = filename.rfind("/");
-    if (pos != string::npos)
+    if (pos != std::string::npos)
         filename = filename.substr(pos + 1);
 
     // remove extension (if any)
     pos = filename.rfind(".");
-    if (pos != string::npos)
+    if (pos != std::string::npos)
         return filename.substr(0, pos);
     return filename;
 }
 
-inline string getfileextension(string filename) {
+inline std::string getfileextension(std::string filename) {
     // remove path (if any)
     size_t pos = filename.rfind("/");
-    if (pos != string::npos)
+    if (pos != std::string::npos)
         filename = filename.substr(pos + 1);
 
     // get extension
     pos = filename.rfind(".");
-    if (pos != string::npos)
+    if (pos != std::string::npos)
         return filename.substr(pos + 1);
     return "";
 }
 
-inline bool checkFlagContent(std::ifstream& is, const vector<string>& flagList) {
-    string tmp;
+inline bool checkFlagContent(std::ifstream& is, const std::vector<std::string>& flagList) {
+    std::string tmp;
     for (uint i = 0; i < flagList.size(); i++) {
         is >> tmp >> tmp;
         if (tmp != flagList[i]) {
             is.clear();
-            is.seekg(0, ios::beg);
+            is.seekg(0, std::ios::beg);
             return false;
         }
     }
     is.clear();
-    is.seekg(0, ios::beg);
+    is.seekg(0, std::ios::beg);
     return true;
 }
 
-inline ostream& operator<<(ostream& os, HookstepPhase p) {
+inline std::ostream& operator<<(std::ostream& os, HookstepPhase p) {
     if (p == ReducingDelta)
         os << "ReducingDelta";
     else if (p == IncreasingDelta)
@@ -941,7 +928,7 @@ inline ostream& operator<<(ostream& os, HookstepPhase p) {
         os << "Finished";
     return os;
 }
-inline ostream& operator<<(ostream& os, ResidualImprovement i) {
+inline std::ostream& operator<<(std::ostream& os, ResidualImprovement i) {
     if (i == Unacceptable)
         os << "Unacceptable";
     else if (i == Poor)
@@ -957,24 +944,24 @@ inline ostream& operator<<(ostream& os, ResidualImprovement i) {
     return os;
 }
 
-inline ostream& operator<<(ostream& os, SolutionType solntype) {
+inline std::ostream& operator<<(std::ostream& os, SolutionType solntype) {
     os << (solntype == Equilibrium ? "Equilibrium" : "PeriodicOrbit");
     return os;
 }
 
-inline void rescale(VectorXd& x, const VectorXd& xscale) {
+inline void rescale(Eigen::VectorXd& x, const Eigen::VectorXd& xscale) {
     if (xscale.size() != 0)
         for (int i = 0; i < x.size(); ++i)
             x(i) /= xscale(i);
 }
-inline void unscale(VectorXd& x, const VectorXd& xscale) {
+inline void unscale(Eigen::VectorXd& x, const Eigen::VectorXd& xscale) {
     if (xscale.size() != 0)
         for (int i = 0; i < x.size(); ++i)
             x(i) *= xscale(i);
 }
 
-inline Real adjustDelta(Real delta, Real deltaRate, Real deltaMin, Real deltaMax, ostream& os) {
-    os << "  old delta == " << delta << endl;
+inline Real adjustDelta(Real delta, Real deltaRate, Real deltaMin, Real deltaMax, std::ostream& os) {
+    os << "  old delta == " << delta << std::endl;
 
     // A special case: if deltaRate would take us from above to below deltaMin,
     // set it at exactly deltaMin and give it one last try. If next time throgh
@@ -982,39 +969,40 @@ inline Real adjustDelta(Real delta, Real deltaRate, Real deltaMin, Real deltaMax
     // will check and return best current answer
 
     if (delta == deltaMin && delta * deltaRate < deltaMin) {
-        os << "delta bottoming out at deltaMin, try one more search" << endl;
+        os << "delta bottoming out at deltaMin, try one more search" << std::endl;
         return deltaMin;
     }
 
     delta *= deltaRate;
     if (delta <= deltaMin) {
         delta = 0.5 * deltaMin;
-        os << "delta bottomed out at deltaMin" << endl;
+        os << "delta bottomed out at deltaMin" << std::endl;
     }
     if (delta > deltaMax) {
         delta = deltaMax;
-        os << "delta topped out at deltaMax" << endl;
+        os << "delta topped out at deltaMax" << std::endl;
     }
-    os << "  new delta == " + r2s(delta) << endl;
+    os << "  new delta == " + r2s(delta) << std::endl;
     return delta;
 }
 
-inline Real adjustLambda(Real lambda, Real lambdaMin, Real lambdaMax, ostream& os) {
+inline Real adjustLambda(Real lambda, Real lambdaMin, Real lambdaMax, std::ostream& os) {
     if (lambda < lambdaMin) {
-        os << "lambda == " + r2s(lambda) + " is too small. Resetting to lambda == " << lambdaMin << endl;
+        os << "lambda == " + r2s(lambda) + " is too small. Resetting to lambda == " << lambdaMin << std::endl;
         lambda = lambdaMin;
     } else if (lambda < lambdaMin) {
-        os << "lambda == " + r2s(lambda) + " is too large. Resetting to lambda == " << lambdaMax << endl;
+        os << "lambda == " + r2s(lambda) + " is too large. Resetting to lambda == " << lambdaMax << std::endl;
         lambda = lambdaMax;
     }
     return lambda;
 }
 
-inline void solve(const MatrixXd& Ut, const VectorXd& D, const MatrixXd& V, const VectorXd& b, VectorXd& x) {
-    VectorXd bh = Ut * b;
+inline void solve(const Eigen::MatrixXd& Ut, const Eigen::VectorXd& D, const Eigen::MatrixXd& V,
+                  const Eigen::VectorXd& b, Eigen::VectorXd& x) {
+    Eigen::VectorXd bh = Ut * b;
     const Real eps = 1e-12;
     for (int i = 0; i < D.size(); ++i) {
-        if (abs(D(i)) > eps)
+        if (std::abs(D(i)) > eps)
             bh(i) *= 1.0 / D(i);
         else
             bh(i) = 0.0;
@@ -1023,7 +1011,7 @@ inline void solve(const MatrixXd& Ut, const VectorXd& D, const MatrixXd& V, cons
 }
 
 // returns u dot v/(|u||v|) or zero if either has zero norm
-inline Real align(const VectorXd& u, const VectorXd& v) {
+inline Real align(const Eigen::VectorXd& u, const Eigen::VectorXd& v) {
     Real norm = L2Norm(u) * L2Norm(v);
     if (norm == 0.0)
         return 0.0;
@@ -1056,13 +1044,13 @@ inline Real polyInterp(const cfarray<Real>& fa, const cfarray<Real>& xa, Real x)
     cfarray<Real> C(N);
     cfarray<Real> D(N);
 
-    Real xdiff = abs(x - xa[0]);
+    Real xdiff = std::abs(x - xa[0]);
     Real xdiff2 = 0.0;
     Real df;
 
     int i_closest = 0;
     for (int i = 0; i < N; ++i) {
-        if ((xdiff2 = abs(x - xa[i])) < xdiff) {
+        if ((xdiff2 = std::abs(x - xa[i])) < xdiff) {
             i_closest = i;
             xdiff = xdiff2;
         }
@@ -1101,7 +1089,7 @@ inline Real secantSearch(Real a, Real b, cfarray<Real>& fn, const cfarray<Real>&
     for (int n = 0; n < maxsteps; ++n) {
         c = a - fa * (b - a) / (fb - fa);
         fc = polyInterp(fn, xn, c);
-        if (abs(fc) < feps)
+        if (std::abs(fc) < feps)
             break;
         if (fc * fa > 0) {
             a = c;
@@ -1125,7 +1113,7 @@ inline Real bisectSearch(Real a, Real b, cfarray<Real>& fn, const cfarray<Real>&
     for (int n = 0; n < maxsteps; ++n) {
         c = 0.5 * (a + b);
         fc = polyInterp(fn, xn, c);
-        if (abs(fc) < feps)
+        if (std::abs(fc) < feps)
             break;
         if (fc * fa > 0) {
             a = c;
@@ -1140,15 +1128,15 @@ inline Real bisectSearch(Real a, Real b, cfarray<Real>& fn, const cfarray<Real>&
 
 // If s is numeric, convert to real using atof
 
-inline string FillSpaces(int i, int n) {
-    string s = i2s(i);
+inline std::string FillSpaces(int i, int n) {
+    std::string s = i2s(i);
     int l = s.length();
     for (int j = l; j < n; j++) {
         s = " " + s;
     }
     return s;
 }
-inline string FillSpaces(Real t, int n) { return FillSpaces((int)t, n); }
+inline std::string FillSpaces(Real t, int n) { return FillSpaces((int)t, n); }
 
 inline bool isconst(cfarray<Real> f, Real eps) {
     if (f.length() == 0)
@@ -1157,14 +1145,14 @@ inline bool isconst(cfarray<Real> f, Real eps) {
     Real f0 = f[0];
     bool rtn = true;
     for (int n = 0; n < f.length(); ++n)
-        if (abs(f[n] - f0) > eps) {
+        if (std::abs(f[n] - f0) > eps) {
             rtn = false;
             break;
         }
     return rtn;
 }
 
-inline bool fileExists(const string& filename) {
+inline bool fileExists(const std::string& filename) {
     int res = 0;
     int taskid = mpirank();
     if (taskid == 0) {
@@ -1178,8 +1166,8 @@ inline bool fileExists(const string& filename) {
     return (res == 1);
 }
 
-inline string FillZeros(int i, int n) {
-    string s = i2s(i);
+inline std::string FillZeros(int i, int n) {
+    std::string s = i2s(i);
     int l = s.length();
     for (int j = l; j < n; j++) {
         s = "0" + s;
@@ -1187,54 +1175,54 @@ inline string FillZeros(int i, int n) {
     return s;
 }
 
-inline string FillZeros(Real t, int n) { return FillZeros((int)t, n); }
+inline std::string FillZeros(Real t, int n) { return FillZeros((int)t, n); }
 
-inline void mkdir(const string& dirname) {
+inline void mkdir(const std::string& dirname) {
     if (mpirank() == 0)
         ::mkdir(dirname.c_str(), S_IRUSR | S_IWUSR | S_IXUSR);
 }
 
-inline string pwd() {
+inline std::string pwd() {
     const int N = 512;
     char* buff = new char[N];
     if (getcwd(buff, N) == NULL)
         cferror("Error in getcwd()");
-    string rtn(buff);
+    std::string rtn(buff);
     delete[] buff;
     return rtn;
 }
 
-inline string pathfix(const string& path) {
-    string rtn = path;
+inline std::string pathfix(const std::string& path) {
+    std::string rtn = path;
     if (rtn.length() > 0 && rtn[rtn.length() - 1] != '/')
         rtn += "/";
     return rtn;
 }
 
-inline string stub(const string& filename, const string& ext) {
+inline std::string stub(const std::string& filename, const std::string& ext) {
     // Clip off path
     size_t s = filename.find_last_of("/");
-    string f = (s == string::npos) ? filename : filename.substr(s + 1, filename.length() - s);
+    std::string f = (s == std::string::npos) ? filename : filename.substr(s + 1, filename.length() - s);
 
     // Clip off extension
     size_t t = f.find(ext, f.length() - ext.length());
-    string g = (t == string::npos) ? f : f.substr(0, t);
+    std::string g = (t == std::string::npos) ? f : f.substr(0, t);
 
     return g;
 }
 
-inline string t2s(Real t, bool inttime) {
+inline std::string t2s(Real t, bool inttime) {
     char buffer[12];
     if (inttime) {
         int it = iround(t);
         sprintf(buffer, "%d", it);
     } else
         sprintf(buffer, "%.3f", t);
-    return string(buffer);
+    return std::string(buffer);
 }
 
-inline string fuzzyless(Real x, Real eps) {
-    string rtn("false ");
+inline std::string fuzzyless(Real x, Real eps) {
+    std::string rtn("false ");
     if (x < eps)
         rtn = "TRUE  ";
     else if (x < sqrt(eps))
@@ -1287,6 +1275,6 @@ inline void sort_by_abs(Vector& Lambda, Matrix& V) {
     Lambda = P.transpose() * Lambda;
 }
 
-}  // namespace cfbasics
+}  // namespace chflow
 
 #endif  // CFBASICS

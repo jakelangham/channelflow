@@ -18,7 +18,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/flowfield.h"
 
-namespace channelflow {
+namespace chflow {
 
 // innerProduct(f,g) == Int f g*  dx dy dz   (/(Lx Ly Lz) if normalize==true)
 // L2Norm2(f)  == Int ||f||^2  dx dy dz      (/(Lx Ly Lz) if normalize==true)
@@ -82,9 +82,6 @@ Real min_x_L2Dist(const FlowField& u0, const FlowField& u1, Real tol = 1e-3);
 // ====================================================================
 // Note: these were previously defaulted to normalize=false 2006-03-02
 Complex L2InnerProduct(const FlowField& f, const BasisFunc& phi, bool normalize = true);
-// UNIMPLEMENTED
-// Complex L2InnerProduct(const FlowField& f, const ComplexChebyCoeff& phi,
-//		       bool normalize=true);
 
 Real L2InnerProduct(const FlowField& f, const RealProfile& phi, bool normalize = true);
 
@@ -99,12 +96,6 @@ inline Real L2IP(const FlowField& f, const FlowField& g, int kxmax, int kzmax, b
 inline Complex L2IP(const FlowField& f, const BasisFunc& phi, bool normalize = true) {
     return L2InnerProduct(f, phi, normalize);
 }
-
-// UNIMPLEMENTED
-// inline Complex L2IP(const FlowField& f, const ComplexChebyCoeff& phi,
-//		    bool normalize=true) {
-//  return L2InnerProduct(f,phi,normalize);
-//}
 
 inline Real L2IP(const FlowField& f, const RealProfile& phi, bool normalize = true) {
     return L2InnerProduct(f, phi, normalize);
@@ -268,20 +259,11 @@ void perturbationTermsLin(const FlowField& u, FlowField& u_nlin, FlowField& f, F
 void perturbationTermsNLin(const FlowField& u, FlowField& u_nlin, FlowField& f, FlowField& tmp, FlowField& tmppert,
                            const fieldstate finalstate = Spectral);
 
-/****************************************************************
-void  linearAboutFieldNL(const FlowField& u, const FlowField& ubase,
-                         const FlowField& ubtot, const FlowField& grad_ubtot,
-                         FlowField& f, FlowField& tmp);
-*******************************************/
-
 void linearAboutFieldNL(const FlowField& u, const FlowField& ubase, const ChebyCoeff& U, FlowField& f, FlowField& tmp,
                         FlowField& tmp2, const fieldstate finalstate = Spectral);
 
 void linearizedNL(const FlowField& u_, const FlowField& ubtot, const FlowField& grad_ubtot, FlowField& f,
                   FlowField& tmp, const fieldstate finalstate = Spectral);
-
-// Unimplemented
-// void matlabSave(FlowField& f, int i, std::string& filename);
 
 void assignOrrSommField(FlowField& u, FlowField& P, Real t, Real Reynolds, Complex omega, const ComplexChebyCoeff& ueig,
                         const ComplexChebyCoeff& veig, const ComplexChebyCoeff& peig);
@@ -310,10 +292,10 @@ Real getdPdz(const FlowField& u, Real nu);
 Real getUbulk(const FlowField& u);
 Real getWbulk(const FlowField& u);
 
-std::string fieldstats_t(const FlowField& u, Real t);      // return some information about u
-std::string fieldstatsheader_t(const string tname = "t");  // header for fieldstats
-std::string fieldstats(const FlowField& u);                // return some information about u
-std::string fieldstatsheader();                            // header for fieldstats
+std::string fieldstats_t(const FlowField& u, Real t);           // return some information about u
+std::string fieldstatsheader_t(const std::string tname = "t");  // header for fieldstats
+std::string fieldstats(const FlowField& u);                     // return some information about u
+std::string fieldstatsheader();                                 // header for fieldstats
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif

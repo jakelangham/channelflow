@@ -14,7 +14,8 @@
 #include "nsolver/eigenvals.h"
 
 using namespace std;
-using namespace cfbasics;
+
+using namespace Eigen;
 
 // Arnoldi iteration estimates the eigenvalues of a matrix A by iteratively
 // constructing a QR decomposition of a matrix whose columns are
@@ -40,7 +41,7 @@ using namespace cfbasics;
 // and translates between fields of the PDE du^n = L^n du and the corresponding vectors
 // v^n = A^n b by using a dynamical system interface (DSI).
 
-namespace nsolver {
+namespace chflow {
 
 EigenvalsFlags::EigenvalsFlags() {}
 
@@ -116,7 +117,7 @@ void Eigenvals::checkConjugacy(const VectorXcd& u, const VectorXcd& v) {
     //   }
 }
 
-void Eigenvals::solve(nsolver::DSI& dsi, const VectorXd& x, VectorXd& dx, Real T, Real eps) {
+void Eigenvals::solve(DSI& dsi, const VectorXd& x, VectorXd& dx, Real T, Real eps) {
     const int prec = 16;
 
     int taskid = 0;
@@ -133,12 +134,12 @@ void Eigenvals::solve(nsolver::DSI& dsi, const VectorXd& x, VectorXd& dx, Real T
 
     dx /= L2Norm(dx);
 
-    unique_ptr<nsolver::Arnoldi> arnoldi;
+    unique_ptr<Arnoldi> arnoldi;
     // If the system is normal (self-adjoint), use Lanczos algorithm instead of Arnoldi one.
     if (eigenflags.isnormal) {
-        arnoldi = unique_ptr<nsolver::Arnoldi>(new Lanczos(dx, eigenflags.Narnoldi, eigenflags.EPS_kry));
+        arnoldi = unique_ptr<Arnoldi>(new Lanczos(dx, eigenflags.Narnoldi, eigenflags.EPS_kry));
     } else {
-        arnoldi = unique_ptr<nsolver::Arnoldi>(new Arnoldi(dx, eigenflags.Narnoldi, eigenflags.EPS_kry));
+        arnoldi = unique_ptr<Arnoldi>(new Arnoldi(dx, eigenflags.Narnoldi, eigenflags.EPS_kry));
     }
 
     // Initialize output streams
@@ -289,4 +290,4 @@ ostream& operator<<(ostream& os, const EigenvalsFlags& flags) {
     return os;
 }
 
-}  // namespace nsolver
+}  // namespace chflow

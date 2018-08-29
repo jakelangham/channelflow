@@ -10,7 +10,7 @@
 
 using namespace std;
 
-namespace channelflow {
+namespace chflow {
 
 const Real EPSILON = 1.0;
 
@@ -233,4 +233,4 @@ Real HelmholtzSolver::residual(const ChebyCoeff& u, Real mu, const ChebyCoeff& f
 
 Real HelmholtzSolver::lambda() const { return lambda_; }
 
-}  // namespace channelflow
+}  // namespace chflow

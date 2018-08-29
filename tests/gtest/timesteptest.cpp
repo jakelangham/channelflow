@@ -10,14 +10,15 @@
 #include "channelflow/dnsflags.h"
 #include "gtest/gtest.h"
 
-namespace channelflowtest {
 using namespace std;
-using namespace channelflow;
 
+namespace chflow {
+namespace test {
 /// A TimeStep object with some reasonable settings
 class TimeStepTest : public ::testing::Test {
    protected:
     TimeStepTest() : ts(0.1, 1e-2, 1.0, 10.0, 0.4, 0.6, true) {}
+
     TimeStep ts;
     const double eps = 1e-16;
 };
@@ -94,5 +95,5 @@ TEST_F(TimeStepTest, totalTime) {
     EXPECT_EQ(totalTimeSteps, 36);
     EXPECT_NEAR(360.0, totalTime, 1e-9);  // Attention: Machine precision is not reached!
 }
-
-}  // end namespace channelflowtest
+}  // namespace test
+}  // namespace chflow

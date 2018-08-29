@@ -23,7 +23,6 @@
 #include <memory>
 
 using namespace std;
-using namespace cfbasics;
 
 namespace {
 /// @brief Expands an input filename using wordexp, if wordexp
@@ -59,7 +58,7 @@ inline string expand_filename(const char* input) {
 
 }  // namespace
 
-namespace channelflow {
+namespace chflow {
 
 const Real QUADRATURE_EPSILON = 1e-17;
 
@@ -1162,8 +1161,8 @@ Complex ComplexChebyCoeff::mean() const { return Complex(re.mean(), im.mean()); 
 //}
 
 ComplexChebyCoeff& ComplexChebyCoeff::operator*=(Complex c) {
-    Real cr = cfbasics::Re(c);
-    Real ci = cfbasics::Im(c);
+    Real cr = Re(c);
+    Real ci = Im(c);
     Real ur;
     Real ui;
     for (int n = 0; n < re.numModes(); ++n) {
@@ -1419,4 +1418,4 @@ Complex innerProduct(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, Nor
     return (n == Uniform) ? L2InnerProduct(u, v, normalize) : chebyInnerProduct(u, v, normalize);
 }
 
-}  // namespace channelflow
+}  // namespace chflow

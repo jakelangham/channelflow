@@ -18,11 +18,13 @@
 #include <string>
 #include <vector>
 
-namespace cfbasics {
+namespace chflow {
 
 // forward declaration
 void write(std::ostream& os, int n);
+
 void read(std::istream& is, int& n);
+
 typedef double Real;
 const int REAL_OUTPUT_DIGITS = 17;
 
@@ -32,21 +34,27 @@ class cfarray {
     using data_container_t = std::vector<T>;
 
     cfarray(int N = 0);
+
     cfarray(int N, const T& t);
 
     bool operator==(const cfarray& a);
+
     bool operator!=(const cfarray& a);
 
     void resize(int N);
+
     void fill(const T& t);
 
     inline typename data_container_t::reference operator[](int i);
+
     inline typename data_container_t::const_reference operator[](int i) const;
 
     cfarray subvector(int offset, int N) const;
 
     int N() const;
+
     int length() const;
+
     const T* pointer() const;  // Efficiency overrules safety in thesis code.
     T* pointer();
 
@@ -54,6 +62,7 @@ class cfarray {
     // read and write      form binary io pair
     void save(const std::string& filename) const;  // inverse of cfarray(file)
     void binaryDump(std::ostream& os) const;
+
     void binaryLoad(std::istream& is);
 
    private:
@@ -175,5 +184,6 @@ void cfarray<T>::binaryLoad(std::istream& is) {
         is.read((char*)d++, size);
 }
 
-}  // namespace cfbasics
+}  // namespace chflow
+
 #endif

@@ -11,9 +11,9 @@
 #endif
 
 using namespace std;
-using namespace cfbasics;
+using namespace Eigen;
 
-namespace nsolver {
+namespace chflow {
 
 /*==================================================================================*/
 /*            Class Lanczos                                                         */
@@ -93,4 +93,4 @@ void Lanczos::eigencalc() {
         }
 }
 
-}  // namespace nsolver
+}  // namespace chflow

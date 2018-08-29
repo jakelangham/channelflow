@@ -13,8 +13,7 @@
 #include "cfbasics/cfvector.h"
 #include "cfbasics/mathdefs.h"
 
-using namespace cfbasics;
-namespace channelflow {
+namespace chflow {
 
 typedef double Real;
 
@@ -119,6 +118,6 @@ inline const Real& BandedTridiag::lodiag(int i) const {
     return d_[3 * i + 1];
 }
 
-}  // namespace channelflow
+}  // namespace chflow
 
 #endif

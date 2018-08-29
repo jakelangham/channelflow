@@ -9,7 +9,7 @@
 #include "channelflow/utilfuncs.h"
 
 using namespace std;
-using namespace channelflow;
+using namespace chflow;
 
 int main(int argc, char** argv) {
     cfMPI_Init(&argc, &argv);

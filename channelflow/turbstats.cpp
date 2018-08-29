@@ -11,62 +11,10 @@
 
 #include "cfbasics/mathdefs.h"
 using namespace std;
-using namespace cfbasics;
 
-namespace channelflow {
+namespace chflow {
 
 TurbStats::TurbStats() : count_(0), nu_(0) {}
-
-/***********************************
-TurbStats(const string& filebase)
-  :
-  count_(0),
-  nu_(0)
-{
-  ifstream is;
-  ifstreamOpen(is, filebase, ".asc");
-  if (!is) {
-    cerr << "TurbStats::TurbStats(filebase) : can't open file "
-         << filebase << " or " << (filebase+".asc") << endl;
-    exit(1);
-  }
-
-  // Read in header. Form is "%N a b nu count wallunits"
-  char c;
-  int N;
-  Real a;
-  Real b;
-  bool wallunits;
-  is >> c;
-  if (c != '%') {
-    string message("TurbStats(filebase): bad header in file ");
-    message += filename;
-    cerr << message << endl;
-    exit(1);
-  }
-  is >> N >> a >> b >> nu_ >> count_ >> wallunits;
-  ChebyCoeff shape(N,a,b,Physical);
-  Ubase_ = shape;
-  U_ = shape;
-  ubase_ = shape;
-  uu_ = shape;
-  uv_ = shape;
-  uw_ = shape;
-  vv_ = shape;
-  vw_ = shape;
-  ww_ = shape;
-  assert(is.good());
-  // Read in mean values, in wall units or physical
-  for (int i=0; i<N; ++i) {
-    is >> uu_[i] >> uv_[i] >> uw_[i] >> vv_[i] >> vw_[i] >> ww_[i]
-       >> Ubase_[i] >> ubase_[i] >> U_[i];
-    assert(is.good());
-  }
-  is.close();
-
-  // Now convert from means (and wall units) back to accumulation sums.
-}
-***************/
 
 TurbStats::TurbStats(const ChebyCoeff& Ubase, Real nu)
     : count_(0),
@@ -111,8 +59,8 @@ void TurbStats::addData(FlowField& un, FlowField& tmp) {
     un.makePhysical_y();
 
     for (int ny = 0; ny < Ny; ++ny) {
-        ubase_[ny] += cfbasics::Re(un.cmplx(0, ny, 0, 0));
-        U_[ny] += cfbasics::Re(un.cmplx(0, ny, 0, 0)) + Ubase_[ny];
+        ubase_[ny] += Re(un.cmplx(0, ny, 0, 0));
+        U_[ny] += Re(un.cmplx(0, ny, 0, 0)) + Ubase_[ny];
     }
 
     // Compute uu(y).
@@ -137,12 +85,12 @@ void TurbStats::addData(FlowField& un, FlowField& tmp) {
             }
     tmp.makeSpectral_xz();
     for (int ny = 0; ny < Ny; ++ny) {
-        uu_[ny] += cfbasics::Re(tmp.cmplx(0, ny, 0, 0));
-        uv_[ny] += cfbasics::Re(tmp.cmplx(0, ny, 0, 1));
-        uw_[ny] += cfbasics::Re(tmp.cmplx(0, ny, 0, 2));
-        vv_[ny] += cfbasics::Re(tmp.cmplx(0, ny, 0, 3));
-        vw_[ny] += cfbasics::Re(tmp.cmplx(0, ny, 0, 4));
-        ww_[ny] += cfbasics::Re(tmp.cmplx(0, ny, 0, 5));
+        uu_[ny] += Re(tmp.cmplx(0, ny, 0, 0));
+        uv_[ny] += Re(tmp.cmplx(0, ny, 0, 1));
+        uw_[ny] += Re(tmp.cmplx(0, ny, 0, 2));
+        vv_[ny] += Re(tmp.cmplx(0, ny, 0, 3));
+        vw_[ny] += Re(tmp.cmplx(0, ny, 0, 4));
+        ww_[ny] += Re(tmp.cmplx(0, ny, 0, 5));
     }
     ++count_;
     un.makeState(xzstate, ystate);
@@ -270,4 +218,4 @@ void TurbStats::msave(const string& filebase, bool wallunits) const {
     }
 }
 
-}  // namespace channelflow
+}  // namespace chflow

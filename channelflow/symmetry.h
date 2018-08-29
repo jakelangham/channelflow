@@ -17,7 +17,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/realprofile.h"
 
-namespace channelflow {
+namespace chflow {
 
 // FieldSymmetry sigma(sx,sy,sz,ax,az,s) takes ax,az in [0,1] and s,sx,sy,sz in {-1,1}
 
@@ -53,8 +53,6 @@ class FieldSymmetry {
     int sign(int i) const;
 
     void save(const std::string& filebase, std::ios::openmode openflag = std::ios::out) const;
-    // Real error(const FlowField& u) const; // L2Dist(u, (this)(u))
-    // FieldSymmetry optimalPhase(const FlowField& u) const;
 
     bool isIdentity() const;  // true if FieldSymmetry is "1 1 1 1 0 0"
 
@@ -110,6 +108,6 @@ FieldSymmetry operator*(const FieldSymmetry& s1, const FieldSymmetry& s2);
 
 FieldSymmetry quadraticInterpolate(const cfarray<FieldSymmetry>& sn, const cfarray<Real>& xn, Real x);
 FieldSymmetry polynomialInterpolate(const cfarray<FieldSymmetry>& sn, const cfarray<Real>& xn, Real x);
-}  // namespace channelflow
+}  // namespace chflow
 
 #endif

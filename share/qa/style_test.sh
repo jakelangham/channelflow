@@ -3,7 +3,7 @@
 # Description:
 #    This script is used to check style on files that changed
 
-changed_since_branching=$(git diff --name-only --diff-filter=ACM ecps... | tr " " "\n" | grep -E "*\.(cpp|hpp|h)")
+changed_since_branching=$(git diff --name-only --diff-filter=ACM master... | tr " " "\n" | grep -E "*\.(cpp|hpp|h)")
 
 exit_status=0
 

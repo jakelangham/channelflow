@@ -7,7 +7,8 @@
 #include "channelflow/flowfield.h"
 
 using namespace std;
-using namespace channelflow;
+
+using namespace chflow;
 
 int main(int argc, char* argv[]) {
     const Real maxerr = 1e-14;

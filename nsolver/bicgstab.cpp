@@ -5,9 +5,9 @@
 #include "nsolver/bicgstab.h"
 #include <iostream>
 using namespace std;
-using namespace cfbasics;
+using namespace Eigen;
 
-namespace nsolver {
+namespace chflow {
 
 // BiCGStab::BiCGStab () {};
 
@@ -82,4 +82,4 @@ Real BiCGStab::residual() { return residual_; }
 
 VectorXd BiCGStab::solution() { return solution_; }
 
-}  // namespace nsolver
+}  // namespace chflow

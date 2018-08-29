@@ -12,7 +12,7 @@
 #include "channelflow/utilfuncs.h"
 
 using namespace std;
-using namespace channelflow;
+using namespace chflow;
 
 Real project(const FlowField& u, const FieldSymmetry& s, int sign);
 

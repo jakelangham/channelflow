@@ -13,9 +13,8 @@
 #include "cfbasics/cfarray.h"
 #include "cfbasics/mathdefs.h"
 #include "channelflow/chebyshev.h"
-using namespace cfbasics;
 
-namespace channelflow {
+namespace chflow {
 
 class FieldSymmetry;
 
@@ -219,6 +218,6 @@ inline fieldstate BasisFunc::state() const { return state_; }
 // helper function for emulating 2-tensors with 9d fields
 inline int i3j(int i, int j) { return 3 * i + j; }
 
-}  // namespace channelflow
+}  // namespace chflow
 
 #endif

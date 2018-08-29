@@ -22,8 +22,7 @@
 #include <memory>
 #include <type_traits>
 
-using namespace cfbasics;
-namespace channelflow {
+namespace chflow {
 
 enum BC { Free, Diri };
 enum NormType { Uniform, Chebyshev };  // Uniform weighting in y or 1/sqrt(1-y^2)
@@ -153,7 +152,7 @@ class ComplexChebyCoeff {
     ComplexChebyCoeff& operator+=(const ComplexChebyCoeff& f);
     ComplexChebyCoeff& operator-=(const ComplexChebyCoeff& f);
     ComplexChebyCoeff& operator*=(Real c);
-    ComplexChebyCoeff& operator*=(Complex c);                   // gcc-2.95 can't handle this
+    ComplexChebyCoeff& operator*=(Complex c);
     ComplexChebyCoeff& operator*=(const ComplexChebyCoeff& c);  // dottimes
 
     void conjugate();  // destructive
@@ -218,7 +217,6 @@ void integrate(const ChebyCoeff& df, ChebyCoeff& f);
 ChebyCoeff integrate(const ChebyCoeff& df);
 
 void legendre(int n, ChebyCoeff& u, ChebyTransform& trans, bool normalize = false);
-// ChebyCoeff chebyshev(int N, int n,ChebyTransform& trans, bool normalize=false);
 
 //   normalize  ?   false                  :  true
 // L2Norm2(f)   =      Int_a^b f^2 dy            1/(b-a) Int_a^b f^2 dy
@@ -241,9 +239,7 @@ Real chebyDist(const ChebyCoeff& f, const ChebyCoeff& g, bool normalize = true);
 Real chebyInnerProduct(const ChebyCoeff& f, const ChebyCoeff& g, bool normalize = true);
 
 Real norm2(const ChebyCoeff& f, NormType n, bool normalize = true);
-// Was undefined
-/*Real dist2(const ChebyCoeff& f, NormType n, const ChebyCoeff& g,
-           bool normalize=true); */
+
 Real norm(const ChebyCoeff& f, NormType n, bool normalize = true);
 Real dist(const ChebyCoeff& f, const ChebyCoeff& g, NormType n, bool normalize = true);
 Real innerProduct(const ChebyCoeff& f, const ChebyCoeff& g, NormType n, bool normalize = true);
@@ -303,9 +299,7 @@ Real chebyDist(const ComplexChebyCoeff& f, const ComplexChebyCoeff& g, bool norm
 Complex chebyInnerProduct(const ComplexChebyCoeff& f, const ComplexChebyCoeff& g, bool normalize = true);
 
 Real norm2(const ComplexChebyCoeff& f, NormType n, bool normalize = true);
-// Was Undefined
-/*Real dist2(const ComplexChebyCoeff& f, NormType n, const ChebyCoeff& g,
-           bool normalize=true); */
+
 Real norm(const ComplexChebyCoeff& f, NormType n, bool normalize = true);
 Real dist(const ComplexChebyCoeff& f, const ComplexChebyCoeff& g, NormType n, bool normalize = true);
 Complex innerProduct(const ComplexChebyCoeff& f, const ComplexChebyCoeff& g, NormType n, bool normalize = true);
@@ -315,8 +309,6 @@ Real L1Dist(const ComplexChebyCoeff& f, const ComplexChebyCoeff& g, bool normali
 
 Real LinfNorm(const ComplexChebyCoeff& f);
 Real LinfDist(const ComplexChebyCoeff& f, const ComplexChebyCoeff& g);
-
-// ComplexChebyCoeff chebyEval(const ComplexChebyCoeff& c, const Vector& x);
 
 inline Real ChebyCoeff::a() const { return a_; }
 inline Real ChebyCoeff::b() const { return b_; }
@@ -340,21 +332,21 @@ inline const ChebyCoeff& Im(const ComplexChebyCoeff& f) { return f.im; }
 
 inline Complex ComplexChebyCoeff::operator[](int i) const { return re[i] + I * im[i]; }
 inline void ComplexChebyCoeff::set(int i, Complex c) {
-    re[i] = cfbasics::Re(c);
-    im[i] = cfbasics::Im(c);
+    re[i] = Re(c);
+    im[i] = Im(c);
 }
 inline void ComplexChebyCoeff::add(int i, Complex c) {
-    re[i] += cfbasics::Re(c);
-    im[i] += cfbasics::Im(c);
+    re[i] += Re(c);
+    im[i] += Im(c);
 }
 inline void ComplexChebyCoeff::sub(int i, Complex c) {
-    re[i] -= cfbasics::Re(c);
-    im[i] -= cfbasics::Im(c);
+    re[i] -= Re(c);
+    im[i] -= Im(c);
 }
 
 inline int ChebyTransform::N() const { return N_; }
 inline int ChebyTransform::length() const { return N_; }
 
-}  // namespace channelflow
+}  // namespace chflow
 
 #endif /* CHEBYSHEV_H */

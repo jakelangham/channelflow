@@ -11,9 +11,8 @@
 #include "channelflow/periodicfunc.h"
 
 using namespace std;
-using namespace cfbasics;
 
-namespace channelflow {
+namespace chflow {
 
 Vector periodicpoints(int N, Real L) {
     Vector x(N + 1);
@@ -569,4 +568,4 @@ Real L2IP(const PeriodicFunc& f, const PeriodicFunc& g, bool normalize) {
     return sum;
 }
 
-}  // namespace channelflow
+}  // namespace chflow

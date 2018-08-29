@@ -5,9 +5,10 @@
 #include "fgmres.h"
 
 using namespace std;
-using namespace cfbasics;
 
-namespace nsolver {
+using namespace Eigen;
+
+namespace chflow {
 
 /*==================================================================================*/
 /*            Class FGMRES                                                           */
@@ -124,4 +125,4 @@ MatrixXd FGMRES::AZn() const { return AZ_.block(0, 0, M_, n_); }
 MatrixXd FGMRES::Vn() const { return V_.block(0, 0, M_, n_ + 1); }
 const MatrixXd& FGMRES::V() const { return V_; }
 void FGMRES::resetV() { V_.conservativeResize(NoChange, 1); }
-}  // namespace nsolver
+}  // namespace chflow

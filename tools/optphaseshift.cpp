@@ -9,7 +9,7 @@
 #include "channelflow/flowfield.h"
 #include "channelflow/utilfuncs.h"
 using namespace std;
-using namespace channelflow;
+using namespace chflow;
 
 // Integrate 10 timesteps and find phaseshift that minimizes L2(u(10) - u(0))
 int main(int argc, char* argv[]) {

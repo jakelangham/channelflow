@@ -7,10 +7,8 @@
 #define NSOLVER_GMRES_H
 
 #include "cfbasics/cfbasics.h"
-using namespace Eigen;
-using namespace cfbasics;
 
-namespace nsolver {
+namespace chflow {
 
 /*==================================================================================*/
 /*            Class GMRES                                                           */
@@ -35,25 +33,25 @@ namespace nsolver {
 class GMRES {
    public:
     GMRES();
-    GMRES(const VectorXd& b, int Niterations, Real minCondition = 1e-13);
+    GMRES(const Eigen::VectorXd& b, int Niterations, Real minCondition = 1e-13);
 
-    const VectorXd& testVector() const;
-    void iterate(const VectorXd& A_testvec);
+    const Eigen::VectorXd& testVector() const;
+    void iterate(const Eigen::VectorXd& A_testvec);
 
-    const VectorXd& solution() const;  // current best approx to soln x of Ax=b
-    const VectorXd& guess() const;
+    const Eigen::VectorXd& solution() const;  // current best approx to soln x of Ax=b
+    const Eigen::VectorXd& guess() const;
     Real residual() const;  // |Ax-b|/|b|
 
     int n() const;
     int Niter() const;
 
-    MatrixXd Hn() const;        // Hn  = (n+1) x n submatrix of H
-    MatrixXd Qn() const;        // Qn  = M x n     submatrix of Q
-    MatrixXd Qn1() const;       // Qn1 = M x (n+1) submatrix of Q
-    void resetQ();              // reset Qn to size(b)
-    const MatrixXd& Q() const;  // Q is large, so avoid copying it
+    Eigen::MatrixXd Hn() const;        // Hn  = (n+1) x n submatrix of H
+    Eigen::MatrixXd Qn() const;        // Qn  = M x n     submatrix of Q
+    Eigen::MatrixXd Qn1() const;       // Qn1 = M x (n+1) submatrix of Q
+    void resetQ();                     // reset Qn to size(b)
+    const Eigen::MatrixXd& Q() const;  // Q is large, so avoid copying it
 
-    VectorXd solve(const VectorXd& bprime, Real& residual);
+    Eigen::VectorXd solve(const Eigen::VectorXd& bprime, Real& residual);
 
    private:
     int M_;      // dimension of vector space
@@ -61,15 +59,15 @@ class GMRES {
     int n_;      // current iteration number
     Real condition_;
 
-    MatrixXd H_;
-    MatrixXd Q_;
-    MatrixXd Vn_;
-    VectorXd x0_;  // guess;
-    VectorXd v_;
-    VectorXd qn_;
-    VectorXd xn_;
+    Eigen::MatrixXd H_;
+    Eigen::MatrixXd Q_;
+    Eigen::MatrixXd Vn_;
+    Eigen::VectorXd x0_;  // guess;
+    Eigen::VectorXd v_;
+    Eigen::VectorXd qn_;
+    Eigen::VectorXd xn_;
     Real bnorm_;
     Real residual_;
 };
-}  // namespace nsolver
+}  // namespace chflow
 #endif

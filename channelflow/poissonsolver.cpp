@@ -9,7 +9,7 @@
 
 using namespace std;
 
-namespace channelflow {
+namespace chflow {
 
 PoissonSolver::PoissonSolver() : Mx_(0), My_(0), Mz_(0), Nd_(0), Lx_(0), Lz_(0), a_(0), b_(0), helmholtz_(0) {}
 
@@ -480,4 +480,4 @@ Real PressureSolver::verify(const FlowField& p, const FlowField& u_) {
     return l2err + bcerr;
 }
 
-}  // namespace channelflow
+}  // namespace chflow

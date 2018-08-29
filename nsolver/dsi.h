@@ -11,9 +11,7 @@
 #include "cfbasics/arglist.h"
 #include "cfbasics/cfbasics.h"
 
-using namespace cfbasics;
-
-namespace nsolver {
+namespace chflow {
 
 /*==================================================================================*/
 /*               Base class for vector-valued functions                             */
@@ -41,35 +39,37 @@ class DSI {
      * and return a vector of the same size as the input.
      */
 
-    virtual VectorXd eval(const VectorXd& x) = 0;
+    virtual Eigen::VectorXd eval(const Eigen::VectorXd& x) = 0;
 
-    virtual VectorXd eval(const VectorXd& x0, const VectorXd& x1, bool symopt = false);
+    virtual Eigen::VectorXd eval(const Eigen::VectorXd& x0, const Eigen::VectorXd& x1, bool symopt = false);
 
     /** Save vector x in "outdir/filebase" */
-    virtual void save(const VectorXd& x, const std::string filebase, const std::string outdir = "./",
+    virtual void save(const Eigen::VectorXd& x, const std::string filebase, const std::string outdir = "./",
                       const bool fieldsonly = false);
 
     /** Save eigenvectors x in "outdir */
-    virtual void saveEigenvec(const VectorXd& x, const string label, const string outdir);  // Save real eigenvectors
+    virtual void saveEigenvec(const Eigen::VectorXd& x, const std::string label,
+                              const std::string outdir);  // Save real eigenvectors
 
     // Save complex conjugate eigenvectors pair
-    virtual void saveEigenvec(const VectorXd& x1, const VectorXd& x2, const string label1, const string label2,
-                              const string outdir);
+    virtual void saveEigenvec(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2, const std::string label1,
+                              const std::string label2, const std::string outdir);
 
-    virtual VectorXd quadraticInterpolate_vector(const cfarray<VectorXd>& xn, const cfarray<Real>& s, Real snew);
+    virtual Eigen::VectorXd quadraticInterpolate_vector(const cfarray<Eigen::VectorXd>& xn, const cfarray<Real>& s,
+                                                        Real snew);
     /** Norm(x) */
-    virtual Real DSIL2Norm(const VectorXd& x);
+    virtual Real DSIL2Norm(const Eigen::VectorXd& x);
 
-    virtual Real extractT(const VectorXd& x);
-    virtual Real extractXshift(const VectorXd& x);
-    virtual Real extractZshift(const VectorXd& x);
+    virtual Real extractT(const Eigen::VectorXd& x);
+    virtual Real extractXshift(const Eigen::VectorXd& x);
+    virtual Real extractZshift(const Eigen::VectorXd& x);
 
     /** Give a string that contains various (physical) properties computed from x, E.g. different norms.
      * This string may be used by programs (such as continuation) to save information the state to
      * the disk. Standard delimiter should be tab ("\t")
      */
-    virtual std::string stats(const VectorXd& x);
-    virtual pair<string, string> stats_minmax(const VectorXd& x);
+    virtual std::string stats(const Eigen::VectorXd& x);
+    virtual std::pair<std::string, std::string> stats_minmax(const Eigen::VectorXd& x);
 
     /** Return an appropriate file header for the string returned by stats. */
     virtual std::string statsHeader();
@@ -79,13 +79,13 @@ class DSI {
      * what the parameter mu means and update the ODE accordingly.
      */
     virtual void updateMu(Real mu) { mu_ = mu; }
-    virtual void saveParameters(string searchdir) {}
-    virtual void saveResults(string searchdir) {}
+    virtual void saveParameters(std::string searchdir) {}
+    virtual void saveResults(std::string searchdir) {}
     virtual Real mu() const { return mu_; }
-    virtual string printMu() { return ""; }
-    virtual Real observable(VectorXd& x) { return 0; }
-    virtual void phaseShift(MatrixXd& y) {}
-    virtual void phaseShift(VectorXd& x) {}
+    virtual std::string printMu() { return ""; }
+    virtual Real observable(Eigen::VectorXd& x) { return 0; }
+    virtual void phaseShift(Eigen::MatrixXd& y) {}
+    virtual void phaseShift(Eigen::VectorXd& x) {}
 
     /** Number of entries at the end of the vector x that do not correspond to physical coefficients, e.g.
      * entries containing translation distances in directions of continuous symmetries.
@@ -103,8 +103,8 @@ class DSI {
      * \param[out] fcount number of calls to eval()
      * \return J_x dot dx
      */
-    virtual VectorXd Jacobian(const VectorXd& x, const VectorXd& dx, const VectorXd& Gx, const Real& epsDx,
-                              bool centdiff, int& fcount);
+    virtual Eigen::VectorXd Jacobian(const Eigen::VectorXd& x, const Eigen::VectorXd& dx, const Eigen::VectorXd& Gx,
+                                     const Real& epsDx, bool centdiff, int& fcount);
 
     /** \brief compute derivative of vector along x axis.
      * Used in enforcing orthogonality when searching for travelling waves drifting in x.
@@ -112,7 +112,7 @@ class DSI {
      * \param[in] a compute da/dx
      * \return da/dx
      */
-    virtual VectorXd xdiff(const VectorXd& a);
+    virtual Eigen::VectorXd xdiff(const Eigen::VectorXd& a);
 
     /** \brief Optional: compute derivative of vector along z axis.
      * Used in enforcing orthogonality when searching for travelling waves drifting in z
@@ -120,7 +120,7 @@ class DSI {
      * \param[in] a compute da/dz
      * \return da/dz
      */
-    virtual VectorXd zdiff(const VectorXd& a);
+    virtual Eigen::VectorXd zdiff(const Eigen::VectorXd& a);
 
     /** \brief Optional: compute derivative of vector along time evolution
      * Used in enforcing orthogonality when searching for periodic orbits.
@@ -128,9 +128,9 @@ class DSI {
      * \param[in] a compute da/dt
      * \return da/dt
      */
-    virtual VectorXd tdiff(const VectorXd& a, Real epsDt);
+    virtual Eigen::VectorXd tdiff(const Eigen::VectorXd& a, Real epsDt);
 
-    virtual Real tph_observable(VectorXd& x);
+    virtual Real tph_observable(Eigen::VectorXd& x);
 
     void setOs(std::ostream* newos) { os_ = newos; }
 
@@ -151,5 +151,5 @@ class DSI {
     std::ostream* os_;
 };
 
-}  // namespace nsolver
+}  // namespace chflow
 #endif

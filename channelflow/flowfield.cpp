@@ -50,9 +50,9 @@
 #include <vector>
 
 using namespace std;
-using namespace cfbasics;
+using namespace Eigen;
 
-namespace channelflow {
+namespace chflow {
 
 #ifdef HAVE_LIBHDF5_CPP
 void hdf5write(int i, const string& name, H5::H5File& h5file);
@@ -1835,12 +1835,12 @@ Real FlowField::eval(Real x, Real y, Real z, int i) const {
             Real cx = kx * alpha_x;  // cx = 2pi kx x /Lx
 
             // Unroll kz=0 terms, so as not to double-count the real part
-            u_my += cfbasics::Re(this->cmplx(mx, my, 0, i) * exp(Complex(0.0, cx)));
+            u_my += Re(this->cmplx(mx, my, 0, i) * exp(Complex(0.0, cx)));
 
             for (int mz = 1; mz < Mz(); ++mz) {
                 // RHS = u_{kx,kz} exp(2pi i (x kx/Lx + z kz/Lz)) + complex conj
                 Real cz = mz * gamma_z;
-                u_my += 2 * cfbasics::Re(this->cmplx(mx, my, mz, i) * exp(Complex(0.0, (cx + cz))));
+                u_my += 2 * Re(this->cmplx(mx, my, mz, i) * exp(Complex(0.0, (cx + cz))));
             }
         }
         uprof[my] = u_my;
@@ -2371,7 +2371,7 @@ void FlowField::saveProfile(int mx, int mz, const string& filebase, const ChebyT
         for (int ny = 0; ny < Ny_; ++ny) {
             for (int i = 0; i < Nd_; ++i) {
                 Complex c = (*this).cmplx(mx, ny, mz, i);
-                os << cfbasics::Re(c) << ' ' << cfbasics::Im(c) << ' ';
+                os << Re(c) << ' ' << Im(c) << ' ';
             }
             os << '\n';
         }
@@ -2413,7 +2413,7 @@ void FlowField::saveSpectrum(const string& filebase, int i, int ny, bool kxorder
                     os << sqrt(energy(mx(kx), mz(kz))) << ' ';
                 else {
                     Complex f = this->cmplx(mx(kx), ny, mz(kz), i);
-                    os << cfbasics::Re(f) << ' ' << cfbasics::Im(f) << ' ';
+                    os << Re(f) << ' ' << Im(f) << ' ';
                 }
             }
             os << endl;
@@ -2425,7 +2425,7 @@ void FlowField::saveSpectrum(const string& filebase, int i, int ny, bool kxorder
                     os << sqrt(energy(mx, mz)) << ' ';
                 else {
                     Complex f = this->cmplx(mx, ny, mz, i);
-                    os << cfbasics::Re(f) << ' ' << cfbasics::Im(f) << ' ';
+                    os << Re(f) << ' ' << Im(f) << ' ';
                 }
             }
             os << endl;
@@ -2592,8 +2592,7 @@ void FlowField::asciiSave(const string& filebase) const {
             for (long ny = 0; ny < Ny_; ++ny)
                 for (int mx = 0; mx < Mx(); ++mx)
                     for (int mz = 0; mz < Mz(); ++mz)
-                        os << setw(w) << cfbasics::Re(cmplx(mx, ny, mz, i)) << s << setw(w)
-                           << cfbasics::Im(cmplx(mx, ny, mz, i)) << nl;
+                        os << setw(w) << Re(cmplx(mx, ny, mz, i)) << s << setw(w) << Im(cmplx(mx, ny, mz, i)) << nl;
     }
     os.close();
 }
@@ -3428,11 +3427,11 @@ void FlowField::writeNetCDF(const string& filebase, vector<string> component_nam
 #endif
 
         /* define the grid and write it to file */
-        cfbasics::Vector xpts(Nx_io);  // grid points have changed in case padded_=true
+        Vector xpts(Nx_io);  // grid points have changed in case padded_=true
         for (int nx = 0; nx < Nx_io; nx++)
             xpts[nx] = nx * Lx_ / Nx_io;
-        cfbasics::Vector ypts = ygridpts();
-        cfbasics::Vector zpts(Nz_io);
+        Vector ypts = ygridpts();
+        Vector zpts(Nz_io);
         for (int nz = 0; nz < Nz_io; nz++)
             zpts[nz] = nz * Lz_ / Nz_io;
 
@@ -3569,7 +3568,7 @@ void FlowField::writeNetCDF(const string& filebase, vector<string> component_nam
                 int tmp1 = nylocmin_;
                 int tmp2 = Nyloc_;
 
-                // FIXME: Here we are sending a value of type cfbasics::lint (a.k.a ptrdiff_t a.k.a long int on most
+                // FIXME: Here we are sending a value of type lint (a.k.a ptrdiff_t a.k.a long int on most
                 // archs)
                 // FIXME: using a MPI_INT instead of an MPI long. The matching receive should be probably adjusted, but
                 // for
@@ -4506,11 +4505,11 @@ void field2vector(const FlowField& u, VectorXd& a) {
     for (int ny = 2; ny < Ny; ++ny)
         // Ny-2 modes (line 1 of table)
         if (u.taskid() == u.task_coeff(0, 0))
-            a(n++) = cfbasics::Re(u.cmplx(0, ny, 0, 0));
+            a(n++) = Re(u.cmplx(0, ny, 0, 0));
     for (int ny = 2; ny < Ny; ++ny)
         // Ny-2 modes (line 2)
         if (u.taskid() == u.task_coeff(0, 0))
-            a(n++) = cfbasics::Re(u.cmplx(0, ny, 0, 2));
+            a(n++) = Re(u.cmplx(0, ny, 0, 2));
     // Some coefficients from the FlowField are linearly dependent due
     // to BCs and divergence constraint. Omit these from a(n), and reconstruct
     // them in vector2field(v,u) using the constraint equations. In what follows,
@@ -4521,26 +4520,26 @@ void field2vector(const FlowField& u, VectorXd& a) {
     for (int kx = 1; kx <= Kx; ++kx) {
         int mx = u.mx(kx);
         if (u.taskid() == u.task_coeff(mx, 0)) {
-            for (int ny = 2; ny < Ny; ++ny) {                  // w BCs => ny=0,1 coefficients
-                a(n++) = cfbasics::Re(u.cmplx(mx, ny, 0, 2));  // J(Ny-2) modes (line 3a)
-                a(n++) = cfbasics::Im(u.cmplx(mx, ny, 0, 2));  // J(Ny-2) modes (line 3b)
+            for (int ny = 2; ny < Ny; ++ny) {        // w BCs => ny=0,1 coefficients
+                a(n++) = Re(u.cmplx(mx, ny, 0, 2));  // J(Ny-2) modes (line 3a)
+                a(n++) = Im(u.cmplx(mx, ny, 0, 2));  // J(Ny-2) modes (line 3b)
             }
-            for (int ny = 3; ny < Ny - 1; ++ny) {              // u BCs => 0,1; v BC => 2; div => Ny-1
-                a(n++) = cfbasics::Re(u.cmplx(mx, ny, 0, 0));  // J(Ny-4) modes (line 4a)
-                a(n++) = cfbasics::Im(u.cmplx(mx, ny, 0, 0));  // J(Ny-4) modes (line 4b)
+            for (int ny = 3; ny < Ny - 1; ++ny) {    // u BCs => 0,1; v BC => 2; div => Ny-1
+                a(n++) = Re(u.cmplx(mx, ny, 0, 0));  // J(Ny-4) modes (line 4a)
+                a(n++) = Im(u.cmplx(mx, ny, 0, 0));  // J(Ny-4) modes (line 4b)
             }
         }
     }
     for (int kz = 1; kz <= Kz; ++kz) {
         int mz = u.mz(kz);
         if (u.taskid() == u.task_coeff(0, mz)) {
-            for (int ny = 2; ny < Ny; ++ny) {                  // u BCs => 0,1; v BC => 2; div => Ny-1
-                a(n++) = cfbasics::Re(u.cmplx(0, ny, mz, 0));  // K(Ny-2)  (line 5a)
-                a(n++) = cfbasics::Im(u.cmplx(0, ny, mz, 0));  // K(Ny-2)  (line 5b)
+            for (int ny = 2; ny < Ny; ++ny) {        // u BCs => 0,1; v BC => 2; div => Ny-1
+                a(n++) = Re(u.cmplx(0, ny, mz, 0));  // K(Ny-2)  (line 5a)
+                a(n++) = Im(u.cmplx(0, ny, mz, 0));  // K(Ny-2)  (line 5b)
             }
-            for (int ny = 3; ny < Ny - 1; ++ny) {              // w BCs => 0,1; v BC => 2; div => Ny-1
-                a(n++) = cfbasics::Re(u.cmplx(0, ny, mz, 2));  // K(Ny-2)  (line 6a)
-                a(n++) = cfbasics::Im(u.cmplx(0, ny, mz, 2));  // K(Ny-2)  (line 6b)
+            for (int ny = 3; ny < Ny - 1; ++ny) {    // w BCs => 0,1; v BC => 2; div => Ny-1
+                a(n++) = Re(u.cmplx(0, ny, mz, 2));  // K(Ny-2)  (line 6a)
+                a(n++) = Im(u.cmplx(0, ny, mz, 2));  // K(Ny-2)  (line 6b)
             }
         }
     }
@@ -4552,13 +4551,13 @@ void field2vector(const FlowField& u, VectorXd& a) {
         for (int kz = 1; kz <= Kz; ++kz) {
             int mz = u.mz(kz);
             if (u.taskid() == u.task_coeff(mx, mz)) {
-                for (int ny = 2; ny < Ny; ++ny) {                   // u BCs => 0,1;
-                    a(n++) = cfbasics::Re(u.cmplx(mx, ny, mz, 0));  // JK(Ny-2)  (line 7a)
-                    a(n++) = cfbasics::Im(u.cmplx(mx, ny, mz, 0));  // JK(Ny-2)  (line 7b)
+                for (int ny = 2; ny < Ny; ++ny) {         // u BCs => 0,1;
+                    a(n++) = Re(u.cmplx(mx, ny, mz, 0));  // JK(Ny-2)  (line 7a)
+                    a(n++) = Im(u.cmplx(mx, ny, mz, 0));  // JK(Ny-2)  (line 7b)
                 }
-                for (int ny = 3; ny < Ny - 1; ++ny) {               // w BCs => 0,1; v BC => 2; div => Ny-1
-                    a(n++) = cfbasics::Re(u.cmplx(mx, ny, mz, 2));  // JK(Ny-4)  (line 8a)
-                    a(n++) = cfbasics::Im(u.cmplx(mx, ny, mz, 2));  // JK(Ny-4)  (line 8b)
+                for (int ny = 3; ny < Ny - 1; ++ny) {     // w BCs => 0,1; v BC => 2; div => Ny-1
+                    a(n++) = Re(u.cmplx(mx, ny, mz, 2));  // JK(Ny-4)  (line 8a)
+                    a(n++) = Im(u.cmplx(mx, ny, mz, 2));  // JK(Ny-4)  (line 8b)
                 }
             }
         }
@@ -4768,4 +4767,4 @@ void fixdivnoslip(FlowField& u) {
     vector2field(v, u);
 }
 
-}  // namespace channelflow
+}  // namespace chflow

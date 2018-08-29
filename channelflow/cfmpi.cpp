@@ -10,9 +10,7 @@
 #include "cfmpi.h"
 #include "cfbasics/cfbasics.h"
 
-using namespace cfbasics;
-
-namespace channelflow {
+namespace chflow {
 int cfMPI_Init(int* argc, char*** argv) {
     int res = 0;
 
@@ -132,4 +130,4 @@ void CfMPI::Init(int nproc0, int nproc1) {
 #endif
 }
 
-}  // namespace channelflow
+}  // namespace chflow

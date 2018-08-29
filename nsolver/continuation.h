@@ -12,11 +12,11 @@
 #include "nsolver/newton.h"
 #include "nsolver/nsolver.h"
 
-namespace nsolver {
+namespace chflow {
 class ContinuationFlags {
    public:
     ContinuationFlags();
-    ContinuationFlags(cfbasics::ArgList& args);
+    ContinuationFlags(ArgList& args);
 
     bool arclength;            // arclength continuation
     Real initialParamStep;     ///< initial relative increment for quadratic extrapolation in continuation parameter
@@ -38,16 +38,16 @@ class ContinuationFlags {
     bool haveTargetMu;         // Abort if a target value of mu is reached
     Real targetMu;             // The target value
 
-    void save(const string& outdir = "") const;
-    void load(int taskid, const string indir);
-    const vector<string> getFlagList();
+    void save(const std::string& outdir = "") const;
+    void load(int taskid, const std::string indir);
+    const std::vector<std::string> getFlagList();
 };
 
 // Real continuation1(DSI& dsi, NewtonAlgorithm& N, const VectorXd& x0, const Real mu0, ContinuationFlags& cflags);
 
-VectorXd quadraticInterpolate(cfarray<VectorXd>& xn, const cfarray<Real>& mun, Real mu, Real eps = 1e-13);
+Eigen::VectorXd quadraticInterpolate(cfarray<Eigen::VectorXd>& xn, const cfarray<Real>& mun, Real mu, Real eps = 1e-13);
 
-bool readContinuationInfo(string restartdir[3], ContinuationFlags& cflags);
+bool readContinuationInfo(std::string restartdir[3], ContinuationFlags& cflags);
 
 /** Perform hookstep continuation.
  *
@@ -62,7 +62,7 @@ bool readContinuationInfo(string restartdir[3], ContinuationFlags& cflags);
  * Intermediate results get saved into directories search-i where i is the step counter.
  * The parameter value, L2Norm and arclength are saved into MuE.asc
  */
-Real continuation(DSI& dsiG, Newton& newton, cfarray<VectorXd> x, cfarray<Real> mu, nsolver::ContinuationFlags& cflags);
+Real continuation(DSI& dsiG, Newton& newton, cfarray<Eigen::VectorXd> x, cfarray<Real> mu, ContinuationFlags& cflags);
 
-}  // namespace nsolver
+}  // namespace chflow
 #endif  // NSOLVER_CONTINUATION_H

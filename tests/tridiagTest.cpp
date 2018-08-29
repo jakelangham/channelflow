@@ -6,7 +6,7 @@
 #include "channelflow/bandedtridiag.h"
 
 using namespace std;
-using namespace channelflow;
+using namespace chflow;
 
 int main() {
     bool save = false;

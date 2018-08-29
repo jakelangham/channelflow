@@ -12,7 +12,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/symmetry.h"
 
-namespace channelflow {
+namespace chflow {
 
 /**
  * Represents a vector field on the xz-periodic domain [0, Lx] x [a,b] x [0,Lz]
@@ -122,6 +122,6 @@ void orthonormalize(std::vector<RealProfileNG>& basis);
 // Remove all elements from basis which are not symmetric under all members of s, to a given tolerence
 void selectSymmetries(std::vector<RealProfileNG>& basis, const std::vector<FieldSymmetry>& s,
                       const Real tolerance = 1e-13);
-}  // namespace channelflow
+}  // namespace chflow
 
 #endif

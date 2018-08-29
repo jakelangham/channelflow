@@ -18,7 +18,8 @@
 // Or start U and u from zero and check convergence onto utot = 1-y^2
 
 using namespace std;
-using namespace channelflow;
+
+using namespace chflow;
 
 class PressureBodyForce : public BodyForce {
    public:
@@ -73,9 +74,6 @@ int main(int argc, char* argv[]) {
         const Real T0 = 0.0;
         const Real T1 = 10.0;
 
-        // utot = Ubase + un
-        // baseflow == true   =>  Ubase,un == parabola,zero
-        // baseflow == false  =>  Ubase,un == zero,parabola,
         bool baseflow = false;
 
         DNSFlags flags;

@@ -47,7 +47,7 @@
 // when it matters. Test your code for correct FlowField transforms and
 // states by compiling and running with debug libs: "make foo.dx; ./foo.dx".
 
-namespace channelflow {
+namespace chflow {
 
 class FieldSymmetry;
 
@@ -198,14 +198,14 @@ class FlowField {
 
     FlowField& operator*=(Real x);
     FlowField& operator*=(Complex x);
-    FlowField& operator+=(const ChebyCoeff& U);           //  i.e. u(0,*,0,0) += U
-    FlowField& operator-=(const ChebyCoeff& U);           //       u(0,*,0,0) -= U
-    FlowField& operator+=(const vector<ChebyCoeff>& UW);  // i.e. u(0,*,0,0) += U and u(0,*,0.2) += W
-    FlowField& operator-=(const vector<ChebyCoeff>& UW);  // i.e. u(0,*,0,0) -= U and u(0,*,0.2) -= W
-    FlowField& operator+=(const Real& a);                 //  i.e. u(0,*,0,0) += a
-    FlowField& operator-=(const Real& a);                 //       u(0,*,0,0) -= a
-    FlowField& operator+=(const ComplexChebyCoeff& U);    // u.cmplx(0,*,0,0) += U
-    FlowField& operator-=(const ComplexChebyCoeff& U);    // u.cmplx(0,*,0,0) += U
+    FlowField& operator+=(const ChebyCoeff& U);                //  i.e. u(0,*,0,0) += U
+    FlowField& operator-=(const ChebyCoeff& U);                //       u(0,*,0,0) -= U
+    FlowField& operator+=(const std::vector<ChebyCoeff>& UW);  // i.e. u(0,*,0,0) += U and u(0,*,0.2) += W
+    FlowField& operator-=(const std::vector<ChebyCoeff>& UW);  // i.e. u(0,*,0,0) -= U and u(0,*,0.2) -= W
+    FlowField& operator+=(const Real& a);                      //  i.e. u(0,*,0,0) += a
+    FlowField& operator-=(const Real& a);                      //       u(0,*,0,0) -= a
+    FlowField& operator+=(const ComplexChebyCoeff& U);         // u.cmplx(0,*,0,0) += U
+    FlowField& operator-=(const ComplexChebyCoeff& U);         // u.cmplx(0,*,0,0) += U
     FlowField& operator+=(const BasisFunc& U);
     FlowField& operator-=(const BasisFunc& U);
     FlowField& operator+=(const RealProfile& U);
@@ -228,14 +228,15 @@ class FlowField {
     void asciiSave(const std::string& filebase) const;
     void binarySave(const std::string& filebase) const;
     void hdf5Save(const std::string& filebase) const;
-    void writeNetCDF(const std::string& filebase, vector<string> component_names = vector<string>()) const;
+    void writeNetCDF(const std::string& filebase,
+                     std::vector<std::string> component_names = std::vector<std::string>()) const;
     void VTKSave(const std::string& filebase, bool SwapEndian = true) const;
 
     // read methods
     void readNetCDF(const std::string& filebase);
 
     // save to .h5 or .ff based on file extension, or if none, presence of HDF5 libs
-    void save(const std::string& filebase, vector<string> component_names = vector<string>()) const;
+    void save(const std::string& filebase, std::vector<std::string> component_names = std::vector<std::string>()) const;
 
     // save k-normal slice of ith component at nkth gridpoint (along k-direction)
     void saveSlice(int k, int i, int nk, const std::string& filebase, int xstride = 1, int ystride = 1,
@@ -307,7 +308,6 @@ class FlowField {
     Real Lz_ = 0;
     Real a_ = 0;
     Real b_ = 0;
-    //   Real nu_;        // fluid kinematic viscosity, 0 if inappropriate
 
     // size parameters for dealiased I/O
     int Nx_io_;
@@ -618,9 +618,9 @@ inline void FlowField::add(const Real a, const FlowField& u, const Real b, const
 
 // The field2vector and vector2field functions assume zero divergece and no-slip BCs.
 int field2vector_size(const FlowField& u);
-void field2vector(const FlowField& u, VectorXd& v);
-void vector2field(const VectorXd& v, FlowField& u);
+void field2vector(const FlowField& u, Eigen::VectorXd& v);
+void vector2field(const Eigen::VectorXd& v, FlowField& u);
 void fixdivnoslip(FlowField& u);
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif

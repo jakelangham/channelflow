@@ -15,7 +15,8 @@
 #include "channelflow/utilfuncs.h"
 
 using namespace std;
-using namespace channelflow;
+
+using namespace chflow;
 
 Real energy(FlowField& u, int i, bool normalize = true);
 
@@ -93,7 +94,7 @@ int main(int argc, char* argv[]) {
                 cferror("Not available for scalar fields");
             }
 
-            if (flags.baseflow != channelflow::ZeroBase) {
+            if (flags.baseflow != ZeroBase) {
                 ofstream uProfileOut;
                 ofstream wProfileOut;
                 openfile(uProfileOut, "uprofile.asc");
@@ -126,7 +127,7 @@ int main(int argc, char* argv[]) {
                 cferror("Not available for scalar fields");
             }
 
-            if (flags.baseflow != channelflow::ZeroBase) {
+            if (flags.baseflow != ZeroBase) {
                 cout << "computing statistics of Utot = u + Ubase \n" << endl, u += Baseflow;
                 u.cmplx(0, 0, 0, 1) -= Complex(ubasefac * flags.Vsuck, 0.);
             }
@@ -169,7 +170,7 @@ int main(int argc, char* argv[]) {
             for (int i = 0; i < u.Nd(); ++i) {
                 cout << "mean u[" << i << "] == " << Re(u.profile(0, 0, i)).mean() << endl;
             }
-            if (flags.baseflow != channelflow::ZeroBase) {
+            if (flags.baseflow != ZeroBase) {
                 u += Baseflow;
                 u.cmplx(0, 0, 0, 1) -= Complex(ubasefac * flags.Vsuck, 0.);
 
@@ -192,7 +193,7 @@ int main(int argc, char* argv[]) {
             cout << "dPdx(u)  == " << getdPdx(u, flags.nu) << endl;
             cout << "Ubulk(u) == " << getUbulk(u) << endl;
 
-            if (flags.baseflow != channelflow::ZeroBase) {
+            if (flags.baseflow != ZeroBase) {
                 u += Baseflow;
                 u.cmplx(0, 0, 0, 1) -= Complex(ubasefac * flags.Vsuck, 0.);
                 cout << "dPdx(u+U)  == " << getdPdx(u, flags.nu) << endl;
@@ -387,7 +388,7 @@ int main(int argc, char* argv[]) {
             // cout << "wallshear(u)   == " <<  0.5*(abs(wallshearUpper(u))+abs(wallshearLower(u))) << endl;
             cout << "energy(u)      == " << 0.5 * L2Norm2(u) << endl;
 
-            if (flags.baseflow != channelflow::ZeroBase) {
+            if (flags.baseflow != ZeroBase) {
                 u += Baseflow;
                 u.cmplx(0, 0, 0, 1) -= Complex(ubasefac * flags.Vsuck, 0.);
                 cout << "dissip (u+U)   == " << dissipation(u) << endl;
@@ -463,7 +464,7 @@ int main(int argc, char* argv[]) {
                 cferror("Not available for scalar fields");
             }
 
-            if (flags.baseflow == channelflow::ZeroBase)
+            if (flags.baseflow == ZeroBase)
                 cferror(
                     "to display wall properties provide the base flow, either a file or DNS flags to construct it.");
 

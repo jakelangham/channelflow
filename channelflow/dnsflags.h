@@ -17,7 +17,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/flowfield.h"
 
-namespace channelflow {
+namespace chflow {
 
 class DNSFlags;
 
@@ -102,8 +102,8 @@ class DNSFlags {
     bool dealias_y() const;
 
     virtual void save(const std::string& outdir = "") const;  // save into file filebase.txt
-    virtual void load(int taskid, const string indir);
-    virtual const vector<string> getFlagList();
+    virtual void load(int taskid, const std::string indir);
+    virtual const std::vector<std::string> getFlagList();
 
     BaseFlow baseflow;             // utot = u + Ubase(y) ex
     MeanConstraint constraint;     // Enforce const press grad or const bulk vel
@@ -201,5 +201,5 @@ class TimeStep {
 
 std::ostream& operator<<(std::ostream& os, const TimeStep& ts);
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif

@@ -18,7 +18,7 @@
 #include "channelflow/flowfield.h"
 #include "channelflow/helmholtz.h"
 
-namespace channelflow {
+namespace chflow {
 
 // Solve lapl u = f with dirichlet BCs. u is unknown, f is given.
 class PoissonSolver {
@@ -105,5 +105,5 @@ class PressureSolver : public PoissonSolver {
 // the same place in the software dependency graph.
 // jfg Wed May 18 18:12:13 EDT 2005
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif

@@ -18,8 +18,7 @@
 #include <iostream>
 #include <memory>
 
-using namespace cfbasics;
-namespace channelflow {
+namespace chflow {
 
 Vector periodicpoints(int N, Real L);  // N+1 pts {0, L/N, 2L/N, ..., L}
 
@@ -182,6 +181,6 @@ inline Real& PeriodicFunc::operator[](uint n) {
 
 inline Real PeriodicFunc::x(uint n) const { return n * (L_ / N_); }
 
-}  // namespace channelflow
+}  // namespace chflow
 
 #endif

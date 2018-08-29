@@ -16,9 +16,7 @@
 #include "nsolver/gmres.h"
 #include "nsolver/newton.h"
 
-using namespace Eigen;
-
-namespace nsolver {
+namespace chflow {
 //   /*==================================================================================*/
 //   /*            function  GMRESHookstep and friends                                   */
 //   /*==================================================================================*/
@@ -111,14 +109,14 @@ class NewtonSearchFlags {
 
     NewtonSearchFlags(ArgList& args);
     SolverMethod string2solver(std::string);
-    string solver2string() const;
+    std::string solver2string() const;
     OptimizationMethod string2optimization(std::string);
-    string optimization2string() const;
-    SolutionType string2solntype(string s) const;
-    string solntype2string() const;
-    void save(const string& outdir = "") const;
-    void load(int taskid, const string indir);
-    const vector<string> getFlagList();
+    std::string optimization2string() const;
+    SolutionType string2solntype(std::string s) const;
+    std::string solntype2string() const;
+    void save(const std::string& outdir = "") const;
+    void load(int taskid, const std::string indir);
+    const std::vector<std::string> getFlagList();
 };
 
 /** Combined Newton Hookstep algorithm
@@ -129,12 +127,12 @@ class NewtonSearchFlags {
  *
  * \return fixed point/one point on periodic orbit
  */
-VectorXd hookstepSearch(DSI& dsiG, const VectorXd& x0, const NewtonSearchFlags& searchflags, Real& gx);
+Eigen::VectorXd hookstepSearch(DSI& dsiG, const Eigen::VectorXd& x0, const NewtonSearchFlags& searchflags, Real& gx);
 
 class NewtonAlgorithm : public Newton {
    public:
     NewtonAlgorithm(NewtonSearchFlags searchflags);
-    virtual VectorXd solve(DSI& dsi, const VectorXd& x, Real& residual);
+    virtual Eigen::VectorXd solve(DSI& dsi, const Eigen::VectorXd& x, Real& residual);
     NewtonSearchFlags searchflags;
 
     virtual void setLogstream(std::ostream* os);
@@ -143,21 +141,21 @@ class NewtonAlgorithm : public Newton {
     Eigen::MatrixXd jacobi(const Eigen::VectorXd& x, const Real epsilon, const bool centerdiff, int& fcount);
 
    private:
-    int linear(VectorXd& dxOpt, VectorXd& GxOpt, const VectorXd& x);
-    int hookstep(VectorXd& dxH, VectorXd& GxH, const VectorXd& x, const VectorXd& b);
-    int convergenceCheckAC(const VectorXd& dx, VectorXd& Gx, const VectorXd& x);
+    int linear(Eigen::VectorXd& dxOpt, Eigen::VectorXd& GxOpt, const Eigen::VectorXd& x);
+    int hookstep(Eigen::VectorXd& dxH, Eigen::VectorXd& GxH, const Eigen::VectorXd& x, const Eigen::VectorXd& b);
+    int convergenceCheckAC(const Eigen::VectorXd& dx, Eigen::VectorXd& Gx, const Eigen::VectorXd& x);
 
-    ostream* os;
+    std::ostream* os;
     int fcount_newton_;
     int fcount_opt_;
 
     // required for Hookstep algorithm
-    unique_ptr<GMRES> gmres_;
-    unique_ptr<FGMRES> fgmres_;
+    std::unique_ptr<GMRES> gmres_;
+    std::unique_ptr<FGMRES> fgmres_;
     Real delta_;
     Real rx_;  // Dennis & Schnabel residual r(x) = 1/2 ||f(x)||^2
 };
 
-}  // namespace nsolver
+}  // namespace chflow
 
 #endif

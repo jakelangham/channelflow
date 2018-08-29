@@ -12,7 +12,7 @@
 
 using namespace std;
 
-namespace channelflow {
+namespace chflow {
 
 FieldSymmetry::FieldSymmetry() : s_(1), sx_(1), sy_(1), sz_(1), ax_(0), az_(0) {}
 
@@ -397,4 +397,4 @@ ostream& operator<<(ostream& os, const SymmetryList& s) {
     return os;
 }
 
-}  // namespace channelflow
+}  // namespace chflow

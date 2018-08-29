@@ -18,14 +18,13 @@
 #include "nsolver/nsolver.h"
 
 using namespace std;
-using namespace channelflow;
+using namespace Eigen;
+using namespace chflow;
 
 // This program calculates eigenvalues of fixed point of plane Couette flow
 // using Arnoldi iteration. The ideas and algorithm are based on Divakar
 // Viswanath, "Recurrent motions within plane Couette turbulence",
 // J. Fluid Mech.</em> 580 (2007), http://arxiv.org/abs/physics/0604062.
-
-// void projectout(FlowField& u, const FlowField& e); // remove from u component along e direction
 
 int main(int argc, char* argv[]) {
     cfMPI_Init(&argc, &argv);
@@ -47,9 +46,9 @@ int main(int argc, char* argv[]) {
 
         // The Eigenvals class is utilized to solve the eigenvalue problem.
         // This class requires Arnoldi class.
-        unique_ptr<nsolver::Eigenvals> E;
-        nsolver::EigenvalsFlags eigenflags(args);
-        E = unique_ptr<nsolver::Eigenvals>(new nsolver::Eigenvals(eigenflags));
+        unique_ptr<Eigenvals> E;
+        EigenvalsFlags eigenflags(args);
+        E = unique_ptr<Eigenvals>(new Eigenvals(eigenflags));
 
         args.section("Program options");
         const bool poincare =

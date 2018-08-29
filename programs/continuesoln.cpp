@@ -12,21 +12,22 @@
 #include "nsolver/nsolver.h"
 
 using namespace std;
-using namespace channelflow;
+using namespace Eigen;
+using namespace chflow;
 
 int main(int argc, char* argv[]) {
     cfMPI_Init(&argc, &argv);
     {
         ArgList args(argc, argv, "parametric continuation of invariant solution");
 
-        nsolver::ContinuationFlags cflags(args);
+        ContinuationFlags cflags(args);
         cflags.save();
 
-        unique_ptr<nsolver::Newton> N;
+        unique_ptr<Newton> N;
         bool Rxsearch, Rzsearch, Tsearch;
-        nsolver::NewtonSearchFlags searchflags(args);
+        NewtonSearchFlags searchflags(args);
         searchflags.save();
-        N = unique_ptr<nsolver::Newton>(new nsolver::NewtonAlgorithm(searchflags));
+        N = unique_ptr<Newton>(new NewtonAlgorithm(searchflags));
 
         Rxsearch = searchflags.xrelative;
         Rzsearch = searchflags.zrelative;
@@ -72,7 +73,7 @@ int main(int argc, char* argv[]) {
 
         string uname(""), restartdir[3];
         if (restart) {
-            bool solutionsAvail = nsolver::readContinuationInfo(restartdir, cflags);
+            bool solutionsAvail = readContinuationInfo(restartdir, cflags);
 
             if (!solutionsAvail) {
                 restartdir[0] = args.getpath(1, "<string>", "directory containing solution 1");
@@ -282,7 +283,7 @@ int main(int argc, char* argv[]) {
 #endif
         cout << Nunk_total << " unknowns" << endl;
 
-        Real muFinal = nsolver::continuation(*dsi, *N, x, mu, cflags);
+        Real muFinal = continuation(*dsi, *N, x, mu, cflags);
         cout << "Final mu is " << muFinal << endl;
     }
     cfMPI_Finalize();

@@ -10,8 +10,8 @@
 #include <vector>
 #include "cfbasics/mathdefs.h"
 #include "channelflow/basisfunc.h"
-using namespace cfbasics;
-namespace channelflow {
+
+namespace chflow {
 
 enum Sign { Minus = -1, Plus = 1 };
 std::ostream& operator<<(std::ostream&, Sign s);
@@ -39,11 +39,6 @@ class RealProfile {
 
     RealProfile(int Nd, int Ny, int kx, int kz, Real Lx, Real Lz, Real a, Real b, Sign sign,
                 fieldstate state = Spectral);
-
-    /*******************
-    RealProfile(int Ny, int kx, int kz, Real Lx, Real Lz, Real a, Real b,
-                Sign sign, fieldstate state=Spectral);    // defaults to Nd=3
-    ************************/
 
     RealProfile(int Ny, const RealProfile& f);
 
@@ -217,5 +212,5 @@ inline Real L2IP(const RealProfile& f, const RealProfile& g, bool normalize = tr
     return L2InnerProduct(f, g, normalize);
 }
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif

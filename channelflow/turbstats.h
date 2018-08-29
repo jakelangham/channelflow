@@ -15,7 +15,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/flowfield.h"
 
-namespace channelflow {
+namespace chflow {
 
 class TurbStats {
    public:
@@ -61,6 +61,6 @@ class TurbStats {
     ChebyCoeff ww_;
 };
 
-}  // namespace channelflow
+}  // namespace chflow
 
 #endif  // TURBSTATS

@@ -27,7 +27,8 @@
 //  ut == the true solution.\n\n";
 
 using namespace std;
-using namespace channelflow;
+
+using namespace chflow;
 
 int main(int argc, char* argv[]) {
     bool verbose = false;

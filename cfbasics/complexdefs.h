@@ -16,11 +16,11 @@
 // easily excluded, to avoid name clashes when working with other libraries
 // (like Octave).
 
-namespace cfbasics {
+namespace chflow {
 
 inline Complex exp(const Complex& z) { return std::exp(Re(z)) * Complex(cos(Im(z)), sin(Im(z))); }
 inline Complex log(const Complex& z) { return Complex(std::log(abs(z)), arg(z)); }
 
-}  // namespace cfbasics
+}  // namespace chflow
 
 #endif

@@ -9,9 +9,9 @@
 #include "cfbasics/cfbasics.h"
 
 using namespace std;
-using namespace cfbasics;
+using namespace Eigen;
 
-namespace nsolver {
+namespace chflow {
 
 MultishootingDSI::MultishootingDSI() {}
 
@@ -428,4 +428,4 @@ pair<string, string> MultishootingDSI::stats_minmax(const VectorXd& x) {
 
 int MultishootingDSI::nShot() { return nShot_; }
 
-}  // namespace nsolver
+}  // namespace chflow

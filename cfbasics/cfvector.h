@@ -20,7 +20,7 @@
 #include <iomanip>
 #include <vector>
 
-namespace cfbasics {
+namespace chflow {
 
 template <class T>
 struct FFTAllocator {
@@ -256,15 +256,15 @@ inline Vector Vector::modularSubvector(int offset, int N) const {
     return subvec;
 }
 
-inline void Vector::save(const string& filebase) const {
-    string filename(filebase);
-    filename += string(".asc");
-    ofstream os(filename.c_str());
+inline void Vector::save(const std::string& filebase) const {
+    std::string filename(filebase);
+    filename += std::string(".asc");
+    std::ofstream os(filename.c_str());
 
-    os << scientific << setprecision(REAL_DIGITS);
+    os << std::scientific << std::setprecision(REAL_DIGITS);
     os << "% " << data_.size() << " 1\n";
     for (auto ii = 0u; ii < data_.size(); ++ii) {
-        os << setw(REAL_IOWIDTH) << data_[ii] << '\n';
+        os << std::setw(REAL_IOWIDTH) << data_[ii] << '\n';
     }
     os.close();
 }
@@ -434,7 +434,7 @@ inline int maxElemIndex(const Vector& v) {
     return index;
 }
 
-inline ostream& operator<<(ostream& os, const Vector& a) {
+inline std::ostream& operator<<(std::ostream& os, const Vector& a) {
     int N = a.length();
     char seperator = (N < 10) ? ' ' : '\n';
     for (int i = 0; i < N; ++i) {
@@ -444,5 +444,5 @@ inline ostream& operator<<(ostream& os, const Vector& a) {
     return os;
 }
 
-}  // namespace cfbasics
+}  // namespace chflow
 #endif

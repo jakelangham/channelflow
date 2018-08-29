@@ -16,7 +16,7 @@
 #include "channelflow/utilfuncs.h"
 #include "nsolver/nsolver.h"
 
-namespace channelflow {
+namespace chflow {
 
 /** \file laurettedsi.h
  * This is an implementation of an algorithm to search for fixed points
@@ -75,17 +75,17 @@ class EulerDNS : public MultistepDNS {
    public:
     EulerDNS();
     EulerDNS(const EulerDNS& dns);
-    EulerDNS(const vector<FlowField>& fields, const shared_ptr<NSE>& nse, const DNSFlags& flags);
+    EulerDNS(const std::vector<FlowField>& fields, const std::shared_ptr<NSE>& nse, const DNSFlags& flags);
 
     ~EulerDNS();
     EulerDNS& operator=(const EulerDNS& dns);
 
     // TODO: Check if overloading a virtual function is something we want or just an error
     using MultistepDNS::advance;
-    virtual void advance(vector<FlowField>& fieldsn, int Nsteps, FlowField& linearU, bool linearize, Real Cx, Real cx,
-                         bool quad);
+    virtual void advance(std::vector<FlowField>& fieldsn, int Nsteps, FlowField& linearU, bool linearize, Real Cx,
+                         Real cx, bool quad);
 
-    DNSAlgorithm* clone(const shared_ptr<NSE>& nse) const override;  // new copy of *this
+    DNSAlgorithm* clone(const std::shared_ptr<NSE>& nse) const override;  // new copy of *this
 };
 
 /** \brief Dynamical systems interface for Laurettes fixed point method */
@@ -93,25 +93,24 @@ class LauretteDSI : public cfDSI {
    public:
     LauretteDSI(FlowField& u, DNSFlags& flags, Real dt, bool xrel, bool zrel, FieldSymmetry sigma);
     virtual ~LauretteDSI();
-    VectorXd eval(const VectorXd& x);
-    virtual VectorXd Jacobian(const VectorXd& x, const VectorXd& dx, const VectorXd& Gx, const cfbasics::Real& epsDx,
-                              bool centdiff, int& fcount);
-    virtual void updateMu(cfbasics::Real mu);
+    Eigen::VectorXd eval(const Eigen::VectorXd& x);
+    virtual Eigen::VectorXd Jacobian(const Eigen::VectorXd& x, const Eigen::VectorXd& dx, const Eigen::VectorXd& Gx,
+                                     const Real& epsDx, bool centdiff, int& fcount);
+    virtual void updateMu(Real mu);
 
-    VectorXd Q(const VectorXd& w);
-    //   virtual VectorXd makeVector(const FlowField& u, FieldSymmetry& sigma, Real T);
+    Eigen::VectorXd Q(const Eigen::VectorXd& w);
 
     Real shift2speed(Real ax);
 
    private:
     //   FlowField ut_, udt_, U_;
-    vector<FlowField> fieldst_, fieldsdt_;
+    std::vector<FlowField> fieldst_, fieldsdt_;
     FlowField U_;
     //   FlowField p;
     Real dt_;
 
-    shared_ptr<NSE> nse;
-    unique_ptr<EulerDNS> alg;
+    std::shared_ptr<NSE> nse;
+    std::unique_ptr<EulerDNS> alg;
 };
 
-}  // namespace channelflow
+}  // namespace chflow

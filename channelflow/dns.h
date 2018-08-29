@@ -20,9 +20,7 @@
 #include "channelflow/flowfield.h"
 #include "channelflow/nse.h"
 
-using namespace cfbasics;
-
-namespace channelflow {
+namespace chflow {
 
 // DNS is a wrapper class for DNSAlgorithms. It's the main class for
 // integrating the Navier-Stokes equations in top-level programs.
@@ -35,19 +33,19 @@ class DNS {
    public:
     DNS();
     DNS(const DNS& dns);
-    DNS(const vector<FlowField>& fields, const DNSFlags& flags);
-    DNS(const vector<FlowField>& fields, const vector<ChebyCoeff>& base, const DNSFlags& flags);
+    DNS(const std::vector<FlowField>& fields, const DNSFlags& flags);
+    DNS(const std::vector<FlowField>& fields, const std::vector<ChebyCoeff>& base, const DNSFlags& flags);
 
     virtual ~DNS();
 
     DNS& operator=(const DNS& dns);
 
     void loaddnsflags(int taskid, DNSFlags& flags, TimeStep& dt,  // UNIMPLEMENTED
-                      const string indir);
-    void advance(vector<FlowField>& fields, int nSteps = 1);
+                      const std::string indir);
+    void advance(std::vector<FlowField>& fields, int nSteps = 1);
 
-    void project();                                      // Project onto symmetric subspace
-    void operator*=(const vector<FieldSymmetry>& symm);  // Apply symmetry to internal fields
+    void project();                                           // Project onto symmetric subspace
+    void operator*=(const std::vector<FieldSymmetry>& symm);  // Apply symmetry to internal fields
 
     // Convert potentially fake pressure q and true pressure p, back and forth.
     // TODO: check if still need. If yes, implement for general vector of fields
@@ -59,12 +57,9 @@ class DNS {
     virtual void reset_time(Real t);
     virtual void reset_gradp(Real dPdx, Real dPdz);    // change dPdx and enforce const dPdx
     virtual void reset_bulkv(Real Ubulk, Real Wbulk);  // change Ubulk and enforce const Ubulk
-    // void reset_dPdx(Real dPdx);    // change dPdx and enforce const dPdx
-    // void reset_Ubulk(Real Ubulk);  // change Ubulk and enforce const Ubulk
 
-    // void reset_uj(const FlowField& uj, int j);  // set u[j]=u(t-j*dt)
-    bool push(const vector<FlowField>& fields);  // push into u[j] stack from another DNS,
-    virtual bool full() const;                   // is u[j] full, can we commence timestepping?
+    bool push(const std::vector<FlowField>& fields);  // push into u[j] stack from another DNS,
+    virtual bool full() const;                        // is u[j] full, can we commence timestepping?
 
     virtual int order() const;       // err should scale as dt^order
     virtual int Ninitsteps() const;  // number of steps needed to initialize
@@ -90,15 +85,17 @@ class DNS {
     virtual void printStack() const;
 
    protected:
-    shared_ptr<NSE> main_nse_;
-    shared_ptr<NSE> init_nse_;
+    std::shared_ptr<NSE> main_nse_;
+    std::shared_ptr<NSE> init_nse_;
     DNSAlgorithm* main_algorithm_;
     DNSAlgorithm* init_algorithm_;
 
-    shared_ptr<NSE> newNSE(const vector<FlowField>& fields, const DNSFlags& flags);
-    shared_ptr<NSE> newNSE(const vector<FlowField>& fields, const vector<ChebyCoeff>& base, const DNSFlags& flags);
+    std::shared_ptr<NSE> newNSE(const std::vector<FlowField>& fields, const DNSFlags& flags);
+    std::shared_ptr<NSE> newNSE(const std::vector<FlowField>& fields, const std::vector<ChebyCoeff>& base,
+                                const DNSFlags& flags);
 
-    DNSAlgorithm* newAlgorithm(const vector<FlowField>& fields, const shared_ptr<NSE>& nse, const DNSFlags& flags);
+    DNSAlgorithm* newAlgorithm(const std::vector<FlowField>& fields, const std::shared_ptr<NSE>& nse,
+                               const DNSFlags& flags);
 };
 
 /****************************************************************************
@@ -199,8 +196,6 @@ class DNSPoincare : public DNS {
     bool advanceToSection(FlowField& u, FlowField& q, int nSteps, int crosssign = 0, Real Tmin = 0,
                           Real epsilon = 1e-13);
 
-    // Real f(const FlowField& u) const; // poincare condition is f(u) == 0
-
     const FlowField& ucrossing() const;
     const FlowField& pcrossing() const;
     Real hcrossing() const;  // value of poincare condition at crossing
@@ -223,5 +218,5 @@ class DNSPoincare : public DNS {
 };
 // END EXPERIMENTAL CODE
 
-}  // namespace channelflow
+}  // namespace chflow
 #endif

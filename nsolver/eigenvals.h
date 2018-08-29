@@ -13,9 +13,7 @@
 #include "nsolver/dsi.h"
 #include "nsolver/lanczos.h"
 
-using namespace cfbasics;
-
-namespace nsolver {
+namespace chflow {
 
 class EigenvalsFlags {
    public:
@@ -34,14 +32,14 @@ class EigenvalsFlags {
     bool centdiff = false;
     bool orthochk = false;
 
-    string duname = "";
-    string outdir = "./";
+    std::string duname = "";
+    std::string outdir = "./";
 
     // new flags:
     Real EPS_stab = 1e-06;
 
     void save(const std::string& outdir = "") const;  // save into file filebase.txt
-    void load(int taskid, const string indir);
+    void load(int taskid, const std::string indir);
 };
 
 class Eigenvals {
@@ -49,8 +47,8 @@ class Eigenvals {
     Eigenvals(ArgList& args);
     Eigenvals(EigenvalsFlags eigenflags);
 
-    void solve(nsolver::DSI& dsi, const VectorXd& x, VectorXd& dx, Real T, Real eps);
-    void checkConjugacy(const VectorXcd& u, const VectorXcd& v);
+    void solve(DSI& dsi, const Eigen::VectorXd& x, Eigen::VectorXd& dx, Real T, Real eps);
+    void checkConjugacy(const Eigen::VectorXcd& u, const Eigen::VectorXcd& v);
     std::ostream* getLogstream() { return eigenflags.logstream; }
 
    private:
@@ -59,6 +57,6 @@ class Eigenvals {
 
 std::ostream& operator<<(std::ostream& os, const EigenvalsFlags& flags);
 
-}  // namespace nsolver
+}  // namespace chflow
 
 #endif

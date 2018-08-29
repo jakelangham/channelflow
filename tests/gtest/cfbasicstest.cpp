@@ -10,8 +10,10 @@
 #include <cfbasics/cfbasics.h>
 #include <gtest/gtest.h>
 
-namespace channelflowtest {
+using namespace Eigen;
 
+namespace chflow {
+namespace test {
 class SortByAbsTest : public ::testing::Test {
    protected:
     SortByAbsTest() : lambda_d(4), expected_d(4), V_d(4, 4) {
@@ -77,10 +79,11 @@ template <class Vector>
     }
     return ::testing::AssertionSuccess();
 }
+
 #define EXPECT_NEAR_VECTOR(val1, val2, abs_error) EXPECT_PRED_FORMAT3(ExpectNearVector, val1, val2, abs_error)
 
 TEST_F(SortByAbsTest, HandleDoubleArgs) {
-    cfbasics::sort_by_abs(lambda_d, V_d);
+    chflow::sort_by_abs(lambda_d, V_d);
     EXPECT_NEAR_VECTOR(lambda_d, expected_d, eps);
 
     VectorXd c0 = V_d.col(0);
@@ -99,5 +102,5 @@ TEST_F(SortByAbsTest, HandleDoubleArgs) {
     VectorXd expected_c3 = VectorXd::Constant(4, 4.0);
     EXPECT_NEAR_VECTOR(c3, expected_c3, eps);
 }
-
-}  // namespace channelflowtest
+}  // namespace test
+}  // namespace chflow

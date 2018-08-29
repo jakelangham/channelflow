@@ -11,7 +11,8 @@
 // Test correctness of Poisson solver.
 
 using namespace std;
-using namespace channelflow;
+
+using namespace chflow;
 
 int main(int argc, char* argv[]) {
     Real maxerr = 1e-13;
