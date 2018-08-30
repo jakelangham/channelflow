@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.com/epfl-ecps/channelflow.svg?branch=master)](https://travis-ci.com/epfl-ecps/channelflow)
+[![codecov](https://codecov.io/gh/epfl-ecps/channelflow/branch/master/graph/badge.svg)](https://codecov.io/gh/epfl-ecps/channelflow)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+
 # Channelflow Project
 
 Channelflow is a software system for numerical analysis of the incompressible fluid flow in

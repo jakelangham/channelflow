@@ -34,8 +34,8 @@ jobs:
             - ubuntu-toolchain-r-test
             - sourceline: 'ppa:likemartinma/devel'
           packages:
+            - lcov
             - ccache
-            - g++-8
             - openmpi-bin
             - libopenmpi-dev
             - libhdf5-dev
@@ -45,8 +45,8 @@ jobs:
             - libeigen3-dev
       env:
         - CMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu
-        - OMPI_CC=gcc-8
-        - OMPI_CXX=g++-8
+        - OMPI_CC=gcc
+        - OMPI_CXX=g++
         - CPLUS_INCLUDE_PATH=/usr/lib/openmpi/include
       script: ./share/qa/unit_and_integration_test.sh
 
@@ -170,6 +170,9 @@ jobs:
 
 install:
   - ccache -M 2G
+
+after_success:
+  - if [[ -f "${TRAVIS_BUILD_DIR}/cmake-build-release/Testing/Temporary/LastTest.log" ]] ; then ./share/qa/compute_coverage.sh ; fi
 
 after_failure:
   - if [[ -f "${TRAVIS_BUILD_DIR}/cmake-build-release/Testing/Temporary/LastTest.log" ]] ; then cat "${TRAVIS_BUILD_DIR}/cmake-build-release/Testing/Temporary/LastTest.log" ; fi
