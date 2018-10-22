@@ -18,16 +18,23 @@ int main(int argc, char* argv[]) {
     {
         CfMPI* cfmpi = &CfMPI::getInstance();
         FlowField u("data/uinit", cfmpi);
+        FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
         VectorXd v, v2, v3;
-        FlowField u2(u);
-        FlowField u3(u);
+        FlowField u2(u_with_density);
+        FlowField u3(u_with_density);
+
+        vector<int> vel_indices = {0, 1, 2};
+        u_with_density.copySubfields(u, vel_indices, vel_indices);
+        // need some data in rho field -- can just copy over w 
+        vector<int> w_index = {2}; vector<int> rho_index = {3};
+        u_with_density.copySubfields(u, w_index, rho_index);
 
         // Check if a conversion of the original field to a vector and back doesn't diverge too much.
-        field2vector(u, v);
+        field2vector(u_with_density, v);
         cout << "L2Norm(v)        = " << L2Norm(v) << endl;
         vector2field(v, u2);
         Real err = 0;
-        cout << "L2Dist(u, u2)    = " << L2Dist(u, u2) << endl;
+        cout << "L2Dist(u, u2)    = " << L2Dist(u_with_density, u2) << endl;
 
         //     err += L2Dist(u, u2);
 
