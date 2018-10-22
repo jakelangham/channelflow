@@ -126,10 +126,12 @@ class NSE {
     ComplexChebyCoeff vk_;
     ComplexChebyCoeff wk_;
     ComplexChebyCoeff Pk_;   // profile of P_{kx,kz} (y)
+    ComplexChebyCoeff rk_;
     ComplexChebyCoeff Pyk_;  // profile of dP_{kx,kz}/dy (y)
     ComplexChebyCoeff Ruk_;
     ComplexChebyCoeff Rvk_;
     ComplexChebyCoeff Rwk_;
+    ComplexChebyCoeff Rrk_;
 
     int kxmaxDealiased() const;
     int kzmaxDealiased() const;

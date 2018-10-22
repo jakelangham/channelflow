@@ -461,6 +461,35 @@ FlowField& FlowField::operator=(const FlowField& f) {
     return *this;
 }
 
+// Copy over subfields of f indexed by indices array
+void FlowField::copySubfields(const FlowField& f, 
+    const std::vector<int>& indices_from, const std::vector<int>& indices_to) {
+    const int Nd = indices_from.size();
+    assert(Nd <= Nd_ && Nd == (int) indices_to.size());
+
+    if (xzstate_ == Spectral) {
+        for (int i = 0; i < Nd; ++i) {
+            const int from = indices_from[i];
+            const int to = indices_to[i];
+            for (int my = 0; my < My(); ++my)
+                for (int mx = mxlocmin_; mx < mxlocmin_ + Mxloc_; ++mx)
+                    for (int mz = mzlocmin_; mz < Mzloc_ + mzlocmin_; ++mz)
+                        this->cmplx(mx, my, mz, to) = f.cmplx(mx, my, mz, from);
+        }
+    } else {
+        for (int i = 0; i < Nd; ++i) {
+            const int from = indices_from[i];
+            const int to = indices_to[i];
+            for (int ny = nylocmin_; ny < nylocmax_; ++ny)
+                for (int nx = nxlocmin_; nx < nxlocmin_ + Nxloc_; ++nx)
+                    for (int nz = 0; nz < Nz(); ++nz)
+                        (*this)(nx, ny, nz, to) = f(nx, ny, nz, from);
+        }
+    }
+}
+
+
+
 void FlowField::reconfig(const FlowField& u, uint fftw_flags) {
     resize(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), fftw_flags);
 }
@@ -4006,7 +4035,7 @@ Real FlowField::dwdy_b() const {
 }
 
 Real FlowField::CFLfactor() const {
-    assert(Nd_ == 3);
+    assert(Nd_ >= 3);
     FlowField u(*this);
     fieldstate xzstate = xzstate_;
     fieldstate ystate = ystate_;
@@ -4038,7 +4067,7 @@ Real FlowField::CFLfactor(ChebyCoeff Ubase, ChebyCoeff Wbase) const {
     if (Ubase.N() == 0)
         return CFLfactor();
 
-    assert(Nd_ == 3);
+    assert(Nd_ >= 4);
     FlowField u(*this);
 
     u.makePhysical();
@@ -4459,13 +4488,13 @@ int field2vector_size(const FlowField& u) {
     // determine cfarray sizes and once with the actual data copying. // Tobias
     int N = 0;
     if (u.taskid() == u.task_coeff(0, 0))
-        N += 2 * (Ny - 2);
+        N += 3 * (Ny - 2); // JL now 3 lots of Ny-2 due to rho field
     for (int kx = 1; kx <= Kx; ++kx)
         if (u.taskid() == u.task_coeff(u.mx(kx), 0))
-            N += 2 * (Ny - 2) + 2 * (Ny - 4);
+            N += 4 * (Ny - 2) + 2 * (Ny - 4); // JL likewise 4(Ny-2) here (rather than 2)
     for (int kz = 1; kz <= Kz; ++kz)
         if (u.taskid() == u.task_coeff(0, u.mz(kz)))
-            N += 2 * (Ny - 2) + 2 * (Ny - 4);
+            N += 4 * (Ny - 2) + 2 * (Ny - 4); // JL and here
     for (int kx = -Kx; kx <= Kx; ++kx) {
         if (kx == 0)
             continue;
@@ -4473,7 +4502,7 @@ int field2vector_size(const FlowField& u) {
         for (int kz = 1; kz <= Kz; ++kz) {
             int mz = u.mz(kz);
             if (u.taskid() == u.task_coeff(mx, mz)) {
-                N += 2 * (Ny - 2) + 2 * (Ny - 4);
+                N += 4 * (Ny - 2) + 2 * (Ny - 4); // JL and here
             }
         }
     }
@@ -4489,7 +4518,7 @@ void field2vector(const FlowField& u, VectorXd& a) {
     // is way less time-efficient in most situations.
 
     assert(u.xzstate() == Spectral && u.ystate() == Spectral);
-    assert(u.Nd() == 3);  // enforcing div(u)=0 assumes velocity field
+    assert(u.Nd() == 4);  // JL must be 3+1 dim field to enforce div(u)=0
     int Kx = u.kxmaxDealiased();
     int Kz = u.kzmaxDealiased();
     int Ny = u.Ny();
@@ -4510,6 +4539,11 @@ void field2vector(const FlowField& u, VectorXd& a) {
         // Ny-2 modes (line 2)
         if (u.taskid() == u.task_coeff(0, 0))
             a(n++) = Re(u.cmplx(0, ny, 0, 2));
+    for (int ny = 2; ny < Ny; ++ny)
+        // Ny-2 modes (density)
+        if (u.taskid() == u.task_coeff(0, 0))
+            a(n++) = Re(u.cmplx(0, ny, 0, 3));
+
     // Some coefficients from the FlowField are linearly dependent due
     // to BCs and divergence constraint. Omit these from a(n), and reconstruct
     // them in vector2field(v,u) using the constraint equations. In what follows,
@@ -4528,6 +4562,10 @@ void field2vector(const FlowField& u, VectorXd& a) {
                 a(n++) = Re(u.cmplx(mx, ny, 0, 0));  // J(Ny-4) modes (line 4a)
                 a(n++) = Im(u.cmplx(mx, ny, 0, 0));  // J(Ny-4) modes (line 4b)
             }
+            for (int ny = 2; ny < Ny; ++ny) {        // rho BCs => ny=0,1 coefficients
+                a(n++) = Re(u.cmplx(mx, ny, 0, 3));  // J(Ny-2) modes (density)
+                a(n++) = Im(u.cmplx(mx, ny, 0, 3));  // J(Ny-2) modes (density)
+            }
         }
     }
     for (int kz = 1; kz <= Kz; ++kz) {
@@ -4540,6 +4578,10 @@ void field2vector(const FlowField& u, VectorXd& a) {
             for (int ny = 3; ny < Ny - 1; ++ny) {    // w BCs => 0,1; v BC => 2; div => Ny-1
                 a(n++) = Re(u.cmplx(0, ny, mz, 2));  // K(Ny-2)  (line 6a)
                 a(n++) = Im(u.cmplx(0, ny, mz, 2));  // K(Ny-2)  (line 6b)
+            }
+            for (int ny = 2; ny < Ny; ++ny) {        // rho BCs => 0,1
+                a(n++) = Re(u.cmplx(0, ny, mz, 3));  // K(Ny-2)  (density)
+                a(n++) = Im(u.cmplx(0, ny, mz, 3));  // K(Ny-2)  (density)
             }
         }
     }
@@ -4559,13 +4601,17 @@ void field2vector(const FlowField& u, VectorXd& a) {
                     a(n++) = Re(u.cmplx(mx, ny, mz, 2));  // JK(Ny-4)  (line 8a)
                     a(n++) = Im(u.cmplx(mx, ny, mz, 2));  // JK(Ny-4)  (line 8b)
                 }
+                for (int ny = 2; ny < Ny; ++ny) {         // rho BCs => 0,1;
+                    a(n++) = Re(u.cmplx(mx, ny, mz, 3));  // JK(Ny-2)  (density)
+                    a(n++) = Im(u.cmplx(mx, ny, mz, 3));  // JK(Ny-2)  (density)
+                }
             }
         }
     }
 }
 
 void vector2field(const VectorXd& a, FlowField& u) {
-    assert(u.Nd() == 3);  // enforcing div(u)=0 assumes velocity field
+    assert(u.Nd() == 4);  // JL must be 3+1 dim field to enforce div(u)=0
     u.setToZero();
 
     int Kx = u.kxmaxDealiased();
@@ -4579,6 +4625,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
     ComplexChebyCoeff f0(Ny, ya, yb, Spectral);
     ComplexChebyCoeff f1(Ny, ya, yb, Spectral);
     ComplexChebyCoeff f2(Ny, ya, yb, Spectral);
+    ComplexChebyCoeff f3(Ny, ya, yb, Spectral);
 
     // These loops follow Gibson, Halcrow, Cvitanovic table 1.
     // The vector contains the linearly independent real numbers in a
@@ -4602,6 +4649,13 @@ void vector2field(const VectorXd& a, FlowField& u) {
         fixDiri(f2.re);
         for (int ny = 0; ny < Ny; ++ny)
             u.cmplx(0, ny, 0, 2) = f2[ny];
+
+        // JL density modes
+        for (int ny = 2; ny < Ny; ++ny)
+            f3.re[ny] = a(n++);
+        fixDiri(f3.re);
+        for (int ny = 0; ny < Ny; ++ny)
+            u.cmplx(0, ny, 0, 3) = f3[ny];
     }
 
     // =========================================================
@@ -4628,12 +4682,21 @@ void vector2field(const VectorXd& a, FlowField& u) {
             f1.sub(0, 0.5 * (f1.eval_a() + f1.eval_b()));
             f1 *= Complex(0.0, -(2 * pi * kx) / Lx);
 
+            // JL density modes
+            for (int ny = 2; ny < Ny; ++ny) {
+                f3.re[ny] = a(n++);
+                f3.im[ny] = a(n++);
+            }
+            fixDiri(f3);
+
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(mx, ny, 0, 0) = f0[ny];
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(mx, ny, 0, 1) = f1[ny];
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(mx, ny, 0, 2) = f2[ny];
+            for (int ny = 0; ny < Ny; ++ny)
+                u.cmplx(mx, ny, 0, 3) = f3[ny];
         }
 
         // ------------------------------------------------------
@@ -4647,6 +4710,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
                 u.cmplx(mxm, ny, 0, 0) = conj(f0[ny]);
                 u.cmplx(mxm, ny, 0, 1) = conj(f1[ny]);
                 u.cmplx(mxm, ny, 0, 2) = conj(f2[ny]);
+                u.cmplx(mxm, ny, 0, 3) = conj(f3[ny]);
             }
 #ifdef HAVE_MPI     // send_id != rec_id requires multiple processes
             else {  // Transfer the conjugates via MPI
@@ -4654,19 +4718,23 @@ void vector2field(const VectorXd& a, FlowField& u) {
                     Complex tmp0 = conj(f0[ny]);
                     Complex tmp1 = conj(f1[ny]);
                     Complex tmp2 = conj(f2[ny]);
+                    Complex tmp3 = conj(f3[ny]);
                     MPI_Send(&tmp0, 1, MPI_DOUBLE_COMPLEX, rec_id, 0, MPI_COMM_WORLD);
                     MPI_Send(&tmp1, 1, MPI_DOUBLE_COMPLEX, rec_id, 1, MPI_COMM_WORLD);
                     MPI_Send(&tmp2, 1, MPI_DOUBLE_COMPLEX, rec_id, 2, MPI_COMM_WORLD);
+                    MPI_Send(&tmp3, 1, MPI_DOUBLE_COMPLEX, rec_id, 3, MPI_COMM_WORLD);
                 }
                 if (u.taskid() == rec_id) {
-                    Complex tmp0, tmp1, tmp2;
+                    Complex tmp0, tmp1, tmp2, tmp3;
                     MPI_Status status;
                     MPI_Recv(&tmp0, 1, MPI_DOUBLE_COMPLEX, send_id, 0, MPI_COMM_WORLD, &status);
                     MPI_Recv(&tmp1, 1, MPI_DOUBLE_COMPLEX, send_id, 1, MPI_COMM_WORLD, &status);
                     MPI_Recv(&tmp2, 1, MPI_DOUBLE_COMPLEX, send_id, 2, MPI_COMM_WORLD, &status);
+                    MPI_Recv(&tmp3, 1, MPI_DOUBLE_COMPLEX, send_id, 3, MPI_COMM_WORLD, &status);
                     u.cmplx(mxm, ny, 0, 0) = tmp0;
                     u.cmplx(mxm, ny, 0, 1) = tmp1;
                     u.cmplx(mxm, ny, 0, 2) = tmp2;
+                    u.cmplx(mxm, ny, 0, 3) = tmp3;
                 }
             }
 #endif
@@ -4696,12 +4764,21 @@ void vector2field(const VectorXd& a, FlowField& u) {
             f1.sub(0, 0.5 * (f1.eval_a() + f1.eval_b()));
             f1 *= Complex(0.0, -(2 * pi * kz) / Lz);
 
+            // JL density modes
+            for (int ny = 2; ny < Ny; ++ny) {
+                f3.re[ny] = a(n++);
+                f3.im[ny] = a(n++);
+            }
+            fixDiri(f3);
+
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(0, ny, mz, 0) = f0[ny];
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(0, ny, mz, 1) = f1[ny];
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(0, ny, mz, 2) = f2[ny];
+            for (int ny = 0; ny < Ny; ++ny)
+                u.cmplx(0, ny, mz, 3) = f3[ny];
         }
     }
 
@@ -4755,6 +4832,16 @@ void vector2field(const VectorXd& a, FlowField& u) {
 
                 for (int ny = 0; ny < Ny; ++ny)
                     u.cmplx(mx, ny, mz, 1) = f1[ny];
+
+                // JL density modes
+                for (int ny = 2; ny < Ny; ++ny) {
+                    f3.re[ny] = a(n++);
+                    f3.im[ny] = a(n++);
+                }
+                fixDiri(f3);
+
+                for (int ny = 0; ny < Ny; ++ny)
+                    u.cmplx(mx, ny, mz, 3) = f3[ny];
             }
         }
     }

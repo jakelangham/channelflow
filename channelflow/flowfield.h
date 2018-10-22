@@ -66,6 +66,9 @@ class FlowField {
     FlowField(const std::string& filebase, int major, int minor, int update);
 
     FlowField& operator=(const FlowField& u);  // assign identical copy of U
+    // Copy over subfields of f indexed by indices array
+    void copySubfields(const FlowField& f, const std::vector<int>& indices_from,
+        const std::vector<int>& indices_to);
 
     // match geom params, set to zero
     void reconfig(const FlowField& u, uint fftw_flags = FFTW_ESTIMATE);

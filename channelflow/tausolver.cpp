@@ -66,6 +66,8 @@ TauSolver::TauSolver()
       b_(0),
       lambda_(0),
       nu_(0),
+      Pr_(1),
+      Ri_(0),
       tauCorrection_(true),
       pressureHelmholtz_(),
       velocityHelmholtz_(),
@@ -80,7 +82,7 @@ TauSolver::TauSolver()
       i10_(0),
       i11_(0) {}
 
-TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, int nChebyModes,
+TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real Pr, Real Ri, int nChebyModes,
                      bool tauCorrection)
     : N_(nChebyModes),
       Nb_(nChebyModes - 1),
@@ -91,11 +93,15 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
       kappa2_(4 * square(pi) * (square(kx / Lx) + square(kz / Lz))),
       a_(a),
       b_(b),
-      lambda_(lambda),
+      lambda_(lambda_t + nu * kappa2_),
+      lambda_rho_(lambda_t + (nu / Pr) * kappa2_),
       nu_(nu),
+      Pr_(Pr),
+      Ri_(Ri),
       tauCorrection_(tauCorrection),
       pressureHelmholtz_(N_, a_, b_, kappa2_),
       velocityHelmholtz_(N_, a_, b_, lambda_, nu_),
+      densityHelmholtz_(N_, a_, b_, lambda_rho_, nu_ / Pr_),
       P_0_(N_, a_, b_, Spectral),
       v_0_(N_, a_, b_, Spectral),
       P_plus_(N_, a_, b_, Spectral),
@@ -192,7 +198,7 @@ void TauSolver::influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const {
     }
 }
 
-void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, Real& sigmaNb1,
+void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, const ChebyCoeff& rho, Real& sigmaNb1,
                               Real& sigmaNb) const {
     // P is Canuto & Hussaini's Ppart particular solution after this solve
     pressureHelmholtz_.solve(P, r, 0.0, 0.0);  // eqn 7.3.25 discrete HH1
@@ -209,6 +215,7 @@ void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r,
     // The rest of this method is for the case kx != 0 or kz != 0.
     ChebyCoeff tmp = diff(P);
     tmp -= Ry;
+    tmp += Ri_ * rho; // JL buoyancy term
 
     // v is Canuto & Hussaini's vpart particular solution after this solve
     velocityHelmholtz_.solve(v, tmp, 0.0, 0.0);  // eqn 7.3.25 discrete HH2
@@ -346,8 +353,10 @@ Real TauSolver::verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const C
     return error;
 }
 
-void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P,
-                      const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz) const {
+void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, 
+                      ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
+                      const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, 
+                      const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho) const {
     ComplexChebyCoeff r(N_, a_, b_, Spectral);
     Real sigmaNb1;
     Real sigmaNb;
@@ -360,12 +369,12 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     int n;  // MSVC++ FOR-SCOPE BUG
     for (n = 0; n < N_; ++n)
         rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
-    solve_P_and_v(P.re, v.re, rr, Ry.re, sigmaNb1, sigmaNb);
+    solve_P_and_v(P.re, v.re, rr, Ry.re, rho.re, sigmaNb1, sigmaNb);
 
     diff(Ry.im, rr);
     for (n = 0; n < N_; ++n)
         rr[n] += two_pi_kxLx_ * Rx.re[n] + two_pi_kzLz_ * Rz.re[n];
-    solve_P_and_v(P.im, v.im, rr, Ry.im, sigmaNb1, sigmaNb);
+    solve_P_and_v(P.im, v.im, rr, Ry.im, rho.im, sigmaNb1, sigmaNb);
 
     // Re and Im parts of u and w eqns seperate.
     // Use r as temporary space to store RHS of eqns.
@@ -385,6 +394,11 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     velocityHelmholtz_.solve(w.re, r.re, 0.0, 0.0);
     velocityHelmholtz_.solve(w.im, r.im, 0.0, 0.0);
 
+    for (n = 0; n < N_; ++n)
+        r.set(n, -Rrho[n]);
+    densityHelmholtz_.solve(rho.re, r.re, 0.0, 0.0);
+    densityHelmholtz_.solve(rho.im, r.im, 0.0, 0.0);
+
     // This is for debugging ONLY
     /**************************
     if ((two_pi_kxLx_ == 0.0 & kx_ != 0) ||
@@ -403,9 +417,11 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     return;
 }
 
-void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P,
+void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
                       Real& dPdx, Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
                       const ComplexChebyCoeff& Rz, Real umean, Real wmean) const {
+    // TODO this hasn't been properly stratified
+    
     // This function should only be called for kx==kz==0, since the enforcing
     // const velocity flux makes sense only for that case. Divergence is not a
     // problem here, so solve everything via momentum.
@@ -422,12 +438,12 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     int n;  // MSVC++ FOR-SCOPE BUG
     for (n = 0; n < N_; ++n)
         rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
-    solve_P_and_v(P.re, v.re, rr, Ry.re, sigmaNb1, sigmaNb);
+    solve_P_and_v(P.re, v.re, rr, Ry.re, rho.re, sigmaNb1, sigmaNb);
 
     diff(Ry.im, rr);
     for (n = 0; n < N_; ++n)
         rr[n] += two_pi_kxLx_ * Rx.re[n] + two_pi_kzLz_ * Rz.re[n];
-    solve_P_and_v(P.im, v.im, rr, Ry.im, sigmaNb1, sigmaNb);
+    solve_P_and_v(P.im, v.im, rr, Ry.im, rho.im, sigmaNb1, sigmaNb);
 
     // Re and Im parts of u and w eqns seperate.
     // Use r as temporary space to store RHS of eqns.
@@ -452,18 +468,20 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
 }
 
 Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
-                       const ComplexChebyCoeff& P, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
-                       const ComplexChebyCoeff& Rz, bool verbose) const {
+                       const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, 
+                       const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
+                       const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho, bool verbose) const {
     Real umean = Re(u.mean());
     Real dPdx = 0.0;
     Real wmean = Re(w.mean());
     Real dPdz = 0.0;
-    return verify(u, v, w, P, dPdx, dPdz, Rx, Ry, Rz, umean, wmean, verbose);
+    return verify(u, v, w, P, rho, dPdx, dPdz, Rx, Ry, Rz, Rrho, umean, wmean, verbose);
 }
 
 Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
-                       const ComplexChebyCoeff& P, Real dPdx, Real dPdz, const ComplexChebyCoeff& Rx,
-                       const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz, Real umean, Real wmean,
+                       const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, Real dPdx, Real dPdz, 
+                       const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz, 
+                       const ComplexChebyCoeff& Rrho, Real umean, Real wmean,
                        bool verbose) const {
     // verify   nu u''(y) - lambda u(y) - grad P = -R,
     //                                     div u = 0
@@ -571,6 +589,21 @@ Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, c
     // else
     // assert(error<EPSILON);
 
+    // Verify strat equation
+    lhs = rho;
+    lhs *= lambda_rho_;
+    diff2(rho, tmp);
+    tmp *= nu_ / Pr_;
+    lhs -= tmp;
+    terr = tauDist(lhs, Rrho);
+    lerr = L2Dist(lhs, Rrho);
+    error += lerr;
+    if (verbose) {
+        cout << "L2Norm(Rrho) == " << L2Norm(Rrho) << endl;
+        cout << "tauDist((nu / Pr) rho'' - lambda_rho rho, -Rrho) == " << terr << endl;
+        cout << " L2Dist((nu / Pr) rho'' - lambda_rho rho, -Rrho) == " << lerr << endl;
+    }
+
     // Verify divergence
     diff(v, tmp);
     for (n = 0; n < N_; ++n)
@@ -610,6 +643,12 @@ Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, c
     error += abs(wa) + abs(wb);
     if (verbose)
         cout << "w(a),w(b) == " << wa << " " << wb << endl;
+
+    Complex rhoa = rho.eval_a();
+    Complex rhob = rho.eval_b();
+    error += abs(rhob) + abs(rhob);
+    if (verbose)
+        cout << "rho(a),rho(b) == " << rhoa << " " << rhob << endl;
 
     Real umean_error = abs2(Re(u.mean()) - umean);
     Real wmean_error = abs2(Re(w.mean()) - wmean);

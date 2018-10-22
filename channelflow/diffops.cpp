@@ -2886,6 +2886,10 @@ void convectionNL(const FlowField& u_, FlowField& f, FlowField& tmp, const field
     dotgrad(u_, u_, f, tmp);
 }
 
+void densityAdvection(const FlowField& u_, FlowField& f, FlowField& tmp, const fieldstate finalstate) {
+    dotgradScalar(u_, u_[3], f, tmp);
+}
+
 void adjointTerms(const FlowField& u_, FlowField& u_dir_, FlowField& f, FlowField& tmp, FlowField& tmpadj,
                   const fieldstate finalstate) {
     FlowField& v = (FlowField&)u_;
@@ -3649,7 +3653,7 @@ void dotgradScalar(const FlowField& u_, const FlowField& s_, FlowField& f, FlowF
     FlowField& s = (FlowField&)s_;
     FlowField& grad_s = tmp;
 
-    assert(u.Nd() == 3 && s.Nd() == 1);
+    assert(u.Nd() >= 3 && s.Nd() == 1);
     assert(u.geomCongruent(s));
 
     if (!u.geomCongruent(f) || f.Nd() != 1)

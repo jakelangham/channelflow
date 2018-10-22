@@ -31,6 +31,8 @@ namespace chflow {
 enum class continuationParameter {
     T,
     Re,
+    Pr,
+    Ri,
     P,
     Ub,
     Uw,

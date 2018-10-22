@@ -12,6 +12,9 @@ namespace chflow {
 void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, FlowField& f, FlowField& tmp,
                     DNSFlags& flags) {
     FlowField& u = const_cast<FlowField&>(u_);
+    FlowField vel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+    FlowField f3d(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+    FlowField f1d(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
 
     fieldstate finalstate = Spectral;
     assert(u.xzstate() == Spectral && u.ystate() == Spectral);
@@ -30,34 +33,49 @@ void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, Flo
                 u.cmplx(0, ny, 0, 0) += Complex(Ubase(ny), 0.0);
             if (u.taskid() == u.task_coeff(0, 0))
                 u.cmplx(0, ny, 0, 2) += Complex(Wbase(ny), 0.0);
+            // rho -= Ubase
+            if (u.taskid() == u.task_coeff(0, 0)) {
+                u.cmplx(0, ny, 0, 3) -= Complex(Ubase(ny), 0.0);
+            }
         }
         if (u.taskid() == u.task_coeff(0, 0)) {
             u.cmplx(0, 0, 0, 1) -= Complex(flags.Vsuck, 0.);
         }
+
+        // TODO must be better way
+        vector<int> vel_indices = {0, 1, 2};
+        vel.copySubfields(u, vel_indices, vel_indices);
+
         switch (flags.nonlinearity) {
             case Rotational:
-                rotationalNL(u, f, tmp, finalstate);
+                rotationalNL(vel, f3d, tmp, finalstate);
                 break;
             case Convection:
-                convectionNL(u, f, tmp, finalstate);
+                convectionNL(vel, f3d, tmp, finalstate);
                 break;
             case SkewSymmetric:
-                skewsymmetricNL(u, f, tmp, finalstate);
+                skewsymmetricNL(vel, f3d, tmp, finalstate);
                 break;
             case Divergence:
-                divergenceNL(u, f, tmp, finalstate);
+                divergenceNL(vel, f3d, tmp, finalstate);
                 break;
             case Alternating:
-                divergenceNL(u, f, tmp, finalstate);
+                divergenceNL(vel, f3d, tmp, finalstate);
                 flags.nonlinearity = Alternating_;
                 break;
             case Alternating_:
-                convectionNL(u, f, tmp, finalstate);
+                convectionNL(vel, f3d, tmp, finalstate);
                 flags.nonlinearity = Alternating;
                 break;
             default:
                 cferror("navierstokesNL(method, u,U,f,tmp) : unknown method");
         }
+        f.copySubfields(f3d, vel_indices, vel_indices);
+
+        densityAdvection(u, f1d, tmp, finalstate);
+        vector<int> zero_index = {0};
+        vector<int> density_index = {3};
+        f.copySubfields(f1d, zero_index, density_index);
 
         // add rotation term -(omega x u) = - flags.rotation * flags.nu (y e_y + e_z x u)
         if (flags.rotation != 0.0) {
@@ -83,6 +101,9 @@ void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, Flo
                 u.cmplx(0, ny, 0, 0) -= Complex(Ubase(ny), 0.0);
             if (u.taskid() == u.task_coeff(0, 0))
                 u.cmplx(0, ny, 0, 2) -= Complex(Wbase(ny), 0.0);
+            // rho += Ubase
+            if (u.taskid() == u.task_coeff(0, 0))
+                u.cmplx(0, ny, 0, 3) += Complex(Ubase(ny), 0.0);
         }
         if (u.taskid() == u.task_coeff(0, 0))
             u.cmplx(0, 0, 0, 1) += Complex(flags.Vsuck, 0.);
@@ -138,10 +159,12 @@ NSE::NSE()
       vk_(),
       wk_(),
       Pk_(),
+      rk_(),
       Pyk_(),
       Ruk_(),
       Rvk_(),
-      Rwk_() {}
+      Rwk_(),
+      Rrk_() {}
 
 NSE::NSE(const NSE& nse)
     : lambda_t_(nse.lambda_t_),
@@ -191,10 +214,12 @@ NSE::NSE(const NSE& nse)
       vk_(nse.vk_),
       wk_(nse.wk_),
       Pk_(nse.Pk_),
+      rk_(nse.rk_),
       Pyk_(nse.Pyk_),
       Ruk_(nse.Ruk_),
       Rvk_(nse.Rvk_),
-      Rwk_(nse.Rwk_) {
+      Rwk_(nse.Rwk_),
+      Rrk_(nse.Rrk_) {
     // Allocate memory for [Nsubsteps x Mx_ x Mz_] Tausolver cfarrays
     // and copy tausolvers from nse argument
     int nsub = lambda_t_.size();
@@ -257,11 +282,13 @@ NSE::NSE(const vector<FlowField>& fields, const DNSFlags& flags)
       vk_(Nyd_, a_, b_, Spectral),
       wk_(Nyd_, a_, b_, Spectral),
       Pk_(Nyd_, a_, b_, Spectral),
+      rk_(Nyd_, a_, b_, Spectral),
       Pyk_(Nyd_, a_, b_, Spectral),
       Ruk_(Nyd_, a_, b_, Spectral),
       Rvk_(Nyd_, a_, b_, Spectral),
-      Rwk_(Nyd_, a_, b_, Spectral) {
-    assert(fields[0].vectorDim() == 3);
+      Rwk_(Nyd_, a_, b_, Spectral),
+      Rrk_(Nyd_, a_, b_, Spectral) {
+    assert(fields[0].vectorDim() >= 3);
 
     // construct wave number vectors
     kxloc_.resize(Mxloc_);
@@ -390,6 +417,7 @@ void NSE::nonlinear(const vector<FlowField>& infields, vector<FlowField>& outfie
         outfields[0].zeroPaddedModes();
 }
 
+// JL TODO stratify this
 void NSE::linear(const vector<FlowField>& infields, vector<FlowField>& outfields) {
     // Method takes input fields {u,press} and computes the linear terms for velocity output field {u}
 
@@ -503,11 +531,12 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                 Ruk_.set(ny, rhs[0].cmplx(mx, ny, mz, 0));
                 Rvk_.set(ny, rhs[0].cmplx(mx, ny, mz, 1));
                 Rwk_.set(ny, rhs[0].cmplx(mx, ny, mz, 2));
+                Rrk_.set(ny, rhs[0].cmplx(mx, ny, mz, 3));
             }
 
             // Solve the tau equations
             if (kx != 0 || kz != 0)
-                tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, Ruk_, Rvk_, Rwk_);
+                tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_);
             // 		solve(ix,iz,uk_,vk_,wk_,Pk_, Ruk_,Rvk_,Rwk_);
             else {  // kx,kz == 0,0
                 // LHS includes also the constant terms C which can be added to RHS
@@ -522,7 +551,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                     // pressure is supplied, put on RHS of tau eqn
                     Ruk_.re[0] -= dPdxRef_;
                     Rwk_.re[0] -= dPdzRef_;
-                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, Ruk_, Rvk_, Rwk_);
+                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_);
                     // 	  	solve(ix,iz,uk_, vk_, wk_, Pk_, Ruk_,Rvk_,Rwk_);
                     // Bulk vel is free variable determined from soln of tau eqn //TODO: write method that computes
                     // UbulkAct everytime it is needed
@@ -533,7 +562,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                     // Use tausolver with additional variable and constraint:
                     // free variable: dPdxAct at next time-step,
                     // constraint:    UbulkBase + mean(u) = UbulkRef.
-                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, dPdxAct_, dPdzAct_, Ruk_, Rvk_, Rwk_,
+                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, dPdxAct_, dPdzAct_, Ruk_, Rvk_, Rwk_,
                                                 UbulkRef_ - UbulkBase_, WbulkRef_ - WbulkBase_);
                     // 		  solve(ix,iz,uk_, vk_, wk_, Pk_, dPdxAct_, dPdzAct_,
                     // 					    Ruk_, Rvk_, Rwk_,
@@ -559,6 +588,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                     outfields[0].cmplx(mx, ny, mz, 0) = Complex(Re(uk_[ny]), 0.0);
                     outfields[0].cmplx(mx, ny, mz, 1) = Complex(Re(vk_[ny]), 0.0);
                     outfields[0].cmplx(mx, ny, mz, 2) = Complex(Re(wk_[ny]), 0.0);
+                    outfields[0].cmplx(mx, ny, mz, 3) = Complex(Re(rk_[ny]), 0.0);
                     outfields[1].cmplx(mx, ny, mz, 0) = Complex(Re(Pk_[ny]), 0.0);
                 }
             }
@@ -568,6 +598,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                     outfields[0].cmplx(mx, ny, mz, 0) = uk_[ny];
                     outfields[0].cmplx(mx, ny, mz, 1) = vk_[ny];
                     outfields[0].cmplx(mx, ny, mz, 2) = wk_[ny];
+                    outfields[0].cmplx(mx, ny, mz, 3) = rk_[ny];
                     outfields[1].cmplx(mx, ny, mz, 0) = Pk_[ny];
                 }
         }
@@ -684,21 +715,16 @@ void NSE::reset_lambda(vector<Real> lambda_t) {
     }
 
     // Configure tausolvers
-    //   FlowField u=fields_[0];
-    const Real c = 4.0 * square(pi) * flags_.nu;
-    //   const int kxmax = u.kxmax();
-    //   const int kzmax = u.kzmax();
     for (uint j = 0; j < lambda_t.size(); ++j) {
         for (int mx = 0; mx < Mxloc_; ++mx) {
             int kx = kxloc_[mx];
             for (int mz = 0; mz < Mzloc_; ++mz) {
                 int kz = kzloc_[mz];
-                Real lambda = lambda_t[j] + c * (square(kx / Lx_) + square(kz / Lz_));
 
                 if ((kx != kxmax_ || kz != kzmax_) && (!flags_.dealias_xz() || !isAliasedMode(kx, kz)))
 
                     tausolver_[j][mx][mz] =
-                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda, flags_.nu, Nyd_, flags_.taucorrection);
+                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.Pr, flags_.Ri, Nyd_, flags_.taucorrection);
             }
         }
     }
