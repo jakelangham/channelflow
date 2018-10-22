@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
         args.section("Program options");
         const string muname = args.getstr(
             "-cont", "--continuation", "",
-            "continuation parameter, one of [Re P Ub Uw ReP Theta ThLx ThLz Lx Lz Aspect Diag Lt Vs ReVs H HVs Rot]");
+            "continuation parameter, one of [Re Pr Ri P Ub Uw ReP Theta ThLx ThLz Lx Lz Aspect Diag Lt Vs ReVs H HVs Rot]");
         const string sigmastr =
             args.getstr("-sigma", "--sigma", "", "file containing sigma of sigma f^T(u) - u = 0 (default == identity)");
         const Real Unormalize = args.getreal("-un", "--unormalize", 0.0, "lower bound in energy for search");
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
         args.check();
 
         if (muname == "") {
-            cerr << "Please choose --continuation with one of [Re P Ub Uw ReP Theta ThLx ThLz Lx Lz Aspect Diag Lt Vs "
+            cerr << "Please choose --continuation with one of [Re Pr Ri P Ub Uw ReP Theta ThLx ThLz Lx Lz Aspect Diag Lt Vs "
                     "ReVs H HVs Rot]"
                  << endl;
             exit(1);
@@ -97,7 +97,8 @@ int main(int argc, char* argv[]) {
 
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
 
-        FlowField u[3];
+        FlowField u[3], u_with_density[3];
+        vector<int> vel_indices = {0, 1, 2};
         FieldSymmetry sigma[3];
         cfarray<Real> mu(3);
         Real T[3];
@@ -176,16 +177,23 @@ int main(int argc, char* argv[]) {
         } else {  // not a restart
             // Compute initial data points for extrapolation from perturbations of given solution
             u[1] = FlowField(uname, cfmpi);
-            project(dnsflags.symmetries, u[1], "initial value u", cout);
-            fixdivnoslip(u[1]);
+            u_with_density[1] = FlowField(u[1].Nx(), u[1].Ny(), u[1].Nz(), 4, u[1].Lx(), u[1].Lz(),
+                u[1].a(), u[1].b(), cfmpi);
+            if (u[1].Nd() == 3) {
+                u_with_density[1].copySubfields(u[1], vel_indices, vel_indices);
+            } else {
+                u_with_density[1] = u[1];
+            }
+            project(dnsflags.symmetries, u_with_density[1], "initial value u", cout);
+            fixdivnoslip(u_with_density[1]);
 
-            u[2] = u[1];
+            u_with_density[2] = u_with_density[1];
             printout("Optimizing FFTW...", false);
-            u[2].optimizeFFTW(FFTW_PATIENT);  // Overwrites u[2]
+            u_with_density[2].optimizeFFTW(FFTW_PATIENT);  // Overwrites u[2]
             printout("done");
             fftw_savewisdom();
-            u[2] = u[1];
-            u[0] = u[1];
+            u_with_density[2] = u_with_density[1];
+            u_with_density[0] = u_with_density[1];
 
             if (sigmastr.length() != 0)
                 sigma[0] = sigma[1] = sigma[2] = givenSigma;
@@ -194,11 +202,11 @@ int main(int argc, char* argv[]) {
             // begin superfluous output
             Real phi, Ltarget;
             if (muname == "Lt") {
-                phi = atan((Lztarg - u[1].Lz()) / (Lxtarg - u[1].Lx()));
-                Ltarget = spythag(u[1].Lx(), Lxtarg, u[1].Lz(), Lztarg, phi);
+                phi = atan((Lztarg - u_with_density[1].Lz()) / (Lxtarg - u_with_density[1].Lx()));
+                Ltarget = spythag(u_with_density[1].Lx(), Lxtarg, u_with_density[1].Lz(), Lztarg, phi);
             } else {
-                Lxtarg = u[1].Lx();
-                Lztarg = u[1].Lz();
+                Lxtarg = u_with_density[1].Lx();
+                Lztarg = u_with_density[1].Lz();
                 phi = 0.0;
                 Ltarget = 0.0;
             }
@@ -207,10 +215,10 @@ int main(int argc, char* argv[]) {
                  << endl;
             cout << "  phi == " << phi << endl;
             cout << "Ltarg == " << Ltarget << endl;
-            cout << "distance  == " << pythag(Lxtarg - u[1].Lx(), Lztarg - u[1].Lz()) << endl;
-            cout << "u[1].Lx() == " << u[1].Lx() << endl;
+            cout << "distance  == " << pythag(Lxtarg - u_with_density[1].Lx(), Lztarg - u_with_density[1].Lz()) << endl;
+            cout << "u[1].Lx() == " << u_with_density[1].Lx() << endl;
             cout << "   Lxtarg == " << Lxtarg << endl;
-            cout << "u[1].Lz() == " << u[1].Lz() << endl;
+            cout << "u[1].Lz() == " << u_with_density[1].Lz() << endl;
             cout << "   Lztarg == " << Lztarg << endl;
 
             cout << "Lxtarg - Ltarg cos(phi) == " << (Lxtarg - Ltarget * cos(phi)) << endl;
@@ -227,7 +235,7 @@ int main(int argc, char* argv[]) {
         // end superfluous output
 
         dsi = unique_ptr<cfDSI>(new cfDSI(dnsflags, sigma[0], 0, dt, Tsearch, Rxsearch, Rzsearch, Tnormalize,
-                                          Unormalize, u[0], N->getLogstream()));
+                                          Unormalize, u_with_density[0], N->getLogstream()));
 
         cout << setprecision(8);
         printout("Working directory == " + pwd());
@@ -255,8 +263,8 @@ int main(int argc, char* argv[]) {
             cout.setf(std::ios::left);
             cout << setw(4) << "n" << setw(20) << muname << setw(20) << "aspect" << setw(20) << "diagonal" << endl;
             for (int n = 2; n >= 0; --n)
-                cout << setw(4) << n << setw(20) << mu[n] << setw(20) << u[n].Lx() / u[n].Lz() << setw(20)
-                     << pythag(u[n].Lx(), u[n].Lz()) << endl;
+                cout << setw(4) << n << setw(20) << mu[n] << setw(20) << u_with_density[n].Lx() / u_with_density[n].Lz() << setw(20)
+                     << pythag(u_with_density[n].Lx(), u_with_density[n].Lz()) << endl;
             cout.unsetf(std::ios::left);
         }
 
@@ -266,14 +274,14 @@ int main(int argc, char* argv[]) {
             cout.setf(std::ios::left);
             cout << setw(4) << "n" << setw(20) << muname << setw(20) << "Lx" << setw(20) << "Lz" << endl;
             for (int i = 2; i >= 0; --i)
-                cout << setw(4) << i << setw(20) << mu[i] << setw(20) << u[i].Lx() << setw(20) << u[i].Lz() << endl;
+                cout << setw(4) << i << setw(20) << mu[i] << setw(20) << u_with_density[i].Lx() << setw(20) << u_with_density[i].Lz() << endl;
             cout.unsetf(std::ios::left);
         }
 
         cfarray<VectorXd> x(3);
         for (int i = 0; i <= 2; ++i) {
             dsi->updateMu(mu[i]);
-            dsi->makeVector(u[i], sigma[i], T[i], x[i]);
+            dsi->makeVector(u_with_density[i], sigma[i], T[i], x[i]);
         }
 
         int Nunk = x[0].rows();
