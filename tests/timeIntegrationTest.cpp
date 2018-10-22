@@ -89,16 +89,21 @@ int main(int argc, char* argv[]) {
         flags.Vsuck = 1. / 400;
         flags.verbosity = Silent;
 
-        if (u.taskid() == 0 && verbose)
+        FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), 
+                                 u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
+        vector<int> vel_indices = {0, 1, 2};
+        u_with_density.copySubfields(u, vel_indices, vel_indices);
+
+        if (u_with_density.taskid() == 0 && verbose)
             cout << "Building FlowField q..." << flush;
         vector<FlowField> fields = {
-            u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral)};
-        if (u.taskid() == 0 && verbose)
+            u_with_density, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral)};
+        if (u_with_density.taskid() == 0 && verbose)
             cout << "done" << endl;
-        if (u.taskid() == 0 && verbose)
+        if (u_with_density.taskid() == 0 && verbose)
             cout << "Building dns..." << flush;
         DNS dns(fields, flags);
-        if (u.taskid() == 0 && verbose)
+        if (u_with_density.taskid() == 0 && verbose)
             cout << "done" << endl;
 
         Real avtime = 0;
@@ -135,7 +140,13 @@ int main(int argc, char* argv[]) {
         }
 
         FlowField v(dir + "/ufinal", cfmpi);
-        Real l2d = L2Dist(v, fields[0]);
+        FlowField v_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
+        v_with_density.copySubfields(v, vel_indices, vel_indices);
+
+        fields[0][3].save("data/density.nc");
+
+        Real l2d = L2Dist(v_with_density, fields[0]);
+
         if (l2d > tol) {
             if (fields[0].taskid() == 0) {
                 if (verbose)
