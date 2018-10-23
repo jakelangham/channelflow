@@ -363,6 +363,12 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
 
     ChebyCoeff rr(N_, a_, b_, Spectral);
 
+    // JL solve rho first so that rho^{n+1} is used in right hand sides below
+    for (n = 0; n < N_; ++n)
+        r.set(n, -Rrho[n]);
+    densityHelmholtz_.solve(rho.re, r.re, 0.0, 0.0);
+    densityHelmholtz_.solve(rho.im, r.im, 0.0, 0.0);
+
     // Always solve v(y) from momentum, and get P.
     // Re and Im parts of v and P eqns decouple. Solve them seperately.
     diff(Ry.re, rr);
@@ -393,11 +399,6 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
 
     velocityHelmholtz_.solve(w.re, r.re, 0.0, 0.0);
     velocityHelmholtz_.solve(w.im, r.im, 0.0, 0.0);
-
-    for (n = 0; n < N_; ++n)
-        r.set(n, -Rrho[n]);
-    densityHelmholtz_.solve(rho.re, r.re, 0.0, 0.0);
-    densityHelmholtz_.solve(rho.im, r.im, 0.0, 0.0);
 
     // This is for debugging ONLY
     /**************************
