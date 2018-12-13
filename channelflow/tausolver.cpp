@@ -200,8 +200,12 @@ void TauSolver::influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const {
 
 void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, const ChebyCoeff& rho, Real& sigmaNb1,
                               Real& sigmaNb) const {
+    // JL need to add on -Ri * rho'
+    ChebyCoeff tmp(r);
+    tmp -= Ri_ * diff(rho);
+
     // P is Canuto & Hussaini's Ppart particular solution after this solve
-    pressureHelmholtz_.solve(P, r, 0.0, 0.0);  // eqn 7.3.25 discrete HH1
+    pressureHelmholtz_.solve(P, tmp, 0.0, 0.0);  // eqn 7.3.25 discrete HH1
 
     // kx==kz==0 is a degenerate case for which the influence matrix is
     // rank-deficient, the v solution is identically zero and P satisfies
@@ -213,7 +217,7 @@ void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r,
     }
 
     // The rest of this method is for the case kx != 0 or kz != 0.
-    ChebyCoeff tmp = diff(P);
+    tmp = diff(P);
     tmp -= Ry;
     tmp += Ri_ * rho; // JL buoyancy term
 
@@ -364,6 +368,7 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     ChebyCoeff rr(N_, a_, b_, Spectral);
 
     // JL solve rho first so that rho^{n+1} is used in right hand sides below
+    int n;  // MSVC++ FOR-SCOPE BUG
     for (n = 0; n < N_; ++n)
         r.set(n, -Rrho[n]);
     densityHelmholtz_.solve(rho.re, r.re, 0.0, 0.0);
@@ -372,7 +377,6 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     // Always solve v(y) from momentum, and get P.
     // Re and Im parts of v and P eqns decouple. Solve them seperately.
     diff(Ry.re, rr);
-    int n;  // MSVC++ FOR-SCOPE BUG
     for (n = 0; n < N_; ++n)
         rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
     solve_P_and_v(P.re, v.re, rr, Ry.re, rho.re, sigmaNb1, sigmaNb);
