@@ -94,6 +94,7 @@ void CfMPI::Init(int nproc0, int nproc1) {
         } else if (nproc0 * nproc1 == 0) {
             cferror("CfMPI: nproc0 or nproc1 is zero");
         } else if (nproc0 * nproc1 > numtasks_) {
+            std::cout << "nproc0, nproc1, numtasks " << nproc0 << " " << nproc1 << " " << numtasks_ << "\n";
             cferror("CfMPI: number of MPI-processes < nproc0*nproc1");
         } else {
             if (nproc0 * nproc1 != numtasks_) {
