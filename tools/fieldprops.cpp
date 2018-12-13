@@ -84,6 +84,9 @@ int main(int argc, char* argv[]) {
 
         vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b())};
         DNS dns;
+        FlowField uvel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+        vector<int> vel_indices = {0, 1, 2};
+        uvel.copySubfields(u, vel_indices, vel_indices);
 
         if (u.Nd() > 1) {
             dns = DNS(fields, flags);
@@ -270,9 +273,9 @@ int main(int argc, char* argv[]) {
         if (all || spec) {
             cout << "\n" << endl;
             cout << "------------Spectrum--------------------" << endl;
-            int kxmax = 0;
-            int kzmax = 0;
-            int kymax = 0;
+            int kxmax = 0, kxmaxvel = 0;
+            int kzmax = 0, kzmaxvel = 0;
+            int kymax = 0, kymaxvel = 0;
             cout << "u.kxmin() == " << u.kxmin() << endl;
             cout << "u.kxmax() == " << u.kxmax() << endl;
             cout << "u.kzmin() == " << u.kzmin() << endl;
@@ -287,16 +290,25 @@ int main(int argc, char* argv[]) {
                 for (int mz = 0; mz < u.Mz(); ++mz) {
                     const int kz = u.kz(mz);
                     BasisFunc prof = u.profile(mx, mz);
+                    BasisFunc profvel = uvel.profile(mx, mz);
                     if (L2Norm(prof) > eps) {
                         kxmax = Greater(kxmax, abs(kx));
                         kzmax = Greater(kzmax, abs(kz));
                     }
+                    if (L2Norm(profvel) > eps) {
+                        kxmaxvel = Greater(kxmaxvel, abs(kx));
+                        kzmaxvel = Greater(kzmaxvel, abs(kz));
+                    }
                     for (int ky = 0; ky < u.Ny(); ++ky) {
-                        Real sum = 0.0;
+                        Real sum = 0.0, sumvel = 0.0;
                         for (int i = 0; i < u.Nd(); ++i)
                             sum += abs(prof[i][ky]);
                         if (sum > eps)
                             kymax = Greater(kymax, ky);
+                        for (int i = 0; i < uvel.Nd(); ++i)
+                            sumvel += abs(profvel[i][ky]);
+                        if (sumvel > eps)
+                            kymaxvel = Greater(kymaxvel, ky);
                     }
                 }
             }
@@ -305,6 +317,10 @@ int main(int argc, char* argv[]) {
             cout << " |kx| <= " << kxmax << endl;
             cout << " |ky| <= " << kymax << endl;
             cout << " |kz| <= " << kzmax << endl;
+            cout << "Energy (vel only) over " << eps << " is confined to : \n";
+            cout << " |kx| <= " << kxmaxvel << endl;
+            cout << " |ky| <= " << kymaxvel << endl;
+            cout << " |kz| <= " << kzmaxvel << endl;
 
             cout << "Minimum   aliased grid : " << 2 * (kxmax + 1) << " x " << kymax + 1 << " x " << 2 * (kzmax + 1)
                  << endl;
@@ -319,28 +335,37 @@ int main(int argc, char* argv[]) {
             int mzmax = u.mz(kzmax);
             int mymax = u.My() - 1;
 
-            int kxtrunc = 0;
-            int kztrunc = 0;
-            Real truncation = 0.0;
+            int kxtrunc = 0, kxtruncvel = 0;
+            int kztrunc = 0, kztruncvel = 0;
+            Real truncation = 0.0, truncationvel = 0.0;
 
             for (int kx = kxmin; kx <= kxmax; kx += (kxmax - kxmin)) {
                 int mx = u.mx(kx);
                 for (int mz = 0; mz <= mzmax; ++mz) {
                     BasisFunc prof = u.profile(mx, mz);
+                    BasisFunc profvel = uvel.profile(mx, mz);
                     Real trunc = L2Norm(prof);
+                    Real truncvel = L2Norm(profvel);
                     if (trunc > truncation) {
                         kxtrunc = kx;
                         kztrunc = u.kz(mz);
                         truncation = trunc;
                     }
+                    if (truncvel > truncationvel) {
+                        kxtruncvel = kx;
+                        kztruncvel = u.kz(mz);
+                        truncationvel = truncvel;
+                    }
                 }
             }
             cout << "Max x truncation == " << setw(12) << truncation << " at kx,kz == " << kxtrunc << ',' << kztrunc
                  << endl;
+            cout << "Max x truncation (vel only) == " << setw(12) << truncationvel << " at kx,kz == " << kxtruncvel << ',' << kztruncvel
+                 << endl;
 
-            truncation = 0.0;
-            kxtrunc = 0;
-            kztrunc = 0;
+            truncation = 0.0; truncationvel = 0.0;
+            kxtrunc = 0; kxtruncvel = 0;
+            kztrunc = 0; kztruncvel = 0;
 
             for (int i = 0; i < u.Nd(); ++i) {
                 for (int kx = kxmin; kx <= kxmax; ++kx) {
@@ -348,30 +373,48 @@ int main(int argc, char* argv[]) {
                     for (int kz = 0; kz <= kzmax; ++kz) {
                         int mz = u.mz(kz);
                         Real trunc = abs(u.cmplx(mx, mymax, mz, i));
+                        Real truncvel = 0.0;
+                        if (i < 3)
+                            truncvel = abs(uvel.cmplx(mx, mymax, mz, i));
                         if (trunc > truncation) {
                             kxtrunc = kx;
                             kztrunc = kz;
                             truncation = trunc;
                         }
+                        if (truncvel > truncationvel) {
+                            kxtruncvel = kx;
+                            kztruncvel = kz;
+                            truncationvel = truncvel;
+                        }
                     }
                 }
             }
-            cout << "Max y truncation == " << setw(12) << truncation << " at kx,kz == " << kxtrunc << ',' << kzmax
+            cout << "Max y truncation == " << setw(12) << truncation << " at kx,kz == " << kxtrunc << ',' << kztrunc
+                 << endl;
+            cout << "Max y truncation (vel only) == " << setw(12) << truncationvel << " at kx,kz == " << kxtruncvel << ',' << kztruncvel
                  << endl;
 
-            truncation = 0.0;
-            kxtrunc = 0;
-            kztrunc = 0;
+            truncation = 0.0; truncationvel = 0.0;
+            kxtrunc = 0; kxtruncvel = 0;
+            kztrunc = 0; kztruncvel = 0;
             for (int kx = kxmin; kx <= kxmax; ++kx) {
                 int mx = u.mx(kx);
                 BasisFunc prof = u.profile(mx, mzmax);
+                BasisFunc profvel = uvel.profile(mx, mzmax);
                 Real trunc = L2Norm(prof);
+                Real truncvel = L2Norm(profvel);
                 if (trunc > truncation) {
                     kxtrunc = kx;
                     truncation = trunc;
                 }
+                if (truncvel > truncationvel) {
+                    kxtruncvel = kx;
+                    truncationvel = truncvel;
+                }
             }
             cout << "Max z truncation == " << setw(12) << truncation << " at kx,kz == " << kxtrunc << ',' << kzmax
+                 << endl;
+            cout << "Max z truncation (vel only) == " << setw(12) << truncationvel << " at kx,kz == " << kxtruncvel << ',' << kzmax
                  << endl;
             cout << "\n" << endl;
         }
