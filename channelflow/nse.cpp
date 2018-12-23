@@ -12,9 +12,9 @@ namespace chflow {
 void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, FlowField& f, FlowField& tmp,
                     DNSFlags& flags) {
     FlowField& u = const_cast<FlowField&>(u_);
-    FlowField vel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
-    FlowField f3d(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
-    FlowField f1d(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+//    FlowField vel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+//    FlowField f3d(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+//    FlowField f1d(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
 
     fieldstate finalstate = Spectral;
     assert(u.xzstate() == Spectral && u.ystate() == Spectral);
@@ -43,39 +43,40 @@ void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, Flo
         }
 
         // TODO must be better way
-        vector<int> vel_indices = {0, 1, 2};
-        vel.copySubfields(u, vel_indices, vel_indices);
+//        vector<int> vel_indices = {0, 1, 2};
+//        vel.copySubfields(u, vel_indices, vel_indices);
 
         switch (flags.nonlinearity) {
             case Rotational:
-                rotationalNL(vel, f3d, tmp, finalstate);
+                //rotationalNL(vel, f3d, tmp, finalstate);
+                rotationalNL(u, f, tmp, finalstate);
                 break;
-            case Convection:
-                convectionNL(vel, f3d, tmp, finalstate);
-                break;
-            case SkewSymmetric:
-                skewsymmetricNL(vel, f3d, tmp, finalstate);
-                break;
-            case Divergence:
-                divergenceNL(vel, f3d, tmp, finalstate);
-                break;
-            case Alternating:
-                divergenceNL(vel, f3d, tmp, finalstate);
-                flags.nonlinearity = Alternating_;
-                break;
-            case Alternating_:
-                convectionNL(vel, f3d, tmp, finalstate);
-                flags.nonlinearity = Alternating;
-                break;
+//            case Convection:
+//                convectionNL(vel, f3d, tmp, finalstate);
+//                break;
+//            case SkewSymmetric:
+//                skewsymmetricNL(vel, f3d, tmp, finalstate);
+//                break;
+//            case Divergence:
+//                divergenceNL(vel, f3d, tmp, finalstate);
+//                break;
+//            case Alternating:
+//                divergenceNL(vel, f3d, tmp, finalstate);
+//                flags.nonlinearity = Alternating_;
+//                break;
+//            case Alternating_:
+//                convectionNL(vel, f3d, tmp, finalstate);
+//                flags.nonlinearity = Alternating;
+//                break;
             default:
                 cferror("navierstokesNL(method, u,U,f,tmp) : unknown method");
         }
-        f.copySubfields(f3d, vel_indices, vel_indices);
+//        f.copySubfields(f3d, vel_indices, vel_indices);
 
-        densityAdvection(u, f1d, tmp, finalstate);
-        vector<int> zero_index = {0};
-        vector<int> density_index = {3};
-        f.copySubfields(f1d, zero_index, density_index);
+        densityAdvection(u, f, tmp, finalstate);
+//        vector<int> zero_index = {0};
+//        vector<int> density_index = {3};
+//        f.copySubfields(f1d, zero_index, density_index);
 
         // add rotation term -(omega x u) = - flags.rotation * flags.nu (y e_y + e_z x u)
         if (flags.rotation != 0.0) {
