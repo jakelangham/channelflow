@@ -114,6 +114,7 @@ class MultistepDNS : public DNSAlgorithm {
     cfarray<Real> beta_;                      // coefficients of nonlin. field history
     cfarray<std::vector<FlowField>> fields_;  // u[j] == u at t-j*dt for multistep algorithms
     cfarray<std::vector<FlowField>> nonlf_;   // f[j] == f at t-j*dt for multistep algorithms (nonlinear term)
+    std::vector<FlowField> rhs_;
 
     int countdown_;
 };

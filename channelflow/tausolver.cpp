@@ -68,19 +68,7 @@ TauSolver::TauSolver()
       nu_(0),
       Pr_(1),
       Ri_(0),
-      tauCorrection_(true),
-      pressureHelmholtz_(),
-      velocityHelmholtz_(),
-      P_0_(),
-      v_0_(),
-      P_plus_(),
-      v_plus_(),
-      P_minus_(),
-      v_minus_(),
-      i00_(0),
-      i01_(0),
-      i10_(0),
-      i11_(0) {}
+      densityHelmholtz_() {}
 
 TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real Pr, Real Ri, int nChebyModes,
                      bool tauCorrection)
@@ -98,272 +86,269 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
       nu_(nu),
       Pr_(Pr),
       Ri_(Ri),
-      tauCorrection_(tauCorrection),
-      pressureHelmholtz_(N_, a_, b_, kappa2_),
-      velocityHelmholtz_(N_, a_, b_, lambda_, nu_),
-      densityHelmholtz_(N_, a_, b_, lambda_rho_, nu_ / Pr_),
-      P_0_(N_, a_, b_, Spectral),
-      v_0_(N_, a_, b_, Spectral),
-      P_plus_(N_, a_, b_, Spectral),
-      v_plus_(N_, a_, b_, Spectral),
-      P_minus_(N_, a_, b_, Spectral),
-      v_minus_(N_, a_, b_, Spectral),
-      i00_(0),
-      i01_(0),
-      i10_(0),
-      i11_(0) {
+      //tauCorrection_(tauCorrection),
+    //  pressureHelmholtz_(N_, a_, b_, kappa2_),
+    //  velocityHelmholtz_(N_, a_, b_, lambda_, nu_),
+      densityHelmholtz_(N_, a_, b_, lambda_rho_, nu_ / Pr_) {
+    //  P_0_(N_, a_, b_, Spectral),
+    //  v_0_(N_, a_, b_, Spectral),
+    //  P_plus_(N_, a_, b_, Spectral),
+    //  v_plus_(N_, a_, b_, Spectral),
+    //  P_minus_(N_, a_, b_, Spectral),
+    //  v_minus_(N_, a_, b_, Spectral),
+    //  i00_(0),
+    //  i01_(0),
+    //  i10_(0),
+    //  i11_(0) {
     // ======================================================================
     // Calculate the influence matrix.
 
     // Make some local aliases to temp storage, for readability
     // This is not an efficiency issue, since TauSolvers are constructed once.
-    ChebyCoeff dvplus_dy(N_, a_, b_, Spectral);
-    ChebyCoeff dvminus_dy(N_, a_, b_, Spectral);
-    ChebyCoeff zero(N_, a_, b_, Spectral);
-    ChebyCoeff dPdy(N_, a_, b_, Spectral);
+    //ChebyCoeff dvplus_dy(N_, a_, b_, Spectral);
+    //ChebyCoeff dvminus_dy(N_, a_, b_, Spectral);
+    //ChebyCoeff zero(N_, a_, b_, Spectral);
+    //ChebyCoeff dPdy(N_, a_, b_, Spectral);
 
     // Solve homogeneous Helmholtz with P(-1) = 0, P(1) = 1.
-    pressureHelmholtz_.solve(P_plus_, zero, 0.0, 1.0);  // eqn 7.3.25 discrete
-    diff(P_plus_, dPdy);
-    velocityHelmholtz_.solve(v_plus_, dPdy, 0.0, 0.0);  // eqn 7.3.26discrete
+    //pressureHelmholtz_.solve(P_plus_, zero, 0.0, 1.0);  // eqn 7.3.25 discrete
+    //diff(P_plus_, dPdy);
+    //velocityHelmholtz_.solve(v_plus_, dPdy, 0.0, 0.0);  // eqn 7.3.26discrete
 
-    // Solve homogeneous Helmholtz with P(-1) = 1, P(1) = 0.
-    pressureHelmholtz_.solve(P_minus_, zero, 1.0, 0.0);  // eqn 7.3.25 discrete
-    diff(P_minus_, dPdy);
-    velocityHelmholtz_.solve(v_minus_, dPdy, 0.0, 0.0);  // eqn 7.3.26 discrete
+    //// Solve homogeneous Helmholtz with P(-1) = 1, P(1) = 0.
+    //pressureHelmholtz_.solve(P_minus_, zero, 1.0, 0.0);  // eqn 7.3.25 discrete
+    //diff(P_minus_, dPdy);
+    //velocityHelmholtz_.solve(v_minus_, dPdy, 0.0, 0.0);  // eqn 7.3.26 discrete
 
-    // Calculate influence matrix elements.
-    diff(v_plus_, dvplus_dy);
-    diff(v_minus_, dvminus_dy);
+    //// Calculate influence matrix elements.
+    //diff(v_plus_, dvplus_dy);
+    //diff(v_minus_, dvminus_dy);
 
-    Real A = dvplus_dy.eval_b();
-    Real B = dvminus_dy.eval_b();
-    Real C = dvplus_dy.eval_a();
-    Real D = dvminus_dy.eval_a();
-    Real discriminant = A * D - B * C;
+    //Real A = dvplus_dy.eval_b();
+    //Real B = dvminus_dy.eval_b();
+    //Real C = dvplus_dy.eval_a();
+    //Real D = dvminus_dy.eval_a();
+    //Real discriminant = A * D - B * C;
 
-    // We know influence matrix is rank-deficient for kx==kz==0. It shouldn't
-    // be for other wave numbers.
-    if (kx_ != 0 || kz_ != 0)
-        assert((abs(discriminant) / Greater(abs(A * D), abs(B * C))) > MINIMUM_DISCRIMINANT);
+    //// We know influence matrix is rank-deficient for kx==kz==0. It shouldn't
+    //// be for other wave numbers.
+    //if (kx_ != 0 || kz_ != 0)
+    //    assert((abs(discriminant) / Greater(abs(A * D), abs(B * C))) > MINIMUM_DISCRIMINANT);
 
-    // Go ahead and divide by zero for kx==kz==0 case. Influence matrix is
-    // unused in that case. Pollute the entries NaN's to make sure.
-    i00_ = D / discriminant;
-    i01_ = -B / discriminant;
-    i10_ = -C / discriminant;
-    i11_ = A / discriminant;
+    //// Go ahead and divide by zero for kx==kz==0 case. Influence matrix is
+    //// unused in that case. Pollute the entries NaN's to make sure.
+    //i00_ = D / discriminant;
+    //i01_ = -B / discriminant;
+    //i10_ = -C / discriminant;
+    //i11_ = A / discriminant;
 
-    // ====================================================================
-    // Solve the B0 problem for tau corrections in solve(P,v)
-    ChebyCoeff p0_rhs(N_, a_, b_, Spectral);
-    Real c = 2 / (b_ - a_);
-    for (int i = 0; i <= Nb_; ++i)
-        p0_rhs[i] = c * n_func(i, Nb_);
+    //// ====================================================================
+    //// Solve the B0 problem for tau corrections in solve(P,v)
+    //ChebyCoeff p0_rhs(N_, a_, b_, Spectral);
+    //Real c = 2 / (b_ - a_);
+    //for (int i = 0; i <= Nb_; ++i)
+    //    p0_rhs[i] = c * n_func(i, Nb_);
 
-    pressureHelmholtz_.solve(P_0_, p0_rhs, 0.0, 0.0);  // eqn 7.3.41a
+    //pressureHelmholtz_.solve(P_0_, p0_rhs, 0.0, 0.0);  // eqn 7.3.41a
 
-    ChebyCoeff dP0dy = diff(P_0_);
-    // dP0dy_Nb1_ = dP0dy[Nb_-1];
-    // dP0dy_Nb_  = dP0dy[Nb_];
-    velocityHelmholtz_.solve(v_0_, dP0dy, 0.0, 0.0);  // eqn 7.3.41b
+    //ChebyCoeff dP0dy = diff(P_0_);
+    //// dP0dy_Nb1_ = dP0dy[Nb_-1];
+    //// dP0dy_Nb_  = dP0dy[Nb_];
+    //velocityHelmholtz_.solve(v_0_, dP0dy, 0.0, 0.0);  // eqn 7.3.41b
 
-    // Note 2010-07-13 gibson:
-    // This call to influenceCorrection would appear to be an error, because
-    // The P and v eqns 7.3.41 have dirichlet BCs P(+/-1) = 0 and v(+/-1) = 0.
-    // An influence correction would change the BCs to v(+/-1) = v'(+/-1) = 0.
-    // The diff in tausolverTest is negligible, however time integrations
-    // get 1e-06 divergence if this call is commented out.
-    influenceCorrection(P_0_, v_0_);
+    //// Note 2010-07-13 gibson:
+    //// This call to influenceCorrection would appear to be an error, because
+    //// The P and v eqns 7.3.41 have dirichlet BCs P(+/-1) = 0 and v(+/-1) = 0.
+    //// An influence correction would change the BCs to v(+/-1) = v'(+/-1) = 0.
+    //// The diff in tausolverTest is negligible, however time integrations
+    //// get 1e-06 divergence if this call is commented out.
+    //influenceCorrection(P_0_, v_0_);
 
-    ChebyCoeff v0yy = diff2(v_0_);
-    // sigma0_Nb1_ = nu_*v0yy[Nb_-1] -(lambda_*v_0_[Nb_-1] + dP0dy[Nb_-1]);
-    // sigma0_Nb_  = nu_*v0yy[Nb_]   -(lambda_*v_0_[Nb_]   + dP0dy[Nb_]);
-    sigma0_Nb1_ = lambda_ * v_0_[Nb_ - 1] + dP0dy[Nb_ - 1] - nu_ * v0yy[Nb_ - 1];
-    sigma0_Nb_ = lambda_ * v_0_[Nb_] + dP0dy[Nb_] - nu_ * v0yy[Nb_];
+    //ChebyCoeff v0yy = diff2(v_0_);
+    //// sigma0_Nb1_ = nu_*v0yy[Nb_-1] -(lambda_*v_0_[Nb_-1] + dP0dy[Nb_-1]);
+    //// sigma0_Nb_  = nu_*v0yy[Nb_]   -(lambda_*v_0_[Nb_]   + dP0dy[Nb_]);
+    //sigma0_Nb1_ = lambda_ * v_0_[Nb_ - 1] + dP0dy[Nb_ - 1] - nu_ * v0yy[Nb_ - 1];
+    //sigma0_Nb_ = lambda_ * v_0_[Nb_] + dP0dy[Nb_] - nu_ * v0yy[Nb_];
 }
 
-void TauSolver::influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const {
-    ChebyCoeff tmp = diff(v);
-    Real dvp_dy_plus = tmp.eval_b();
-    Real dvp_dy_minus = tmp.eval_a();
-    Real delta_plus = -i00_ * dvp_dy_plus - i01_ * dvp_dy_minus;
-    Real delta_minus = -i10_ * dvp_dy_plus - i11_ * dvp_dy_minus;
+//void TauSolver::influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const {
+//    ChebyCoeff tmp = diff(v);
+//    Real dvp_dy_plus = tmp.eval_b();
+//    Real dvp_dy_minus = tmp.eval_a();
+//    Real delta_plus = -i00_ * dvp_dy_plus - i01_ * dvp_dy_minus;
+//    Real delta_minus = -i10_ * dvp_dy_plus - i11_ * dvp_dy_minus;
+//
+//    // Add the influence matrix corrections to the particular solutions
+//    // to get a solution that statisfies both v(+-1)==0 and v'(+-1)==0.
+//    for (int i = 0; i < N_; ++i) {
+//        P[i] += delta_plus * P_plus_[i] + delta_minus * P_minus_[i];
+//        v[i] += delta_plus * v_plus_[i] + delta_minus * v_minus_[i];
+//    }
+//}
 
-    // Add the influence matrix corrections to the particular solutions
-    // to get a solution that statisfies both v(+-1)==0 and v'(+-1)==0.
-    for (int i = 0; i < N_; ++i) {
-        P[i] += delta_plus * P_plus_[i] + delta_minus * P_minus_[i];
-        v[i] += delta_plus * v_plus_[i] + delta_minus * v_minus_[i];
-    }
-}
+//void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, const ChebyCoeff& rho, Real& sigmaNb1,
+//                              Real& sigmaNb) const {
+//    // JL need to add on -Ri * rho'
+//    ChebyCoeff tmp(r);
+//    tmp -= Ri_ * diff(rho);
+//
+//    // P is Canuto & Hussaini's Ppart particular solution after this solve
+//    pressureHelmholtz_.solve(P, tmp, 0.0, 0.0);  // eqn 7.3.25 discrete HH1
+//
+//    // kx==kz==0 is a degenerate case for which the influence matrix is
+//    // rank-deficient, the v solution is identically zero and P satisfies
+//    // P' == Ry (which is equivalent to P'' == div(R) == r, found above).
+//    if (kx_ == 0 && kz_ == 0) {
+//        for (int i = 0; i < N_; ++i)
+//            v[i] = 0.0;
+//        return;
+//    }
+//
+//    // The rest of this method is for the case kx != 0 or kz != 0.
+//    tmp = diff(P);
+//    tmp -= Ry;
+//    tmp += Ri_ * rho; // JL buoyancy term
+//
+//    // v is Canuto & Hussaini's vpart particular solution after this solve
+//    velocityHelmholtz_.solve(v, tmp, 0.0, 0.0);  // eqn 7.3.25 discrete HH2
+//    influenceCorrection(P, v);
+//
+//    // Jump ship if not doing tau correction
+//    if (!tauCorrection_)
+//        return;
+//
+//    // Add up tau correction terms. Quotes are from Canuto & Hussaini pg 219
+//    // My Nb is Canuto's N.
+//    // My sigma1_Nb  is Canuto's sigma_{1m} for m=N
+//    // My sigma1_Nb1 is Canuto's sigma_{1m} for m=N-1
+//
+//    // Set tmp = vyy;
+//    diff2(v, tmp);
+//
+//    // "define sigma_{1m} and sigma_{0m} for m = N-1, N as the tau
+//    // terms that must be added to the v-momentum eqns for (P1,v1) and
+//    // (P0,v0) for them to hold"
+//    Real sigma1_Nb = lambda_ * v[Nb_] - nu_ * tmp[Nb_] - Ry[Nb_];
+//    Real sigma1_Nb1 = lambda_ * v[Nb_ - 1] - nu_ * tmp[Nb_ - 1] - Ry[Nb_ - 1];
+//    diff(P, tmp);
+//    sigma1_Nb += tmp[Nb_];
+//    sigma1_Nb1 += tmp[Nb_ - 1];
+//
+//    // "One can show that sigma_m = sigma_{1m}/(1-sigma_{0m}, m=N-1,N"
+//    sigmaNb = sigma1_Nb / (1.0 - sigma0_Nb_);
+//    sigmaNb1 = sigma1_Nb1 / (1.0 - sigma0_Nb1_);
+//
+//    // " and that ..."
+//    for (int i = 0; i <= Nb_; ++i) {
+//        P[i] += ((i % 2 == 0) ? sigmaNb1 : sigmaNb) * P_0_[i];
+//        v[i] += ((i % 2 == 0) ? sigmaNb : sigmaNb1) * v_0_[i];
+//    }
+//
+//    //#ifdef DEBUG
+//    // verify_P_and_v(P,v,r,Ry, sigmaNb1, sigmaNb, true);
+//    //#endif
+//
+//    return;
+//}
+//
+//Real TauSolver::verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry,
+//                               Real sigmaNb1, Real sigmaNb, bool verbose) const {
+//    Real error = 0.0;
+//
+//    if (verbose) {
+//        cout << "--------TauSolver::verify_P_and_v(P,v,r,Ry,sigmaNb1,sigmaNb) {" << endl;
+//        cout << "nu = " << nu_ << "; lambda = " << lambda_ << endl;
+//    }
+//
+//    ChebyCoeff Py = diff(P);
+//    ChebyCoeff Pyy = diff(Py);
+//    ChebyCoeff p_lhs(P);
+//    p_lhs *= -kappa2_;
+//    p_lhs += Pyy;
+//
+//    Real l2err = L2Dist(p_lhs, r);
+//    Real t2err = tauDist(p_lhs, r);
+//    error += l2err;
+//    if (verbose) {
+//        cout << "Homog tauDist(P'' - k^2 P, r)   == " << t2err << endl;
+//        cout << "Homog  L2Dist(P'' - k^2 P, r)   == " << l2err << endl;
+//    }
+//
+//    ChebyCoeff vy = diff(v);
+//    ChebyCoeff vyy = diff(vy);
+//    ChebyCoeff v_lhs = nu_ * vyy - lambda_ * v - Py;
+//    ChebyCoeff minusRy = Ry;
+//    minusRy *= -1.0;
+//
+//    t2err = tauDist(v_lhs, minusRy);
+//    l2err = L2Dist(v_lhs, minusRy);
+//    error += l2err;
+//    if (verbose) {
+//        cout << "tauDist(v_lhs, -Ry) == " << t2err << endl;
+//        cout << " L2Dist(v_lhs, -Ry) == " << l2err << endl;
+//    }
+//
+//    // Now compare P and v eqns with tau correction terms.
+//    ChebyCoeff sigma(N_, a_, b_, Spectral);
+//    sigma[Nb_ - 1] = sigmaNb1;
+//    sigma[Nb_] = sigmaNb;
+//    ChebyCoeff p_rhs(N_, a_, b_, Spectral);
+//    diff(sigma, p_rhs);
+//    p_rhs += r;
+//
+//    t2err = tauDist(p_lhs, p_rhs);
+//    l2err = L2Dist(p_lhs, p_rhs);
+//    error += l2err;
+//    if (verbose) {
+//        cout << "Homog tauDist(P'' - k^2 P, r + sigma')   == " << t2err << endl;
+//        cout << "Homog  L2Dist(P'' - k^2 P, r + sigma')   == " << l2err << endl;
+//    }
+//
+//    ChebyCoeff v_rhs(minusRy);
+//    v_rhs -= sigma;
+//
+//    t2err = tauDist(v_lhs, v_rhs);
+//    l2err = L2Dist(v_lhs, v_rhs);
+//    error += l2err;
+//    if (verbose) {
+//        cout << "tauDist(v_lhs, -Ry - sigma) == " << tauDist(v_lhs, v_rhs) << endl;
+//        cout << " L2Dist(v_lhs, -Ry - sigma) == " << L2Dist(v_lhs, v_rhs) << endl;
+//    }
+//
+//    Real vp = v.eval_b();
+//    Real vm = v.eval_a();
+//    Real vyp = vy.eval_b();
+//    Real vym = vy.eval_a();
+//    Real v_norm = (abs(nu_ * L2Norm(vyy)) + abs(lambda_ * L2Norm(v))) + L2Norm(Py);
+//    v_norm = (v_norm > EPSILON) ? v_norm : 1.0;
+//
+//    Real p_norm = L2Norm(Pyy) + kappa2_ * L2Norm(P);
+//    p_norm = (p_norm > EPSILON) ? p_norm : 1.0;
+//
+//    error += abs(vp) / v_norm;
+//    error += abs(vm) / v_norm;
+//    error += abs(vyp) / v_norm;
+//    error += abs(vym) / v_norm;
+//
+//    if (verbose) {
+//        cout << " v(+/- 1) == " << vp << ' ' << vm << endl;
+//        cout << "v'(+/- 1) == " << vyp << ' ' << vym << endl;
+//    }
+//
+//    // Real v_err = tauDist(v_lhs,v_rhs)/v_norm;
+//    // Real p_err = tauDist(p_lhs,p_rhs)/p_norm;
+//    // assert(v_err < EPSILON);
+//    // assert(p_err < EPSILON);
+//    if (verbose)
+//        cout << "} TauSolver::verify_P_and_v" << endl;
+//
+//    return error;
+//}
 
-void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, const ChebyCoeff& rho, Real& sigmaNb1,
-                              Real& sigmaNb) const {
-    // JL need to add on -Ri * rho'
-    ChebyCoeff tmp(r);
-    tmp -= Ri_ * diff(rho);
-
-    // P is Canuto & Hussaini's Ppart particular solution after this solve
-    pressureHelmholtz_.solve(P, tmp, 0.0, 0.0);  // eqn 7.3.25 discrete HH1
-
-    // kx==kz==0 is a degenerate case for which the influence matrix is
-    // rank-deficient, the v solution is identically zero and P satisfies
-    // P' == Ry (which is equivalent to P'' == div(R) == r, found above).
-    if (kx_ == 0 && kz_ == 0) {
-        for (int i = 0; i < N_; ++i)
-            v[i] = 0.0;
-        return;
-    }
-
-    // The rest of this method is for the case kx != 0 or kz != 0.
-    tmp = diff(P);
-    tmp -= Ry;
-    tmp += Ri_ * rho; // JL buoyancy term
-
-    // v is Canuto & Hussaini's vpart particular solution after this solve
-    velocityHelmholtz_.solve(v, tmp, 0.0, 0.0);  // eqn 7.3.25 discrete HH2
-    influenceCorrection(P, v);
-
-    // Jump ship if not doing tau correction
-    if (!tauCorrection_)
-        return;
-
-    // Add up tau correction terms. Quotes are from Canuto & Hussaini pg 219
-    // My Nb is Canuto's N.
-    // My sigma1_Nb  is Canuto's sigma_{1m} for m=N
-    // My sigma1_Nb1 is Canuto's sigma_{1m} for m=N-1
-
-    // Set tmp = vyy;
-    diff2(v, tmp);
-
-    // "define sigma_{1m} and sigma_{0m} for m = N-1, N as the tau
-    // terms that must be added to the v-momentum eqns for (P1,v1) and
-    // (P0,v0) for them to hold"
-    Real sigma1_Nb = lambda_ * v[Nb_] - nu_ * tmp[Nb_] - Ry[Nb_];
-    Real sigma1_Nb1 = lambda_ * v[Nb_ - 1] - nu_ * tmp[Nb_ - 1] - Ry[Nb_ - 1];
-    diff(P, tmp);
-    sigma1_Nb += tmp[Nb_];
-    sigma1_Nb1 += tmp[Nb_ - 1];
-
-    // "One can show that sigma_m = sigma_{1m}/(1-sigma_{0m}, m=N-1,N"
-    sigmaNb = sigma1_Nb / (1.0 - sigma0_Nb_);
-    sigmaNb1 = sigma1_Nb1 / (1.0 - sigma0_Nb1_);
-
-    // " and that ..."
-    for (int i = 0; i <= Nb_; ++i) {
-        P[i] += ((i % 2 == 0) ? sigmaNb1 : sigmaNb) * P_0_[i];
-        v[i] += ((i % 2 == 0) ? sigmaNb : sigmaNb1) * v_0_[i];
-    }
-
-    //#ifdef DEBUG
-    // verify_P_and_v(P,v,r,Ry, sigmaNb1, sigmaNb, true);
-    //#endif
-
-    return;
-}
-
-Real TauSolver::verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry,
-                               Real sigmaNb1, Real sigmaNb, bool verbose) const {
-    Real error = 0.0;
-
-    if (verbose) {
-        cout << "--------TauSolver::verify_P_and_v(P,v,r,Ry,sigmaNb1,sigmaNb) {" << endl;
-        cout << "nu = " << nu_ << "; lambda = " << lambda_ << endl;
-    }
-
-    ChebyCoeff Py = diff(P);
-    ChebyCoeff Pyy = diff(Py);
-    ChebyCoeff p_lhs(P);
-    p_lhs *= -kappa2_;
-    p_lhs += Pyy;
-
-    Real l2err = L2Dist(p_lhs, r);
-    Real t2err = tauDist(p_lhs, r);
-    error += l2err;
-    if (verbose) {
-        cout << "Homog tauDist(P'' - k^2 P, r)   == " << t2err << endl;
-        cout << "Homog  L2Dist(P'' - k^2 P, r)   == " << l2err << endl;
-    }
-
-    ChebyCoeff vy = diff(v);
-    ChebyCoeff vyy = diff(vy);
-    ChebyCoeff v_lhs = nu_ * vyy - lambda_ * v - Py;
-    ChebyCoeff minusRy = Ry;
-    minusRy *= -1.0;
-
-    t2err = tauDist(v_lhs, minusRy);
-    l2err = L2Dist(v_lhs, minusRy);
-    error += l2err;
-    if (verbose) {
-        cout << "tauDist(v_lhs, -Ry) == " << t2err << endl;
-        cout << " L2Dist(v_lhs, -Ry) == " << l2err << endl;
-    }
-
-    // Now compare P and v eqns with tau correction terms.
-    ChebyCoeff sigma(N_, a_, b_, Spectral);
-    sigma[Nb_ - 1] = sigmaNb1;
-    sigma[Nb_] = sigmaNb;
-    ChebyCoeff p_rhs(N_, a_, b_, Spectral);
-    diff(sigma, p_rhs);
-    p_rhs += r;
-
-    t2err = tauDist(p_lhs, p_rhs);
-    l2err = L2Dist(p_lhs, p_rhs);
-    error += l2err;
-    if (verbose) {
-        cout << "Homog tauDist(P'' - k^2 P, r + sigma')   == " << t2err << endl;
-        cout << "Homog  L2Dist(P'' - k^2 P, r + sigma')   == " << l2err << endl;
-    }
-
-    ChebyCoeff v_rhs(minusRy);
-    v_rhs -= sigma;
-
-    t2err = tauDist(v_lhs, v_rhs);
-    l2err = L2Dist(v_lhs, v_rhs);
-    error += l2err;
-    if (verbose) {
-        cout << "tauDist(v_lhs, -Ry - sigma) == " << tauDist(v_lhs, v_rhs) << endl;
-        cout << " L2Dist(v_lhs, -Ry - sigma) == " << L2Dist(v_lhs, v_rhs) << endl;
-    }
-
-    Real vp = v.eval_b();
-    Real vm = v.eval_a();
-    Real vyp = vy.eval_b();
-    Real vym = vy.eval_a();
-    Real v_norm = (abs(nu_ * L2Norm(vyy)) + abs(lambda_ * L2Norm(v))) + L2Norm(Py);
-    v_norm = (v_norm > EPSILON) ? v_norm : 1.0;
-
-    Real p_norm = L2Norm(Pyy) + kappa2_ * L2Norm(P);
-    p_norm = (p_norm > EPSILON) ? p_norm : 1.0;
-
-    error += abs(vp) / v_norm;
-    error += abs(vm) / v_norm;
-    error += abs(vyp) / v_norm;
-    error += abs(vym) / v_norm;
-
-    if (verbose) {
-        cout << " v(+/- 1) == " << vp << ' ' << vm << endl;
-        cout << "v'(+/- 1) == " << vyp << ' ' << vym << endl;
-    }
-
-    // Real v_err = tauDist(v_lhs,v_rhs)/v_norm;
-    // Real p_err = tauDist(p_lhs,p_rhs)/p_norm;
-    // assert(v_err < EPSILON);
-    // assert(p_err < EPSILON);
-    if (verbose)
-        cout << "} TauSolver::verify_P_and_v" << endl;
-
-    return error;
-}
-
-void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, 
-                      ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
-                      const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, 
-                      const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho) const {
+void TauSolver::solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho) const {
     ComplexChebyCoeff r(N_, a_, b_, Spectral);
-    Real sigmaNb1;
-    Real sigmaNb;
+    //Real sigmaNb1;
+    //Real sigmaNb;
 
     ChebyCoeff rr(N_, a_, b_, Spectral);
 
@@ -374,35 +359,47 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     densityHelmholtz_.solve(rho.re, r.re, 0.0, 0.0);
     densityHelmholtz_.solve(rho.im, r.im, 0.0, 0.0);
 
-    // Always solve v(y) from momentum, and get P.
-    // Re and Im parts of v and P eqns decouple. Solve them seperately.
-    diff(Ry.re, rr);
-    for (n = 0; n < N_; ++n)
-        rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
-    solve_P_and_v(P.re, v.re, rr, Ry.re, rho.re, sigmaNb1, sigmaNb);
-
-    diff(Ry.im, rr);
-    for (n = 0; n < N_; ++n)
-        rr[n] += two_pi_kxLx_ * Rx.re[n] + two_pi_kzLz_ * Rz.re[n];
-    solve_P_and_v(P.im, v.im, rr, Ry.im, rho.im, sigmaNb1, sigmaNb);
-
-    // Re and Im parts of u and w eqns seperate.
-    // Use r as temporary space to store RHS of eqns.
-    for (n = 0; n < N_; ++n)
-        r.set(n, two_pi_kxLx_ * I * P[n] - Rx[n]);
-    // Complex c = pi2i*kxLx_*P[n] - Rx[n];
-    // r.set(n,c);
-
-    velocityHelmholtz_.solve(u.re, r.re, 0.0, 0.0);
-    velocityHelmholtz_.solve(u.im, r.im, 0.0, 0.0);
-
-    for (n = 0; n < N_; ++n)
-        r.set(n, two_pi_kzLz_ * I * P[n] - Rz[n]);
-    // Complex c = pi2i*kzLz_*P[n] - Rz[n];
-    // r.set(n, c);
-
-    velocityHelmholtz_.solve(w.re, r.re, 0.0, 0.0);
-    velocityHelmholtz_.solve(w.im, r.im, 0.0, 0.0);
+//    diff(Ry.re, rr);
+//
+//    //ComplexChebyCoeff rhobase(N_, a_, b_, Spectral);
+//    //rhobase[1] -= 1.0;
+//    //// JL add on base density
+//    ComplexChebyCoeff tmp(Ry);
+//    //rhobase *= Ri_;
+//    //tmp -= rhobase;
+//    //ChebyCoeff diff_rhobase(N_, a_, b_, Spectral);
+//    //diff(rhobase.re, diff_rhobase);
+//    //rr -= diff_rhobase;
+//    //rr[0] += Ri_;
+//
+//    // Always solve v(y) from momentum, and get P.
+//    // Re and Im parts of v and P eqns decouple. Solve them seperately.
+//    for (n = 0; n < N_; ++n)
+//        rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
+//    solve_P_and_v(P.re, v.re, rr, tmp.re, rho.re, sigmaNb1, sigmaNb);
+//
+//    diff(Ry.im, rr);
+//    for (n = 0; n < N_; ++n)
+//        rr[n] += two_pi_kxLx_ * Rx.re[n] + two_pi_kzLz_ * Rz.re[n];
+//    solve_P_and_v(P.im, v.im, rr, tmp.im, rho.im, sigmaNb1, sigmaNb);
+//
+//    // Re and Im parts of u and w eqns seperate.
+//    // Use r as temporary space to store RHS of eqns.
+//    for (n = 0; n < N_; ++n)
+//        r.set(n, two_pi_kxLx_ * I * P[n] - Rx[n]);
+//    // Complex c = pi2i*kxLx_*P[n] - Rx[n];
+//    // r.set(n,c);
+//
+//    velocityHelmholtz_.solve(u.re, r.re, 0.0, 0.0);
+//    velocityHelmholtz_.solve(u.im, r.im, 0.0, 0.0);
+//
+//    for (n = 0; n < N_; ++n)
+//        r.set(n, two_pi_kzLz_ * I * P[n] - Rz[n]);
+//    // Complex c = pi2i*kzLz_*P[n] - Rz[n];
+//    // r.set(n, c);
+//
+//    velocityHelmholtz_.solve(w.re, r.re, 0.0, 0.0);
+//    velocityHelmholtz_.solve(w.im, r.im, 0.0, 0.0);
 
     // This is for debugging ONLY
     /**************************
@@ -422,55 +419,57 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     return;
 }
 
-void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
-                      Real& dPdx, Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
-                      const ComplexChebyCoeff& Rz, Real umean, Real wmean) const {
-    // TODO this hasn't been properly stratified
-    
-    // This function should only be called for kx==kz==0, since the enforcing
-    // const velocity flux makes sense only for that case. Divergence is not a
-    // problem here, so solve everything via momentum.
-    assert(kx_ == 0 && kz_ == 0);
-
-    ComplexChebyCoeff r(N_, a_, b_, Spectral);
-    Real sigmaNb1;  // tau correction term
-    Real sigmaNb;   // tau correction term
-
-    ChebyCoeff rr(N_, a_, b_, Spectral);
-
-    // Re and Im parts of v and P eqns decouple. Solve them seperately.
-    diff(Ry.re, rr);
-    int n;  // MSVC++ FOR-SCOPE BUG
-    for (n = 0; n < N_; ++n)
-        rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
-    solve_P_and_v(P.re, v.re, rr, Ry.re, rho.re, sigmaNb1, sigmaNb);
-
-    diff(Ry.im, rr);
-    for (n = 0; n < N_; ++n)
-        rr[n] += two_pi_kxLx_ * Rx.re[n] + two_pi_kzLz_ * Rz.re[n];
-    solve_P_and_v(P.im, v.im, rr, Ry.im, rho.im, sigmaNb1, sigmaNb);
-
-    // Re and Im parts of u and w eqns seperate.
-    // Use r as temporary space to store RHS of eqns.
-    for (n = 0; n < N_; ++n)
-        r.set(n, two_pi_kxLx_ * I * P[n] - Rx[n]);
-
-    // Real part has added const pressure gradient term, Im does not
-    velocityHelmholtz_.solve(u.re, dPdx, r.re, umean, 0.0, 0.0);
-    velocityHelmholtz_.solve(u.im, r.im, 0.0, 0.0);
-
-    for (n = 0; n < N_; ++n)
-        r.set(n, two_pi_kzLz_ * I * P[n] - Rz[n]);
-
-    velocityHelmholtz_.solve(w.re, dPdz, r.re, wmean, 0.0, 0.0);
-    velocityHelmholtz_.solve(w.im, r.im, 0.0, 0.0);
-
-#ifdef DEBUG
-    // verify(u,v,w,P, dPdx, Rx,Ry,Rz, umean);
-#endif
-
-    return;
-}
+//void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
+//                      Real& dPdx, Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
+//                      const ComplexChebyCoeff& Rz, Real umean, Real wmean) const {
+//    // TODO this hasn't been properly stratified
+//    
+//    // This function should only be called for kx==kz==0, since the enforcing
+//    // const velocity flux makes sense only for that case. Divergence is not a
+//    // problem here, so solve everything via momentum.
+//    cout << "WHAT WHY ARE WE HERE?" << endl;
+//    assert(false);
+//    //assert(kx_ == 0 && kz_ == 0);
+//
+//    //ComplexChebyCoeff r(N_, a_, b_, Spectral);
+//    //Real sigmaNb1;  // tau correction term
+//    //Real sigmaNb;   // tau correction term
+//
+//    //ChebyCoeff rr(N_, a_, b_, Spectral);
+//
+//    //// Re and Im parts of v and P eqns decouple. Solve them seperately.
+//    //diff(Ry.re, rr);
+//    //int n;  // MSVC++ FOR-SCOPE BUG
+//    //for (n = 0; n < N_; ++n)
+//    //    rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
+//    //solve_P_and_v(P.re, v.re, rr, Ry.re, rho.re, sigmaNb1, sigmaNb);
+//
+//    //diff(Ry.im, rr);
+//    //for (n = 0; n < N_; ++n)
+//    //    rr[n] += two_pi_kxLx_ * Rx.re[n] + two_pi_kzLz_ * Rz.re[n];
+//    //solve_P_and_v(P.im, v.im, rr, Ry.im, rho.im, sigmaNb1, sigmaNb);
+//
+//    //// Re and Im parts of u and w eqns seperate.
+//    //// Use r as temporary space to store RHS of eqns.
+//    //for (n = 0; n < N_; ++n)
+//    //    r.set(n, two_pi_kxLx_ * I * P[n] - Rx[n]);
+//
+//    //// Real part has added const pressure gradient term, Im does not
+//    //velocityHelmholtz_.solve(u.re, dPdx, r.re, umean, 0.0, 0.0);
+//    //velocityHelmholtz_.solve(u.im, r.im, 0.0, 0.0);
+//
+//    //for (n = 0; n < N_; ++n)
+//    //    r.set(n, two_pi_kzLz_ * I * P[n] - Rz[n]);
+//
+//    //velocityHelmholtz_.solve(w.re, dPdz, r.re, wmean, 0.0, 0.0);
+//    //velocityHelmholtz_.solve(w.im, r.im, 0.0, 0.0);
+//
+//#ifdef DEBUG
+//    // verify(u,v,w,P, dPdx, Rx,Ry,Rz, umean);
+//#endif
+//
+//    return;
+//}
 
 Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                        const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, 

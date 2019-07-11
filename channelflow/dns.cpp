@@ -144,11 +144,12 @@ void DNS::advance(vector<FlowField>& fields, int Nsteps) {
         exit(1);
     }
     // check if 2nd, 3rd, ... field has the same size as 1st field (usually velocity)
-    for (uint j = 1; j < fields.size(); ++j) {
-        if (!fields[j].geomCongruent(fields[0]))  // are velocity and pressure of the same size?
-            fields[j].resize(fields[0].Nx(), fields[0].Ny(), fields[0].Nz(), fields[j].Nd(), fields[0].Lx(),
-                             fields[0].Lz(), fields[0].a(), fields[0].b(), fields[0].cfmpi());
-    }
+    // JL commented out so vel can be different size to rho
+    //for (uint j = 1; j < fields.size(); ++j) {
+    //    if (!fields[j].geomCongruent(fields[0]))  // are velocity and pressure of the same size?
+    //        fields[j].resize(fields[0].Nx(), fields[0].Ny(), fields[0].Nz(), fields[j].Nd(), fields[0].Lx(),
+    //                         fields[0].Lz(), fields[0].a(), fields[0].b(), fields[0].cfmpi());
+    //}
 
     int n = 0;
     if ((int)(main_algorithm_->time()) % (int)(flags().symmetryprojectioninterval) == 0) {
@@ -220,18 +221,18 @@ if (main_algorithm_)
 }
 **************************************/
 
-void DNS::reset_gradp(Real dPdx, Real dPdz) {
-    if (init_nse_)
-        init_nse_->reset_gradp(dPdx, dPdz);
-    if (main_nse_)
-        main_nse_->reset_gradp(dPdx, dPdz);
-}
-void DNS::reset_bulkv(Real Ubulk, Real Wbulk) {
-    if (init_nse_)
-        init_nse_->reset_bulkv(Ubulk, Wbulk);
-    if (main_nse_)
-        main_nse_->reset_bulkv(Ubulk, Wbulk);
-}
+//void DNS::reset_gradp(Real dPdx, Real dPdz) {
+//    if (init_nse_)
+//        init_nse_->reset_gradp(dPdx, dPdz);
+//    if (main_nse_)
+//        main_nse_->reset_gradp(dPdx, dPdz);
+//}
+//void DNS::reset_bulkv(Real Ubulk, Real Wbulk) {
+//    if (init_nse_)
+//        init_nse_->reset_bulkv(Ubulk, Wbulk);
+//    if (main_nse_)
+//        main_nse_->reset_bulkv(Ubulk, Wbulk);
+//}
 
 // void DNS::reset_uj(const FlowField& uj, int j) {
 // assert(main_algorithm_);
@@ -297,38 +298,38 @@ Real DNS::time() const {
     else
         return 0.0;
 }
-Real DNS::dPdx() const {
-    if (main_nse_)
-        return main_nse_->dPdx();
-    else if (init_nse_)
-        return init_nse_->dPdx();
-    else
-        return 0.0;
-}
-Real DNS::Ubulk() const {
-    if (main_nse_)
-        return main_nse_->Ubulk();
-    else if (init_nse_)
-        return init_nse_->Ubulk();
-    else
-        return 0.0;
-}
-Real DNS::dPdxRef() const {
-    if (main_nse_)
-        return main_nse_->dPdxRef();
-    else if (init_nse_)
-        return init_nse_->dPdxRef();
-    else
-        return 0.0;
-}
-Real DNS::UbulkRef() const {  // the bulk velocity enforced during integ.
-    if (main_nse_)
-        return main_nse_->UbulkRef();
-    else if (init_nse_)
-        return init_nse_->UbulkRef();
-    else
-        return 0.0;
-}
+//Real DNS::dPdx() const {
+//    if (main_nse_)
+//        return main_nse_->dPdx();
+//    else if (init_nse_)
+//        return init_nse_->dPdx();
+//    else
+//        return 0.0;
+//}
+//Real DNS::Ubulk() const {
+//    if (main_nse_)
+//        return main_nse_->Ubulk();
+//    else if (init_nse_)
+//        return init_nse_->Ubulk();
+//    else
+//        return 0.0;
+//}
+//Real DNS::dPdxRef() const {
+//    if (main_nse_)
+//        return main_nse_->dPdxRef();
+//    else if (init_nse_)
+//        return init_nse_->dPdxRef();
+//    else
+//        return 0.0;
+//}
+//Real DNS::UbulkRef() const {  // the bulk velocity enforced during integ.
+//    if (main_nse_)
+//        return main_nse_->UbulkRef();
+//    else if (init_nse_)
+//        return init_nse_->UbulkRef();
+//    else
+//        return 0.0;
+//}
 const ChebyCoeff& DNS::Ubase() const {
     if (main_nse_)
         return main_nse_->Ubase();

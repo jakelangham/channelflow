@@ -46,8 +46,8 @@ class NSE {
 
     inline int taskid() const;
 
-    void reset_gradp(Real dPdx, Real dPdz);    // change dPdx and enforce const dPdx
-    void reset_bulkv(Real Ubulk, Real Wbulk);  // change Ubulk and enforce const Ubulk
+//    void reset_gradp(Real dPdx, Real dPdz);    // change dPdx and enforce const dPdx
+//    void reset_bulkv(Real Ubulk, Real Wbulk);  // change Ubulk and enforce const Ubulk
 
     // getter functions
     int Nx() const;
@@ -60,14 +60,14 @@ class NSE {
     Real b() const;
     Real nu() const;
 
-    Real dPdx() const;  // the mean pressure gradient at the current time
-    Real dPdz() const;
-    Real Ubulk() const;  // the actual bulk velocity at the current time
-    Real Wbulk() const;
-    Real dPdxRef() const;  // the mean press grad enforced during integration
-    Real dPdzRef() const;
-    Real UbulkRef() const;  // the bulk velocity enforced during integ.
-    Real WbulkRef() const;
+//    Real dPdx() const;  // the mean pressure gradient at the current time
+//    Real dPdz() const;
+//    Real Ubulk() const;  // the actual bulk velocity at the current time
+//    Real Wbulk() const;
+//    Real dPdxRef() const;  // the mean press grad enforced during integration
+//    Real dPdzRef() const;
+//    Real UbulkRef() const;  // the bulk velocity enforced during integ.
+//    Real WbulkRef() const;
 
     virtual const ChebyCoeff& Ubase() const;
     virtual const ChebyCoeff& Wbase() const;
@@ -103,17 +103,17 @@ class NSE {
     std::vector<int> kzloc_;
 
     // Base flow members
-    Real dPdxRef_;    // Enforced mean pressure gradient (0.0 if unused).
-    Real dPdxAct_;    // Actual   mean pressure gradient at previous timestep.
-    Real dPdzRef_;    //
-    Real dPdzAct_;    //
-    Real UbulkRef_;   // Enforced total bulk velocity (0.0 if unused).
-    Real UbulkAct_;   // Actual total bulk velocity bulk obtained.
-    Real UbulkBase_;  // Bulk velocity of Ubase
-    Real WbulkRef_;
-    Real WbulkAct_;
-    Real WbulkBase_;
-
+///    Real dPdxRef_;    // Enforced mean pressure gradient (0.0 if unused).
+///    Real dPdxAct_;    // Actual   mean pressure gradient at previous timestep.
+///    Real dPdzRef_;    //
+///    Real dPdzAct_;    //
+///    Real UbulkRef_;   // Enforced total bulk velocity (0.0 if unused).
+///    Real UbulkAct_;   // Actual total bulk velocity bulk obtained.
+///    Real UbulkBase_;  // Bulk velocity of Ubase
+///    Real WbulkRef_;
+///    Real WbulkAct_;
+///    Real WbulkBase_;
+///
     ChebyCoeff Ubase_;    // baseflow physical
     ChebyCoeff Ubaseyy_;  // baseflow'' physical
     ChebyCoeff Wbase_;    // baseflow physical
@@ -122,15 +122,15 @@ class NSE {
     // Memspace members
     FlowField tmp_;  // tmp space for nonlinearity calculation
     // These variables are used as temp storage when solving indpt tau problems.
-    ComplexChebyCoeff uk_;  // profile of u_{kx,kz} (y) at t = n dt
-    ComplexChebyCoeff vk_;
-    ComplexChebyCoeff wk_;
-    ComplexChebyCoeff Pk_;   // profile of P_{kx,kz} (y)
+//    ComplexChebyCoeff uk_;  // profile of u_{kx,kz} (y) at t = n dt
+//    ComplexChebyCoeff vk_;
+//    ComplexChebyCoeff wk_;
+//    ComplexChebyCoeff Pk_;   // profile of P_{kx,kz} (y)
     ComplexChebyCoeff rk_;
-    ComplexChebyCoeff Pyk_;  // profile of dP_{kx,kz}/dy (y)
-    ComplexChebyCoeff Ruk_;
-    ComplexChebyCoeff Rvk_;
-    ComplexChebyCoeff Rwk_;
+//    ComplexChebyCoeff Pyk_;  // profile of dP_{kx,kz}/dy (y)
+//    ComplexChebyCoeff Ruk_;
+//    ComplexChebyCoeff Rvk_;
+//    ComplexChebyCoeff Rwk_;
     ComplexChebyCoeff Rrk_;
 
     int kxmaxDealiased() const;

@@ -13,16 +13,17 @@ endif()
 set(
     test_APPS
     chebyTest
-    dnsOrrsommTest
-    dnsParabolaTest
-    dnsSinusoidTest
-    dnsZeroTest
+#    dnsOrrsommTest
+#    dnsParabolaTest
+#    dnsSinusoidTest
+#    dnsZeroTest
     helmholtzTest
     ioTest
     poissonTest
-    pressureTest
+#    pressureTest
     realprofileTest
-    tausolverTest
+    stratTest
+#    tausolverTest
     timeIntegrationTest
     tridiagTest
     vector2fieldTest

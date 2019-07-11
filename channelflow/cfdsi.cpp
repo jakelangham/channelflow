@@ -21,11 +21,12 @@ namespace chflow {
 
 cfDSI::cfDSI() {}
 
-cfDSI::cfDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, TimeStep dt, bool Tsearch, bool xrelative,
-             bool zrelative, bool Tnormalize, Real Unormalize, const FlowField& u, ostream* os)
+cfDSI::cfDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, TimeStep dt, 
+    bool Tsearch, bool xrelative, bool zrelative, bool Tnormalize, Real Unormalize, 
+    const FlowField& u, const FlowField& rho, ostream* os)
     : DSI(os),
       dnsflags_(dnsflags),
-      cfmpi_(u.cfmpi()),
+      cfmpi_(rho.cfmpi()),
       sigma_(sigma),
       h_(h),
       dt_(dt),
@@ -37,24 +38,25 @@ cfDSI::cfDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, Time
       azinit_(sigma.az()),
       Tnormalize_(Tnormalize),
       Unormalize_(Unormalize),
+      velfields_(u),
       fcount_(0),
-      Nx_(u.Nx()),
-      Ny_(u.Ny()),
-      Nz_(u.Nz()),
-      Nd_(u.Nd()),
-      Lx_(u.Lx()),
-      Lz_(u.Lz()),
-      ya_(u.a()),
-      yb_(u.b()),
+      Nx_(rho.Nx()),
+      Ny_(rho.Ny()),
+      Nz_(rho.Nz()),
+      Nd_(rho.Nd()),
+      Lx_(rho.Lx()),
+      Lz_(rho.Lz()),
+      ya_(rho.a()),
+      yb_(rho.b()),
       CFL_(0),
-      uunk_(u.taskid() == 0 ? xrelative_ + zrelative_ + Tsearch_ : 0) {}
+      uunk_(rho.taskid() == 0 ? xrelative_ + zrelative_ + Tsearch_ : 0) {}
 
 VectorXd cfDSI::eval(const VectorXd& x) {
     FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     Real T;
     extractVector(x, u, sigma_, T);
     FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
-    G(u, T, h_, sigma_, Gu, dnsflags_, dt_, Tnormalize_, Unormalize_, fcount_, CFL_, *os_);
+    G(u, velfields_, T, h_, sigma_, Gu, dnsflags_, dt_, Tnormalize_, Unormalize_, fcount_, CFL_, *os_);
     VectorXd Gx(VectorXd::Zero(x.rows()));
     field2vector(Gu, Gx);  // This does not change the size of Gx and automatically leaves the last entries zero
     return Gx;
@@ -70,7 +72,7 @@ VectorXd cfDSI::eval(const VectorXd& x0, const VectorXd& x1, bool symopt) {
 
     FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
 
-    f(u0, T0, h_, Gu, dnsflags_, dt_, fcount_, CFL_, *os_);
+    f(u0, velfields_, T0, h_, Gu, dnsflags_, dt_, fcount_, CFL_, *os_);
     Real funorm = L2Norm3d(Gu);
     if (symopt)
         Gu *= sigma0;
@@ -96,23 +98,24 @@ void cfDSI::save(const VectorXd& x, const string filebase, const string outdir, 
     u.save(outdir + "u" + filebase);
     dnsflags_.T = T;
 
-    if (!fieldsonly) {
-        string fs = fieldstats(u);
-        if (u.taskid() == 0) {
-            if (xrelative_ || zrelative_ || !sigma.isIdentity())
-                sigma.save(outdir + "sigma" + filebase);
-            if (Tsearch_)
-                chflow::save(T, outdir + "T" + filebase);
-            ofstream fout((outdir + "fieldconverge.asc").c_str(), ios::app);
-            long pos = fout.tellp();
-            if (pos == 0)
-                fout << fieldstatsheader() << endl;
-            fout << fs << endl;
-            fout.close();
-            dnsflags_.save(outdir);
-            // save_sp(T,outdir);
-        }
-    }
+    // JL don't need any of this
+    //if (!fieldsonly) {
+    //    string fs = fieldstats(u);
+    //    if (u.taskid() == 0) {
+    //        if (xrelative_ || zrelative_ || !sigma.isIdentity())
+    //            sigma.save(outdir + "sigma" + filebase);
+    //        if (Tsearch_)
+    //            chflow::save(T, outdir + "T" + filebase);
+    //        ofstream fout((outdir + "fieldconverge.asc").c_str(), ios::app);
+    //        long pos = fout.tellp();
+    //        if (pos == 0)
+    //            fout << fieldstatsheader() << endl;
+    //        fout << fs << endl;
+    //        fout.close();
+    //        dnsflags_.save(outdir);
+    //        // save_sp(T,outdir);
+    //    }
+    //}
 }
 
 void cfDSI::saveEigenvec(const VectorXd& ev, const string label, const string outdir) {
@@ -162,7 +165,7 @@ pair<string, string> cfDSI::stats_minmax(const VectorXd& x) {
 
     *os_ << "Using flag -orbOut: Calculate minmax-statistics of periodic orbit." << endl;
     for (int t = 0; t < 100; t++) {
-        f(u, timep, h, Gu, dnsflags_, dt, fcount, CFL, muted_os);
+        f(u, velfields_, timep, h, Gu, dnsflags_, dt, fcount, CFL, muted_os);
         stats = fieldstats_vector(u);
         for (uint i = 0; i < stats.size(); i++) {
             minstats[i] = (minstats[i] < stats[i]) ? minstats[i] : stats[i];
@@ -547,18 +550,18 @@ Real cfDSI::DSIL2Norm(const VectorXd& x) {
     return L2Norm(u);
 }
 
-void cfDSI::makeVector(const FlowField& u, const FieldSymmetry& sigma, const Real T, VectorXd& x) {
-    int taskid = u.taskid();
-    int uunk = field2vector_size(u);                         // # of variables for u unknonwn
-    const int Tunk = (Tsearch_ && taskid == 0) ? uunk : -1;  // index for T unknown
-    const int xunk = (xrelative_ && taskid == 0) ? uunk + Tsearch_ : -1;
-    const int zunk = (zrelative_ && taskid == 0) ? uunk + Tsearch_ + xrelative_ : -1;
-    int Nunk = (taskid == 0) ? uunk + Tsearch_ + xrelative_ + zrelative_ : uunk;
+void cfDSI::makeVector(const FlowField& rho, const FieldSymmetry& sigma, const Real T, VectorXd& x) {
+    int taskid = rho.taskid();
+    int runk = field2vector_size(rho);                         // # of variables for u unknonwn
+    const int Tunk = (Tsearch_ && taskid == 0) ? runk : -1;  // index for T unknown
+    const int xunk = (xrelative_ && taskid == 0) ? runk + Tsearch_ : -1;
+    const int zunk = (zrelative_ && taskid == 0) ? runk + Tsearch_ + xrelative_ : -1;
+    int Nunk = (taskid == 0) ? runk + Tsearch_ + xrelative_ + zrelative_ : runk;
 
     //   VectorXd x(Nunk);
     if (x.rows() < Nunk)
         x.resize(Nunk);
-    field2vector(u, x);
+    field2vector(rho, x);
 
     if (taskid == 0) {
         if (Tsearch_)
@@ -647,7 +650,7 @@ VectorXd cfDSI::tdiff(const VectorXd& a, Real epsDt) {
     FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     FlowField edudtf(u);
     vector2field(a, u);
-    f(u, epsDt, 0, edudtf, dnsflags_, dt_, fcount_, CFL_, *os_);
+    f(u, velfields_, epsDt, 0, edudtf, dnsflags_, dt_, fcount_, CFL_, *os_);
     edudtf -= u;
     VectorXd dadt(a.size());
     field2vector(edudtf, dadt);
@@ -693,12 +696,13 @@ Real cfDSI::tph_observable(VectorXd& x) {
 }
 
 // return f^{N dt}(u) = time-(N dt) DNS integration of u
-void f(const FlowField& u, int N, Real dt, FlowField& f_u, const DNSFlags& flags_, ostream& os) {
+void f(const FlowField& rho, const FlowField& vel, int N, Real dt, FlowField& f_u, const DNSFlags& flags_, ostream& os) {
     os << "f(u, N, dt, f_u, flags, dt) : " << flush;
     DNSFlags flags(flags_);
     flags.logstream = &os;
     vector<FlowField> fields(2);
-    fields[0] = u;
+    fields[0] = rho;
+    fields[1] = vel; // JL pass in the constant velocity fields
     DNS dns(fields, flags);
     dns.advance(fields, N);
     f_u = fields[0];
@@ -706,13 +710,13 @@ void f(const FlowField& u, int N, Real dt, FlowField& f_u, const DNSFlags& flags
 }
 
 // G(x) = G(u,sigma) = (sigma f^T(u) - u) for orbits
-void G(const FlowField& u, Real& T, PoincareCondition* h, const FieldSymmetry& sigma, FlowField& Gu,
+void G(const FlowField& rho, const FlowField& vel, Real& T, PoincareCondition* h, const FieldSymmetry& sigma, FlowField& Gu,
        const DNSFlags& flags, const TimeStep& dt, bool Tnormalize, Real Unormalize, int& fcount, Real& CFL,
        ostream& os) {
-    f(u, T, h, Gu, flags, dt, fcount, CFL, os);
+    f(rho, vel, T, h, Gu, flags, dt, fcount, CFL, os);
     Real funorm = L2Norm3d(Gu);
     Gu *= sigma;
-    Gu -= u;
+    Gu -= rho;
     if (Tnormalize)
         Gu *= 1.0 / T;
     if (Unormalize != 0.0) {
@@ -720,18 +724,19 @@ void G(const FlowField& u, Real& T, PoincareCondition* h, const FieldSymmetry& s
     }
 }
 
-void f(const FlowField& u, Real& T, PoincareCondition* h, FlowField& f_u, const DNSFlags& flags_, const TimeStep& dt_,
+void f(const FlowField& rho, const FlowField& vel, Real& T, PoincareCondition* h, FlowField& f_u, const DNSFlags& flags_, const TimeStep& dt_,
        int& fcount, Real& CFL, ostream& os) {
-    if (!isfinite(L2Norm(u))) {
-        os << "error in f: u is not finite. exiting." << endl;
+    if (!isfinite(L2Norm(rho))) {
+        os << "error in f: rho is not finite. exiting." << endl;
         exit(1);
     }
 
     DNSFlags flags(flags_);
     flags.logstream = &os;
     TimeStep dt(dt_);
-    vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi())};
-    f_u = u;
+//    vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi())};
+    vector<FlowField> fields = {rho, vel};
+    f_u = rho;
     // No Poincare section, just integration to time T
     if (h == 0) {
         if (T < 0) {
@@ -750,9 +755,9 @@ void f(const FlowField& u, Real& T, PoincareCondition* h, FlowField& f_u, const 
         DNS dns(fields, flags);
         if (dt.variable()) {
             dns.advance(fields, 1);
-            dt.adjust(dns.CFL(fields[0]), false);
+            dt.adjust(dns.CFL(fields[1]), false);
             dns.reset_dt(dt);
-            fields[0] = u;
+            fields[0] = rho;
         }
 
         //  t == current time in integration
@@ -766,7 +771,7 @@ void f(const FlowField& u, Real& T, PoincareCondition* h, FlowField& f_u, const 
         os << "f^T: " << flush;
         for (int s = 1; s <= dt.N(); ++s) {
             Real t = s * dt.dT();
-            CFL = dns.CFL(fields[0]);
+            CFL = dns.CFL(fields[1]);
 
             if (s % 10 == 0)
                 os << iround(t) << flush;
@@ -793,11 +798,12 @@ void f(const FlowField& u, Real& T, PoincareCondition* h, FlowField& f_u, const 
     }
     // Poincare section computation: return Poincare crossing nearest to t=T, with Tmin < t < Tmax.
     else {
+        os << "poincare\n";
         // Adjust dt for CFL if necessary
         DNSPoincare dns(fields[0], h, flags);
         if (dt.variable()) {
             dns.advance(fields, 1);
-            dt.adjust(dns.CFL(fields[0]));
+            dt.adjust(dns.CFL(fields[1]));
             dns.reset_dt(dt);
         }
         // Collect all Poincare crossings between Tfudgemin and Tfudgemax
@@ -881,7 +887,7 @@ void f(const FlowField& u, Real& T, PoincareCondition* h, FlowField& f_u, const 
         Real l2distubestucross = 0;
         for (uint n = 0; n < ucross.size(); ++n) {
             l2distubestucross = L2Dist(ubest, ucross[n]);
-            if ((u.taskid() == 0) && (scross[n] != sbest)) {
+            if ((rho.taskid() == 0) && (scross[n] != sbest)) {
                 os << "\nWARNING : There is a nearby Poincare crossing of opposite sign," << endl;
                 os << "signalling near-tangency to section. You should probably switch " << endl;
                 os << "to another Poincare crossing." << endl;
@@ -901,41 +907,41 @@ void f(const FlowField& u, Real& T, PoincareCondition* h, FlowField& f_u, const 
 }
 
 // Is this function maybe obsolete? (FR)
-Real GMRESHookstep_vector(FlowField& u, Real& T, FieldSymmetry& sigma, PoincareCondition* hpoincare,
-                          const NewtonSearchFlags& searchflags, DNSFlags& dnsflags, TimeStep& dt, Real& CFL,
-                          Real Unormalize) {
-    Real residual = 0;
-    ostream* os = searchflags.logstream;  // a short name for ease of use
-    project(dnsflags.symmetries, u, "initial guess u", *os);
-    fixdivnoslip(u);
-
-    bool Tsearch = (searchflags.solntype == PeriodicOrbit && hpoincare == 0) ? true : false;
-    const bool Tnormalize = (searchflags.solntype == PeriodicOrbit) ? false : true;
-    cfDSI Gx(dnsflags, sigma, hpoincare, dt, Tsearch, searchflags.xrelative, searchflags.zrelative, Tnormalize,
-             Unormalize, u, os);
-
-    VectorXd x;
-    Gx.makeVector(u, sigma, T, x);
-    int Nunk = x.rows();
-    int Nunk_total = Nunk;
-#ifdef HAVE_MPI
-    MPI_Allreduce(&Nunk, &Nunk_total, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-#endif
-    *os << Nunk_total << " unknowns" << endl;
-
-    //********************************* Do search and deal with results *********************************************//
-    VectorXd SearchResult = hookstepSearch(Gx, x, searchflags, residual);
-
-    Gx.extractVector(SearchResult, u, sigma, T);
-
-    u.save(searchflags.outdir + "xbest");
-
-    if (u.taskid() == 0) {
-        sigma.save(searchflags.outdir + "sigmabest");
-        save(T, searchflags.outdir + "Tbest");
-    }
-    return residual;
-}
+//Real GMRESHookstep_vector(FlowField& u, Real& T, FieldSymmetry& sigma, PoincareCondition* hpoincare,
+//                          const NewtonSearchFlags& searchflags, DNSFlags& dnsflags, TimeStep& dt, Real& CFL,
+//                          Real Unormalize) {
+//    Real residual = 0;
+//    ostream* os = searchflags.logstream;  // a short name for ease of use
+//    project(dnsflags.symmetries, u, "initial guess u", *os);
+//    fixdivnoslip(u);
+//
+//    bool Tsearch = (searchflags.solntype == PeriodicOrbit && hpoincare == 0) ? true : false;
+//    const bool Tnormalize = (searchflags.solntype == PeriodicOrbit) ? false : true;
+//    cfDSI Gx(dnsflags, sigma, hpoincare, dt, Tsearch, searchflags.xrelative, 
+//             searchflags.zrelative, Tnormalize, Unormalize, u, os);
+//
+//    VectorXd x;
+//    Gx.makeVector(u, sigma, T, x);
+//    int Nunk = x.rows();
+//    int Nunk_total = Nunk;
+//#ifdef HAVE_MPI
+//    MPI_Allreduce(&Nunk, &Nunk_total, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+//#endif
+//    *os << Nunk_total << " unknowns" << endl;
+//
+//    //********************************* Do search and deal with results *********************************************//
+//    VectorXd SearchResult = hookstepSearch(Gx, x, searchflags, residual);
+//
+//    Gx.extractVector(SearchResult, u, sigma, T);
+//
+//    u.save(searchflags.outdir + "xbest");
+//
+//    if (u.taskid() == 0) {
+//        sigma.save(searchflags.outdir + "sigmabest");
+//        save(T, searchflags.outdir + "Tbest");
+//    }
+//    return residual;
+//}
 
 vector<Real> fieldstats_vector(const FlowField& u) {
     vector<Real> stats;

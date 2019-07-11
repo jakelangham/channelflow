@@ -52,7 +52,8 @@ int main(int argc, char* argv[]) {
         const int nproc1 = args.getint("-np1", "--nproc1", 0, "number of MPI-processes for one fft");
         const bool msinit =
             args.getflag("-MSinit", "--MSinitials", "read different files as the initial guesses for different shoots");
-        const string uname = args.getstr(1, "<flowfield>", "initial guess for the solution");
+        const string rhofile = args.getstr(1, "<flowfield>", "initial guess for the solution");
+        const string velfile = args.getstr(2, "<flowfield>", "precomputed velocity field");
 
         args.check();
         args.save();
@@ -62,16 +63,25 @@ int main(int argc, char* argv[]) {
 
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
 
-        FlowField u(uname, cfmpi);
-        // JL check if there's a density field. If not, add a zero density field
-        FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
-        vector<int> vel_indices = {0, 1, 2};
-        vector<int> all_indices = {0, 1, 2, 3};
-        if (u.Nd() == 3) {
-            u_with_density.copySubfields(u, vel_indices, vel_indices);
+        FlowField rhoin(rhofile, cfmpi);
+        FlowField rho(rhoin.Nx(), rhoin.Ny(), rhoin.Nz(), 1, 
+                      rhoin.Lx(), rhoin.Lz(), rhoin.a(), rhoin.b(), cfmpi);
+        // JL if rhofile has 4 dimensions assume 4th is the initial density,
+        // else assume the 1st
+        if (rhoin.Nd() == 4) {
+            rho.copySubfields(rhoin, {3}, {0});
+        } else if (rhoin.Nd() == 1) {
+            rho = rhoin;
         } else {
-            u_with_density.copySubfields(u, all_indices, all_indices);
+            cout << "rho file must have 1 or 4 dimensions\n";
+            cfMPI_Finalize();
+            return 1;
         }
+
+        // upscale u if necessary for the later dot product in physical space
+        FlowField uin(velfile, cfmpi);
+        FlowField u(rho.Nx(), rho.Ny(), rho.Nz(), uin.Nd(), uin.Lx(), uin.Lz(), uin.a(), uin.b(), rho.cfmpi());
+        u.interpolate(uin);
 
         FieldSymmetry sigma;
         if (sigmastr.length() != 0)
@@ -83,23 +93,23 @@ int main(int argc, char* argv[]) {
         unique_ptr<cfDSI> dsi;
         dsi = unique_ptr<cfDSI>(new cfDSI(dnsflags, sigma, 0, dt, Tsearch, 
             Rxsearch, Rzsearch, Tnormalize, unormalize,
-            u_with_density, N->getLogstream()));
+            u, rho, N->getLogstream()));
 
         VectorXd x_singleShot;
         VectorXd x;
         VectorXd yvec;
         MatrixXd y;
         MultishootingDSI* msDSI = N->getMultishootingDSI();
-        dsi->makeVector(u_with_density, sigma, dnsflags.T, x_singleShot);
+        dsi->makeVector(rho, sigma, dnsflags.T, x_singleShot);
         msDSI->setDSI(*dsi, x_singleShot.size());
         if (msinit) {
             int nSh = msDSI->nShot();
             y.resize(x_singleShot.size(), nSh);
             Real Tms = dnsflags.T / nSh;
             vector<FlowField> u_ms(nSh);
-            u_ms[0] = u_with_density;
+            u_ms[0] = rho;
             for (int i = 1; i < nSh; i++) {
-                string uname_ms = "./Multishooting/" + uname + i2s(i);
+                string uname_ms = "./Multishooting/" + rhofile + i2s(i);
                 FlowField ui(uname_ms, cfmpi);
                 u_ms[i] = ui;
             }

@@ -9,107 +9,102 @@ using namespace std;
 
 namespace chflow {
 
-void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, FlowField& f, FlowField& tmp,
+void navierstokesNL(const FlowField& rho_, const FlowField& vel_, ChebyCoeff Ubase, ChebyCoeff Wbase, FlowField& f, FlowField& tmp,
                     DNSFlags& flags) {
-    FlowField& u = const_cast<FlowField&>(u_);
-//    FlowField vel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
-//    FlowField f3d(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
-//    FlowField f1d(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+    FlowField& rho = const_cast<FlowField&>(rho_);
+    FlowField& vel = const_cast<FlowField&>(vel_);
 
     fieldstate finalstate = Spectral;
-    assert(u.xzstate() == Spectral && u.ystate() == Spectral);
+    assert(rho.xzstate() == Spectral && rho.ystate() == Spectral);
     assert(Ubase.state() == Spectral);
-    assert(Wbase.state() == Spectral);
-    if (flags.rotation != 0.0) {
-        finalstate = Physical;
-    }
+    //assert(Wbase.state() == Spectral);
+    //if (flags.rotation != 0.0) {
+    //    finalstate = Physical;
+    //}
 
-    if (flags.nonlinearity == LinearAboutProfile)
-        linearizedNL(u, Ubase, Wbase, f, finalstate);
-    else {
+    //if (flags.nonlinearity == LinearAboutProfile)
+    //    linearizedNL(u, Ubase, Wbase, f, finalstate);
+    //else {
         // u += Ubase;
-        for (int ny = 0; ny < u.Ny(); ++ny) {
-            if (u.taskid() == u.task_coeff(0, 0))
-                u.cmplx(0, ny, 0, 0) += Complex(Ubase(ny), 0.0);
-            if (u.taskid() == u.task_coeff(0, 0))
-                u.cmplx(0, ny, 0, 2) += Complex(Wbase(ny), 0.0);
-            // rho -= Ubase
-            if (u.taskid() == u.task_coeff(0, 0)) {
-                u.cmplx(0, ny, 0, 3) -= Complex(Ubase(ny), 0.0);
-            }
+        for (int ny = 0; ny < vel.Ny(); ++ny) {
+            if (vel.taskid() == vel.task_coeff(0, 0))
+                vel.cmplx(0, ny, 0, 0) += Complex(Ubase(ny), 0.0);
+        //    if (u.taskid() == u.task_coeff(0, 0))
+        //        u.cmplx(0, ny, 0, 2) += Complex(Wbase(ny), 0.0);
+        //    // rho -= Ubase
+        //    // JL taken out and put in the densityAdvection routine
+        //    //if (u.taskid() == u.task_coeff(0, 0)) {
+        //    //    u.cmplx(0, ny, 0, 3) -= Complex(Ubase(ny), 0.0);
+        //    //}
         }
-        if (u.taskid() == u.task_coeff(0, 0)) {
-            u.cmplx(0, 0, 0, 1) -= Complex(flags.Vsuck, 0.);
-        }
+        //if (u.taskid() == u.task_coeff(0, 0)) {
+        //    u.cmplx(0, 0, 0, 1) -= Complex(flags.Vsuck, 0.);
+        //}
 
-        // TODO must be better way
-//        vector<int> vel_indices = {0, 1, 2};
-//        vel.copySubfields(u, vel_indices, vel_indices);
+        //// TODO must be better way
+//      //  vector<int> vel_indices = {0, 1, 2};
+//      //  vel.copySubfields(u, vel_indices, vel_indices);
 
-        switch (flags.nonlinearity) {
-            case Rotational:
-                //rotationalNL(vel, f3d, tmp, finalstate);
-                rotationalNL(u, f, tmp, finalstate);
-                break;
-//            case Convection:
-//                convectionNL(vel, f3d, tmp, finalstate);
-//                break;
-//            case SkewSymmetric:
-//                skewsymmetricNL(vel, f3d, tmp, finalstate);
-//                break;
-//            case Divergence:
-//                divergenceNL(vel, f3d, tmp, finalstate);
-//                break;
-//            case Alternating:
-//                divergenceNL(vel, f3d, tmp, finalstate);
-//                flags.nonlinearity = Alternating_;
-//                break;
-//            case Alternating_:
-//                convectionNL(vel, f3d, tmp, finalstate);
-//                flags.nonlinearity = Alternating;
-//                break;
-            default:
-                cferror("navierstokesNL(method, u,U,f,tmp) : unknown method");
-        }
-//        f.copySubfields(f3d, vel_indices, vel_indices);
+        //switch (flags.nonlinearity) {
+        //    case Rotational:
+        //        //rotationalNL(vel, f3d, tmp, finalstate);
+        //        rotationalNL(u, f, tmp, finalstate);
+        //        break;
+//      //      case Convection:
+//      //          convectionNL(vel, f3d, tmp, finalstate);
+//      //          break;
+//      //      case SkewSymmetric:
+//      //          skewsymmetricNL(vel, f3d, tmp, finalstate);
+//      //          break;
+//      //      case Divergence:
+//      //          divergenceNL(vel, f3d, tmp, finalstate);
+//      //          break;
+//      //      case Alternating:
+//      //          divergenceNL(vel, f3d, tmp, finalstate);
+//      //          flags.nonlinearity = Alternating_;
+//      //          break;
+//      //      case Alternating_:
+//      //          convectionNL(vel, f3d, tmp, finalstate);
+//      //          flags.nonlinearity = Alternating;
+//      //          break;
+        //    default:
+        //        cferror("navierstokesNL(method, u,U,f,tmp) : unknown method");
+        //}
 
-        densityAdvection(u, f, tmp, finalstate);
-//        vector<int> zero_index = {0};
-//        vector<int> density_index = {3};
-//        f.copySubfields(f1d, zero_index, density_index);
-
+        densityAdvection(rho, vel, f, tmp, finalstate);
         // add rotation term -(omega x u) = - flags.rotation * flags.nu (y e_y + e_z x u)
-        if (flags.rotation != 0.0) {
-            u.makePhysical();
-            lint Nz = f.Nz();
-            lint nxlocmin = f.nxlocmin();
-            lint nxlocmax = f.nxlocmin() + f.Nxloc();
-            lint nylocmin = f.nylocmin();
-            lint nylocmax = f.nylocmax();
-            for (lint ny = nylocmin; ny < nylocmax; ++ny)
-                for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
-                    for (lint nz = 0; nz < Nz; ++nz) {
-                        f(nx, ny, nz, 0) -= (flags.rotation) * u(nx, ny, nz, 1);
-                        f(nx, ny, nz, 1) += (flags.rotation) * u(nx, ny, nz, 0);
-                    }
-
-            u.makeSpectral();
-            f.makeSpectral();
-        }
+//        if (flags.rotation != 0.0) {
+//            u.makePhysical();
+//            lint Nz = f.Nz();
+//            lint nxlocmin = f.nxlocmin();
+//            lint nxlocmax = f.nxlocmin() + f.Nxloc();
+//            lint nylocmin = f.nylocmin();
+//            lint nylocmax = f.nylocmax();
+//            for (lint ny = nylocmin; ny < nylocmax; ++ny)
+//                for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
+//                    for (lint nz = 0; nz < Nz; ++nz) {
+//                        f(nx, ny, nz, 0) -= (flags.rotation) * u(nx, ny, nz, 1);
+//                        f(nx, ny, nz, 1) += (flags.rotation) * u(nx, ny, nz, 0);
+//                    }
+//
+//            u.makeSpectral();
+//            f.makeSpectral();
+//        }
         //     u -= Ubase;
-        for (int ny = 0; ny < u.Ny(); ++ny) {
-            if (u.taskid() == u.task_coeff(0, 0))
-                u.cmplx(0, ny, 0, 0) -= Complex(Ubase(ny), 0.0);
-            if (u.taskid() == u.task_coeff(0, 0))
-                u.cmplx(0, ny, 0, 2) -= Complex(Wbase(ny), 0.0);
-            // rho += Ubase
-            if (u.taskid() == u.task_coeff(0, 0))
-                u.cmplx(0, ny, 0, 3) += Complex(Ubase(ny), 0.0);
-        }
-        if (u.taskid() == u.task_coeff(0, 0))
-            u.cmplx(0, 0, 0, 1) += Complex(flags.Vsuck, 0.);
+        for (int ny = 0; ny < vel.Ny(); ++ny) {
+            if (vel.taskid() == vel.task_coeff(0, 0))
+                vel.cmplx(0, ny, 0, 0) -= Complex(Ubase(ny), 0.0);
+//            if (u.taskid() == u.task_coeff(0, 0))
+//                u.cmplx(0, ny, 0, 2) -= Complex(Wbase(ny), 0.0);
+//            // rho += Ubase
+//            // JL taken out and put in the density advection routine
+//            //if (u.taskid() == u.task_coeff(0, 0))
+//            //    u.cmplx(0, ny, 0, 3) += Complex(Ubase(ny), 0.0);
+//        }
+//        if (u.taskid() == u.task_coeff(0, 0))
+//            u.cmplx(0, 0, 0, 1) += Complex(flags.Vsuck, 0.);
     }
-    u.makeSpectral();
+    rho.makeSpectral();
 }
 
 NSE::NSE()
@@ -140,31 +135,31 @@ NSE::NSE()
       kxloc_(0),
       kzloc_(0),
       // Base flow members
-      dPdxRef_(0),
-      dPdxAct_(0),
-      dPdzRef_(0),
-      dPdzAct_(0),
-      UbulkRef_(0),
-      UbulkAct_(0),
-      UbulkBase_(0),
-      WbulkRef_(0),
-      WbulkAct_(0),
-      WbulkBase_(0),
-      Ubase_(),
-      Ubaseyy_(),
-      Wbase_(),
-      Wbaseyy_(),
+      //dPdxRef_(0),
+      //dPdxAct_(0),
+      //dPdzRef_(0),
+      //dPdzAct_(0),
+      //UbulkRef_(0),
+      //UbulkAct_(0),
+      //UbulkBase_(0),
+      //WbulkRef_(0),
+      //WbulkAct_(0),
+      //WbulkBase_(0),
+      //Ubase_(),
+      //Ubaseyy_(),
+      //Wbase_(),
+      //Wbaseyy_(),
       // Memspace members
       tmp_(),
-      uk_(),
-      vk_(),
-      wk_(),
-      Pk_(),
+      //uk_(),
+      //vk_(),
+      //wk_(),
+      //Pk_(),
       rk_(),
-      Pyk_(),
-      Ruk_(),
-      Rvk_(),
-      Rwk_(),
+      //Pyk_(),
+      //Ruk_(),
+      //Rvk_(),
+      //Rwk_(),
       Rrk_() {}
 
 NSE::NSE(const NSE& nse)
@@ -195,31 +190,31 @@ NSE::NSE(const NSE& nse)
       kxloc_(nse.kxloc_),
       kzloc_(nse.kzloc_),
       // Base flow members
-      dPdxRef_(nse.dPdxRef_),
-      dPdxAct_(nse.dPdxAct_),
-      dPdzRef_(nse.dPdzRef_),
-      dPdzAct_(nse.dPdzAct_),
-      UbulkRef_(nse.UbulkRef_),
-      UbulkAct_(nse.UbulkAct_),
-      UbulkBase_(nse.UbulkBase_),
-      WbulkRef_(nse.WbulkRef_),
-      WbulkAct_(nse.WbulkAct_),
-      WbulkBase_(nse.WbulkBase_),
-      Ubase_(nse.Ubase_),
-      Ubaseyy_(nse.Ubaseyy_),
-      Wbase_(nse.Wbase_),
-      Wbaseyy_(nse.Wbaseyy_),
+      //dPdxRef_(nse.dPdxRef_),
+      //dPdxAct_(nse.dPdxAct_),
+      //dPdzRef_(nse.dPdzRef_),
+      //dPdzAct_(nse.dPdzAct_),
+      //UbulkRef_(nse.UbulkRef_),
+      //UbulkAct_(nse.UbulkAct_),
+      //UbulkBase_(nse.UbulkBase_),
+      //WbulkRef_(nse.WbulkRef_),
+      //WbulkAct_(nse.WbulkAct_),
+      //WbulkBase_(nse.WbulkBase_),
+      //Ubase_(nse.Ubase_),
+      //Ubaseyy_(nse.Ubaseyy_),
+      //Wbase_(nse.Wbase_),
+      //Wbaseyy_(nse.Wbaseyy_),
       // Memspace members
       tmp_(nse.tmp_),
-      uk_(nse.uk_),
-      vk_(nse.vk_),
-      wk_(nse.wk_),
-      Pk_(nse.Pk_),
+      //uk_(nse.uk_),
+      //vk_(nse.vk_),
+      //wk_(nse.wk_),
+      //Pk_(nse.Pk_),
       rk_(nse.rk_),
-      Pyk_(nse.Pyk_),
-      Ruk_(nse.Ruk_),
-      Rvk_(nse.Rvk_),
-      Rwk_(nse.Rwk_),
+      //Pyk_(nse.Pyk_),
+      //Ruk_(nse.Ruk_),
+      //Rvk_(nse.Rvk_),
+      //Rwk_(nse.Rwk_),
       Rrk_(nse.Rrk_) {
     // Allocate memory for [Nsubsteps x Mx_ x Mz_] Tausolver cfarrays
     // and copy tausolvers from nse argument
@@ -263,33 +258,26 @@ NSE::NSE(const vector<FlowField>& fields, const DNSFlags& flags)
       kxloc_(0),
       kzloc_(0),
       // Base flow members
-      dPdxRef_(0),
-      dPdxAct_(0),
-      dPdzRef_(0),
-      dPdzAct_(0),
-      UbulkRef_(0),
-      UbulkAct_(0),
-      UbulkBase_(0),
-      WbulkRef_(0),
-      WbulkAct_(0),
-      WbulkBase_(0),
+      //dPdxRef_(0),
+      //dPdxAct_(0),
+      //dPdzRef_(0),
+      //dPdzAct_(0),
+      //UbulkRef_(0),
+      //UbulkAct_(0),
+      //UbulkBase_(0),
+      //WbulkRef_(0),
+      //WbulkAct_(0),
+      //WbulkBase_(0),
       Ubase_(),
       Ubaseyy_(),
       Wbase_(),
       Wbaseyy_(),
       // Memspace members
       tmp_(),
-      uk_(Nyd_, a_, b_, Spectral),
-      vk_(Nyd_, a_, b_, Spectral),
-      wk_(Nyd_, a_, b_, Spectral),
-      Pk_(Nyd_, a_, b_, Spectral),
       rk_(Nyd_, a_, b_, Spectral),
-      Pyk_(Nyd_, a_, b_, Spectral),
-      Ruk_(Nyd_, a_, b_, Spectral),
-      Rvk_(Nyd_, a_, b_, Spectral),
-      Rwk_(Nyd_, a_, b_, Spectral),
       Rrk_(Nyd_, a_, b_, Spectral) {
-    assert(fields[0].vectorDim() >= 3);
+    assert(fields[0].vectorDim() == 1);
+    assert(fields[1].vectorDim() >= 3);
 
     // construct wave number vectors
     kxloc_.resize(Mxloc_);
@@ -313,7 +301,7 @@ NSE::NSE(const vector<FlowField>& fields, const DNSFlags& flags)
     createCFBaseFlow();
 
     // set member variables for contraint
-    initCFConstraint(fields[0]);
+    //initCFConstraint(fields[0]);
 }
 
 NSE::NSE(const vector<FlowField>& fields, const vector<ChebyCoeff>& base, const DNSFlags& flags)
@@ -345,30 +333,24 @@ NSE::NSE(const vector<FlowField>& fields, const vector<ChebyCoeff>& base, const 
       kxloc_(0),
       kzloc_(0),
       // Base flow members
-      dPdxRef_(0),
-      dPdxAct_(0),
-      dPdzRef_(0),
-      dPdzAct_(0),
-      UbulkRef_(0),
-      UbulkAct_(0),
-      UbulkBase_(0),
-      WbulkRef_(0),
-      WbulkAct_(0),
-      WbulkBase_(0),
+      //dPdxRef_(0),
+      //dPdxAct_(0),
+      //dPdzRef_(0),
+      //dPdzAct_(0),
+      //UbulkRef_(0),
+      //UbulkAct_(0),
+      //UbulkBase_(0),
+      //WbulkRef_(0),
+      //WbulkAct_(0),
+      //WbulkBase_(0),
       Ubase_(base[0]),
       Ubaseyy_(),
       Wbase_(base[1]),
       Wbaseyy_(),
       // Memspace members
       tmp_(),
-      uk_(Nyd_, a_, b_, Spectral),
-      vk_(Nyd_, a_, b_, Spectral),
-      wk_(Nyd_, a_, b_, Spectral),
-      Pk_(Nyd_, a_, b_, Spectral),
-      Pyk_(Nyd_, a_, b_, Spectral),
-      Ruk_(Nyd_, a_, b_, Spectral),
-      Rvk_(Nyd_, a_, b_, Spectral),
-      Rwk_(Nyd_, a_, b_, Spectral) {
+      rk_(Nyd_, a_, b_, Spectral),
+      Rrk_(Nyd_, a_, b_, Spectral) {
     assert(fields[0].vectorDim() == 3);
 
     // construct wave number vectors
@@ -390,7 +372,7 @@ NSE::NSE(const vector<FlowField>& fields, const vector<ChebyCoeff>& base, const 
                     fields[0].b(), fields[0].cfmpi());
 
     // set member variables for contraint
-    initCFConstraint(fields[0]);
+    //initCFConstraint(fields[0]);
 }
 
 NSE::~NSE() {
@@ -413,96 +395,99 @@ void NSE::nonlinear(const vector<FlowField>& infields, vector<FlowField>& outfie
     // Pressure as second entry in in/outfields is not touched.
     // Dealiasing must be done separately, e.g. by calling nse::solve
 
-    navierstokesNL(infields[0], Ubase_, Wbase_, outfields[0], tmp_, flags_);
+    // JL second arg is the velocity
+    navierstokesNL(infields[0], infields[1], Ubase_, Wbase_, outfields[0], tmp_, flags_);
+
     if (flags_.dealias_xz())
         outfields[0].zeroPaddedModes();
 }
 
 // JL TODO stratify this
 void NSE::linear(const vector<FlowField>& infields, vector<FlowField>& outfields) {
-    // Method takes input fields {u,press} and computes the linear terms for velocity output field {u}
-
-    assert(infields.size() == (outfields.size() + 1));  // Make sure user does not expect a pressure output. Outfields
-                                                        // should be created outside NSE with NSE::createRHS()
-    const int kxmax = infields[0].kxmax();
-    const int kzmax = infields[0].kzmax();
-
-    // Loop over Fourier modes. 2nd derivative and summation of linear term
-    // is most sufficient on ComplexChebyCoeff. Therefore, the old loop structure is kept.
-    for (lint mx = mxlocmin_; mx < mxlocmin_ + Mxloc_; ++mx) {
-        const int kx = infields[0].kx(mx);
-        for (lint mz = mzlocmin_; mz < mzlocmin_ + Mzloc_; ++mz) {
-            const int kz = infields[0].kz(mz);
-
-            // Skip last and aliased modes
-            if ((kx == kxmax || kz == kzmax) || (flags_.dealias_xz() && isAliasedMode(kx, kz)))
-                break;
-
-            // Goal is to compute
-            // L = nu uj" - kappa2 nu uj - grad qj + C
-
-            // Extract relevant Fourier modes of uj and qj
-            for (int ny = 0; ny < Nyd_; ++ny) {
-                uk_.set(ny, flags_.nu * infields[0].cmplx(mx, ny, mz, 0));
-                vk_.set(ny, flags_.nu * infields[0].cmplx(mx, ny, mz, 1));
-                wk_.set(ny, flags_.nu * infields[0].cmplx(mx, ny, mz, 2));
-                Pk_.set(ny, infields[1].cmplx(mx, ny, mz, 0));
-            }
-
-            // (1) Put nu uj" into in R. (Pyk_ is used as tmp workspace)
-            diff2(uk_, Ruk_, Pyk_);
-            diff2(vk_, Rvk_, Pyk_);
-            diff2(wk_, Rwk_, Pyk_);
-
-            // (2) Put qn' into Pyk (compute y-comp of pressure gradient).
-            diff(Pk_, Pyk_);
-
-            // (3) Summation of all derivative terms and assignment to output velocity field.
-            const Real kappa2 = 4 * pi * pi * (square(kx / Lx_) + square(kz / Lz_));
-            const Complex Dx = infields[0].Dx(mx);
-            const Complex Dz = infields[0].Dz(mz);
-            for (int ny = 0; ny < Nyd_; ++ny) {
-                outfields[0].cmplx(mx, ny, mz, 0) = Ruk_[ny] - kappa2 * uk_[ny] - Dx * Pk_[ny];
-                outfields[0].cmplx(mx, ny, mz, 1) = Rvk_[ny] - kappa2 * vk_[ny] - Pyk_[ny];
-                outfields[0].cmplx(mx, ny, mz, 2) = Rwk_[ny] - kappa2 * wk_[ny] - Dz * Pk_[ny];
-            }
-
-            // (4) Add const. terms
-            if (kx == 0 && kz == 0) {
-                // L includes const dissipation term of Ubase and Wbase: nu Uyy, nu Wyy
-                if (Ubaseyy_.length() > 0)
-                    for (int ny = 0; ny < My_; ++ny)
-                        outfields[0].cmplx(mx, ny, mz, 0) += Complex(flags_.nu * Ubaseyy_[ny], 0);
-                if (Wbaseyy_.length() > 0)
-                    for (int ny = 0; ny < My_; ++ny)
-                        outfields[0].cmplx(mx, ny, mz, 2) += Complex(flags_.nu * Wbaseyy_[ny], 0);
-
-                // Add base pressure gradient depending on the constraint
-                if (flags_.constraint == PressureGradient) {
-                    // dPdx is supplied as dPdxRef
-                    outfields[0].cmplx(mx, 0, mz, 0) -= Complex(dPdxRef_, 0);
-                    outfields[0].cmplx(mx, 0, mz, 2) -= Complex(dPdzRef_, 0);
-                } else {  // const bulk velocity
-                    // actual dPdx is unknown but defined by constraint of bulk velocity
-                    // Determine actual dPdx from Ubase + u.
-                    Real Ly = b_ - a_;
-                    diff(uk_, Ruk_);
-                    diff(wk_, Rwk_);
-                    Real dPdxAct = Re(Ruk_.eval_b() - Ruk_.eval_a()) / Ly;
-                    Real dPdzAct = Re(Rwk_.eval_b() - Rwk_.eval_a()) / Ly;
-                    ChebyCoeff Ubasey = diff(Ubase_);
-                    ChebyCoeff Wbasey = diff(Wbase_);
-                    if (Ubase_.length() != 0)
-                        dPdxAct += flags_.nu * (Ubasey.eval_b() - Ubasey.eval_a()) / Ly;
-                    if (Wbase_.length() != 0)
-                        dPdzAct += flags_.nu * (Wbasey.eval_b() - Wbasey.eval_a()) / Ly;
-                    // add press. gradient to linear term
-                    outfields[0].cmplx(mx, 0, mz, 0) -= Complex(dPdxAct, 0);
-                    outfields[0].cmplx(mx, 0, mz, 2) -= Complex(dPdzAct, 0);
-                }
-            }  // End of const. terms
-        }
-    }  // End of loop over Fourier modes
+    assert(false);
+//    // Method takes input fields {u,press} and computes the linear terms for velocity output field {u}
+//
+//    assert(infields.size() == (outfields.size() + 1));  // Make sure user does not expect a pressure output. Outfields
+//                                                        // should be created outside NSE with NSE::createRHS()
+//    const int kxmax = infields[0].kxmax();
+//    const int kzmax = infields[0].kzmax();
+//
+//    // Loop over Fourier modes. 2nd derivative and summation of linear term
+//    // is most sufficient on ComplexChebyCoeff. Therefore, the old loop structure is kept.
+//    for (lint mx = mxlocmin_; mx < mxlocmin_ + Mxloc_; ++mx) {
+//        const int kx = infields[0].kx(mx);
+//        for (lint mz = mzlocmin_; mz < mzlocmin_ + Mzloc_; ++mz) {
+//            const int kz = infields[0].kz(mz);
+//
+//            // Skip last and aliased modes
+//            if ((kx == kxmax || kz == kzmax) || (flags_.dealias_xz() && isAliasedMode(kx, kz)))
+//                break;
+//
+//            // Goal is to compute
+//            // L = nu uj" - kappa2 nu uj - grad qj + C
+//
+//            // Extract relevant Fourier modes of uj and qj
+//            for (int ny = 0; ny < Nyd_; ++ny) {
+//                uk_.set(ny, flags_.nu * infields[0].cmplx(mx, ny, mz, 0));
+//                vk_.set(ny, flags_.nu * infields[0].cmplx(mx, ny, mz, 1));
+//                wk_.set(ny, flags_.nu * infields[0].cmplx(mx, ny, mz, 2));
+//                Pk_.set(ny, infields[1].cmplx(mx, ny, mz, 0));
+//            }
+//
+//            // (1) Put nu uj" into in R. (Pyk_ is used as tmp workspace)
+//            diff2(uk_, Ruk_, Pyk_);
+//            diff2(vk_, Rvk_, Pyk_);
+//            diff2(wk_, Rwk_, Pyk_);
+//
+//            // (2) Put qn' into Pyk (compute y-comp of pressure gradient).
+//            diff(Pk_, Pyk_);
+//
+//            // (3) Summation of all derivative terms and assignment to output velocity field.
+//            const Real kappa2 = 4 * pi * pi * (square(kx / Lx_) + square(kz / Lz_));
+//            const Complex Dx = infields[0].Dx(mx);
+//            const Complex Dz = infields[0].Dz(mz);
+//            for (int ny = 0; ny < Nyd_; ++ny) {
+//                outfields[0].cmplx(mx, ny, mz, 0) = Ruk_[ny] - kappa2 * uk_[ny] - Dx * Pk_[ny];
+//                outfields[0].cmplx(mx, ny, mz, 1) = Rvk_[ny] - kappa2 * vk_[ny] - Pyk_[ny];
+//                outfields[0].cmplx(mx, ny, mz, 2) = Rwk_[ny] - kappa2 * wk_[ny] - Dz * Pk_[ny];
+//            }
+//
+//            // (4) Add const. terms
+//            if (kx == 0 && kz == 0) {
+//                // L includes const dissipation term of Ubase and Wbase: nu Uyy, nu Wyy
+//                if (Ubaseyy_.length() > 0)
+//                    for (int ny = 0; ny < My_; ++ny)
+//                        outfields[0].cmplx(mx, ny, mz, 0) += Complex(flags_.nu * Ubaseyy_[ny], 0);
+//                if (Wbaseyy_.length() > 0)
+//                    for (int ny = 0; ny < My_; ++ny)
+//                        outfields[0].cmplx(mx, ny, mz, 2) += Complex(flags_.nu * Wbaseyy_[ny], 0);
+//
+//                // Add base pressure gradient depending on the constraint
+//                if (flags_.constraint == PressureGradient) {
+//                    // dPdx is supplied as dPdxRef
+//                    outfields[0].cmplx(mx, 0, mz, 0) -= Complex(dPdxRef_, 0);
+//                    outfields[0].cmplx(mx, 0, mz, 2) -= Complex(dPdzRef_, 0);
+//                } else {  // const bulk velocity
+//                    // actual dPdx is unknown but defined by constraint of bulk velocity
+//                    // Determine actual dPdx from Ubase + u.
+//                    Real Ly = b_ - a_;
+//                    diff(uk_, Ruk_);
+//                    diff(wk_, Rwk_);
+//                    Real dPdxAct = Re(Ruk_.eval_b() - Ruk_.eval_a()) / Ly;
+//                    Real dPdzAct = Re(Rwk_.eval_b() - Rwk_.eval_a()) / Ly;
+//                    ChebyCoeff Ubasey = diff(Ubase_);
+//                    ChebyCoeff Wbasey = diff(Wbase_);
+//                    if (Ubase_.length() != 0)
+//                        dPdxAct += flags_.nu * (Ubasey.eval_b() - Ubasey.eval_a()) / Ly;
+//                    if (Wbase_.length() != 0)
+//                        dPdzAct += flags_.nu * (Wbasey.eval_b() - Wbasey.eval_a()) / Ly;
+//                    // add press. gradient to linear term
+//                    outfields[0].cmplx(mx, 0, mz, 0) -= Complex(dPdxAct, 0);
+//                    outfields[0].cmplx(mx, 0, mz, 2) -= Complex(dPdzAct, 0);
+//                }
+//            }  // End of const. terms
+//        }
+//    }  // End of loop over Fourier modes
 }
 
 void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, const int s) {
@@ -529,51 +514,53 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
 
             // Construct ComplexChebyCoeff
             for (int ny = 0; ny < Nyd_; ++ny) {
-                Ruk_.set(ny, rhs[0].cmplx(mx, ny, mz, 0));
-                Rvk_.set(ny, rhs[0].cmplx(mx, ny, mz, 1));
-                Rwk_.set(ny, rhs[0].cmplx(mx, ny, mz, 2));
-                Rrk_.set(ny, rhs[0].cmplx(mx, ny, mz, 3));
+                //Ruk_.set(ny, rhs[0].cmplx(mx, ny, mz, 0));
+                //Rvk_.set(ny, rhs[0].cmplx(mx, ny, mz, 1));
+                //Rwk_.set(ny, rhs[0].cmplx(mx, ny, mz, 2));
+                Rrk_.set(ny, rhs[0].cmplx(mx, ny, mz, 0));
             }
 
             // Solve the tau equations
-            if (kx != 0 || kz != 0)
-                tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_);
+            if (kx != 0 || kz != 0) {
+                tausolver_[s][ix][iz].solve(rk_, Rrk_);
+            }
             // 		solve(ix,iz,uk_,vk_,wk_,Pk_, Ruk_,Rvk_,Rwk_);
             else {  // kx,kz == 0,0
                 // LHS includes also the constant terms C which can be added to RHS
-                if (Ubaseyy_.length() > 0)
-                    for (int ny = 0; ny < My_; ++ny)
-                        Ruk_.re[ny] += flags_.nu * Ubaseyy_[ny];  // Rx has addl'l term from Ubase
-                if (Wbaseyy_.length() > 0)
-                    for (int ny = 0; ny < My_; ++ny)
-                        Rwk_.re[ny] += flags_.nu * Wbaseyy_[ny];  // Rz has addl'l term from Wbase
+//                if (Ubaseyy_.length() > 0)
+//                    for (int ny = 0; ny < My_; ++ny)
+//                        Ruk_.re[ny] += flags_.nu * Ubaseyy_[ny];  // Rx has addl'l term from Ubase
+//                if (Wbaseyy_.length() > 0)
+//                    for (int ny = 0; ny < My_; ++ny)
+//                        Rwk_.re[ny] += flags_.nu * Wbaseyy_[ny];  // Rz has addl'l term from Wbase
 
                 if (flags_.constraint == PressureGradient) {
                     // pressure is supplied, put on RHS of tau eqn
-                    Ruk_.re[0] -= dPdxRef_;
-                    Rwk_.re[0] -= dPdzRef_;
-                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_);
+                    //Ruk_.re[0] -= dPdxRef_;
+                    //Rwk_.re[0] -= dPdzRef_;
+                    tausolver_[s][ix][iz].solve(rk_, Rrk_);
                     // 	  	solve(ix,iz,uk_, vk_, wk_, Pk_, Ruk_,Rvk_,Rwk_);
                     // Bulk vel is free variable determined from soln of tau eqn //TODO: write method that computes
                     // UbulkAct everytime it is needed
 
                 } else {  // const bulk velocity
+                    assert(false);
                     // bulk velocity is supplied, use alternative tau solver
 
                     // Use tausolver with additional variable and constraint:
                     // free variable: dPdxAct at next time-step,
                     // constraint:    UbulkBase + mean(u) = UbulkRef.
-                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, dPdxAct_, dPdzAct_, Ruk_, Rvk_, Rwk_,
-                                                UbulkRef_ - UbulkBase_, WbulkRef_ - WbulkBase_);
-                    // 		  solve(ix,iz,uk_, vk_, wk_, Pk_, dPdxAct_, dPdzAct_,
-                    // 					    Ruk_, Rvk_, Rwk_,
-                    // 					    UbulkRef_ - UbulkBase_,
-                    // 					    WbulkRef_ - WbulkBase_);
-
-                    assert((UbulkRef_ - UbulkBase_ - uk_.re.mean()) <
-                           1e-15);  // test if UbulkRef == UbulkAct = UbulkBase_ + uk_.re.mean()
-                    assert((WbulkRef_ - WbulkBase_ - wk_.re.mean()) <
-                           1e-15);  // test if WbulkRef == WbulkAct = WbulkBase_ + wk_.re.mean()
+//                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, dPdxAct_, dPdzAct_, Ruk_, Rvk_, Rwk_,
+//                                                UbulkRef_ - UbulkBase_, WbulkRef_ - WbulkBase_);
+//                    // 		  solve(ix,iz,uk_, vk_, wk_, Pk_, dPdxAct_, dPdzAct_,
+//                    // 					    Ruk_, Rvk_, Rwk_,
+//                    // 					    UbulkRef_ - UbulkBase_,
+//                    // 					    WbulkRef_ - WbulkBase_);
+//
+//                    assert((UbulkRef_ - UbulkBase_ - uk_.re.mean()) <
+//                           1e-15);  // test if UbulkRef == UbulkAct = UbulkBase_ + uk_.re.mean()
+//                    assert((WbulkRef_ - WbulkBase_ - wk_.re.mean()) <
+//                           1e-15);  // test if WbulkRef == WbulkAct = WbulkBase_ + wk_.re.mean()
                 }
             }
             // Load solutions into u and p.
@@ -586,21 +573,21 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                 (outfields[0].Nz() % 2 == 0 && kz == kzmax && kx == 0) ||
                 (outfields[0].Nx() % 2 == 0 && outfields[0].Nz() % 2 == 0 && kx == kxmax && kz == kzmax)) {
                 for (int ny = 0; ny < Nyd_; ++ny) {
-                    outfields[0].cmplx(mx, ny, mz, 0) = Complex(Re(uk_[ny]), 0.0);
-                    outfields[0].cmplx(mx, ny, mz, 1) = Complex(Re(vk_[ny]), 0.0);
-                    outfields[0].cmplx(mx, ny, mz, 2) = Complex(Re(wk_[ny]), 0.0);
-                    outfields[0].cmplx(mx, ny, mz, 3) = Complex(Re(rk_[ny]), 0.0);
-                    outfields[1].cmplx(mx, ny, mz, 0) = Complex(Re(Pk_[ny]), 0.0);
+                    //outfields[0].cmplx(mx, ny, mz, 0) = Complex(Re(uk_[ny]), 0.0);
+                    //outfields[0].cmplx(mx, ny, mz, 1) = Complex(Re(vk_[ny]), 0.0);
+                    //outfields[0].cmplx(mx, ny, mz, 2) = Complex(Re(wk_[ny]), 0.0);
+                    outfields[0].cmplx(mx, ny, mz, 0) = Complex(Re(rk_[ny]), 0.0);
+                    //outfields[1].cmplx(mx, ny, mz, 0) = Complex(Re(Pk_[ny]), 0.0);
                 }
             }
             // The normal case, for general kx,kz
             else
                 for (int ny = 0; ny < Nyd_; ++ny) {
-                    outfields[0].cmplx(mx, ny, mz, 0) = uk_[ny];
-                    outfields[0].cmplx(mx, ny, mz, 1) = vk_[ny];
-                    outfields[0].cmplx(mx, ny, mz, 2) = wk_[ny];
-                    outfields[0].cmplx(mx, ny, mz, 3) = rk_[ny];
-                    outfields[1].cmplx(mx, ny, mz, 0) = Pk_[ny];
+                    //outfields[0].cmplx(mx, ny, mz, 0) = uk_[ny];
+                    //outfields[0].cmplx(mx, ny, mz, 1) = vk_[ny];
+                    //outfields[0].cmplx(mx, ny, mz, 2) = wk_[ny];
+                    outfields[0].cmplx(mx, ny, mz, 0) = rk_[ny];
+                    //outfields[1].cmplx(mx, ny, mz, 0) = Pk_[ny];
                 }
         }
     }
@@ -663,44 +650,44 @@ void NSE::createCFBaseFlow() {
     }
 }
 
-void NSE::initCFConstraint(const FlowField& u) {
-    // Calculate Ubaseyy_ and related quantities
-    UbulkBase_ = Ubase_.mean();
-    ChebyCoeff Ubasey = diff(Ubase_);
-    Ubaseyy_ = diff(Ubasey);
-    WbulkBase_ = Wbase_.mean();
-    ChebyCoeff Wbasey = diff(Wbase_);
-    Wbaseyy_ = diff(Wbasey);
+//void NSE::initCFConstraint(const FlowField& u) {
+//    // Calculate Ubaseyy_ and related quantities
+//    UbulkBase_ = Ubase_.mean();
+//    ChebyCoeff Ubasey = diff(Ubase_);
+//    Ubaseyy_ = diff(Ubasey);
+//    WbulkBase_ = Wbase_.mean();
+//    ChebyCoeff Wbasey = diff(Wbase_);
+//    Wbaseyy_ = diff(Wbasey);
+//
+//    // Determine actual Ubulk and dPdx from initial data Ubase + u.
+//
+//    UbulkAct_ = UbulkBase_ + getUbulk(u);
+//    WbulkAct_ = WbulkBase_ + getWbulk(u);
+//    dPdxAct_ = getdPdx(u, flags_.nu);
+//    dPdzAct_ = getdPdz(u, flags_.nu);
+//
+//    if (Ubase_.length() != 0) {
+//        FlowField utmp(u);
+//        utmp += Ubase_;
+//        dPdxAct_ = getdPdx(utmp, flags_.nu);
+//    }
+//
+//    if (Wbase_.length() != 0) {
+//        FlowField wtmp(u);
+//        wtmp += Wbase_;
+//        dPdzAct_ = getdPdz(wtmp, flags_.nu);
+//    }
 
-    // Determine actual Ubulk and dPdx from initial data Ubase + u.
-
-    UbulkAct_ = UbulkBase_ + getUbulk(u);
-    WbulkAct_ = WbulkBase_ + getWbulk(u);
-    dPdxAct_ = getdPdx(u, flags_.nu);
-    dPdzAct_ = getdPdz(u, flags_.nu);
-
-    if (Ubase_.length() != 0) {
-        FlowField utmp(u);
-        utmp += Ubase_;
-        dPdxAct_ = getdPdx(utmp, flags_.nu);
-    }
-
-    if (Wbase_.length() != 0) {
-        FlowField wtmp(u);
-        wtmp += Wbase_;
-        dPdzAct_ = getdPdz(wtmp, flags_.nu);
-    }
-
-    if (flags_.constraint == BulkVelocity) {
-        UbulkRef_ = flags_.Ubulk;
-        WbulkRef_ = flags_.Wbulk;
-    } else {
-        dPdxAct_ = flags_.dPdx;
-        dPdxRef_ = flags_.dPdx;
-        dPdzAct_ = flags_.dPdz;
-        dPdzRef_ = flags_.dPdz;
-    }
-}
+//    if (flags_.constraint == BulkVelocity) {
+//        UbulkRef_ = flags_.Ubulk;
+//        WbulkRef_ = flags_.Wbulk;
+//    } else {
+//        dPdxAct_ = flags_.dPdx;
+//        dPdxRef_ = flags_.dPdx;
+//        dPdzAct_ = flags_.dPdz;
+//        dPdzRef_ = flags_.dPdz;
+//    }
+//}
 
 void NSE::reset_lambda(vector<Real> lambda_t) {
     lambda_t_ = lambda_t;
@@ -748,28 +735,28 @@ dPdxRef_ = 0.0;
 }
 *******************************************/
 
-void NSE::reset_gradp(Real dPdx, Real dPdz) {
-    flags_.constraint = PressureGradient;
-    flags_.dPdx = dPdx;
-    flags_.dPdz = dPdz;
-    flags_.Ubulk = 0.0;
-    flags_.Wbulk = 0.0;
-    dPdxRef_ = dPdx;
-    dPdzRef_ = dPdz;
-    UbulkRef_ = 0.0;
-    WbulkRef_ = 0.0;
-}
-void NSE::reset_bulkv(Real Ubulk, Real Wbulk) {
-    flags_.constraint = BulkVelocity;
-    flags_.Ubulk = Ubulk;
-    flags_.Wbulk = Wbulk;
-    flags_.dPdx = 0.0;
-    flags_.dPdz = 0.0;
-    UbulkRef_ = Ubulk;
-    WbulkRef_ = Wbulk;
-    dPdxRef_ = 0.0;
-    dPdzRef_ = 0.0;
-}
+//void NSE::reset_gradp(Real dPdx, Real dPdz) {
+//    flags_.constraint = PressureGradient;
+//    flags_.dPdx = dPdx;
+//    flags_.dPdz = dPdz;
+//    flags_.Ubulk = 0.0;
+//    flags_.Wbulk = 0.0;
+//    dPdxRef_ = dPdx;
+//    dPdzRef_ = dPdz;
+//    UbulkRef_ = 0.0;
+//    WbulkRef_ = 0.0;
+//}
+//void NSE::reset_bulkv(Real Ubulk, Real Wbulk) {
+//    flags_.constraint = BulkVelocity;
+//    flags_.Ubulk = Ubulk;
+//    flags_.Wbulk = Wbulk;
+//    flags_.dPdx = 0.0;
+//    flags_.dPdz = 0.0;
+//    UbulkRef_ = Ubulk;
+//    WbulkRef_ = Wbulk;
+//    dPdxRef_ = 0.0;
+//    dPdzRef_ = 0.0;
+//}
 Real NSE::nu() const { return flags_.nu; }
 // int devDNSAlgorithm::Nx() const {
 //     return Nx_;
@@ -782,14 +769,14 @@ Real NSE::Lx() const { return Lx_; }
 Real NSE::Lz() const { return Lz_; }
 Real NSE::a() const { return a_; }
 Real NSE::b() const { return b_; }
-Real NSE::dPdx() const { return dPdxAct_; }
-Real NSE::dPdz() const { return dPdzAct_; }
-Real NSE::dPdxRef() const { return dPdxRef_; }
-Real NSE::dPdzRef() const { return dPdzRef_; }
-Real NSE::Ubulk() const { return UbulkAct_; }
-Real NSE::Wbulk() const { return WbulkAct_; }
-Real NSE::UbulkRef() const { return UbulkRef_; }
-Real NSE::WbulkRef() const { return WbulkRef_; }
+//Real NSE::dPdx() const { return dPdxAct_; }
+//Real NSE::dPdz() const { return dPdzAct_; }
+//Real NSE::dPdxRef() const { return dPdxRef_; }
+//Real NSE::dPdzRef() const { return dPdzRef_; }
+//Real NSE::Ubulk() const { return UbulkAct_; }
+//Real NSE::Wbulk() const { return WbulkAct_; }
+//Real NSE::UbulkRef() const { return UbulkRef_; }
+//Real NSE::WbulkRef() const { return WbulkRef_; }
 const ChebyCoeff& NSE::Ubase() const { return Ubase_; }
 const ChebyCoeff& NSE::Wbase() const { return Wbase_; }
 int NSE::kxmaxDealiased() const { return kxd_max_; }

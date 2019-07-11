@@ -38,9 +38,7 @@ class TauSolver {
     // Real nu, int nChebyModes, bool dx_on=true, bool dz_on=true,
     // bool tauCorrection=true);
 
-    void solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, 
-               ComplexChebyCoeff& P, ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rx, 
-               const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho) const;
+    void solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho) const;
 
     Real verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                 const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, 
@@ -49,9 +47,9 @@ class TauSolver {
 
     // Solve tau eqns with additional unknown, time-varying, -dPdx on LHS.
     // and additional constraint mean(u) = umean.
-    void solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho, Real& dPdx,
-               Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz,
-               Real umean, Real wmean) const;
+//    void solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho, Real& dPdx,
+ //              Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz,
+  //             Real umean, Real wmean) const;
 
     Real verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                 const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, Real dPdx, Real dPdz, 
@@ -60,15 +58,15 @@ class TauSolver {
                 bool verbose = false) const;
 
     // Enforce v'(+-1)==0 with influence matrix method, leaving v(+-1)==0 and RHS unchanged.
-    void influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const;
+    //void influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const;
 
     // These are helper functions for the above, not meant to be used alone,
     // but provided as public for testing purposes. r == div(R).
-    void solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, const ChebyCoeff& rho, Real& sigmaNb1,
-                       Real& sigmaNb) const;
+    //void solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, const ChebyCoeff& rho, Real& sigmaNb1,
+     //                  Real& sigmaNb) const;
 
-    Real verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry,
-                        Real sigmaNb1, Real sigmaNb, bool verbose = false) const;
+    //Real verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry,
+      //                  Real sigmaNb1, Real sigmaNb, bool verbose = false) const;
 
     int kx() const { return kx_; }
     int kz() const { return kz_; }
@@ -92,29 +90,29 @@ class TauSolver {
     Real nu_;             // viscosity
     Real Pr_;             // Prandtl number
     Real Ri_;             // Richardson number
-    bool tauCorrection_;  // Try to eliminate tau errors in (P,v) solutions
+//    bool tauCorrection_;  // Try to eliminate tau errors in (P,v) solutions
 
-    HelmholtzSolver pressureHelmholtz_;
-    HelmholtzSolver velocityHelmholtz_;
+//    HelmholtzSolver pressureHelmholtz_;
+//    HelmholtzSolver velocityHelmholtz_;
     HelmholtzSolver densityHelmholtz_;
 
     // These quantities are constant in time in the tau algorithm.
     // So they're initialized in the constructor and kept fixed.
-    ChebyCoeff P_0_;
-    ChebyCoeff v_0_;
-    ChebyCoeff P_plus_;
-    ChebyCoeff v_plus_;
-    ChebyCoeff P_minus_;
-    ChebyCoeff v_minus_;
+//    ChebyCoeff P_0_;
+//    ChebyCoeff v_0_;
+//    ChebyCoeff P_plus_;
+//    ChebyCoeff v_plus_;
+//    ChebyCoeff P_minus_;
+//    ChebyCoeff v_minus_;
 
     // Element of the inverse of the influence matrix.
-    Real i00_;
-    Real i01_;
-    Real i10_;
-    Real i11_;
-
-    Real sigma0_Nb1_;  // tau correction factor for mode Nb-1
-    Real sigma0_Nb_;   // tau correction factor for mode Nb
+//    Real i00_;
+//    Real i01_;
+//    Real i10_;
+//    Real i11_;
+//
+//    Real sigma0_Nb1_;  // tau correction factor for mode Nb-1
+//    Real sigma0_Nb_;   // tau correction factor for mode Nb
 
     // L1 norm of first N-2 components of u.
     Real tauNorm(const ChebyCoeff& u) const;

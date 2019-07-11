@@ -4489,13 +4489,13 @@ int field2vector_size(const FlowField& u) {
     // determine cfarray sizes and once with the actual data copying. // Tobias
     int N = 0;
     if (u.taskid() == u.task_coeff(0, 0))
-        N += 3 * (Ny - 2); // JL now 3 lots of Ny-2 due to rho field
+        N += Ny - 2; // JL 0,0 modes`
     for (int kx = 1; kx <= Kx; ++kx)
         if (u.taskid() == u.task_coeff(u.mx(kx), 0))
-            N += 4 * (Ny - 2) + 2 * (Ny - 4); // JL likewise 4(Ny-2) here (rather than 2)
+            N += 2 * (Ny - 2); // JL z = 0 modes
     for (int kz = 1; kz <= Kz; ++kz)
         if (u.taskid() == u.task_coeff(0, u.mz(kz)))
-            N += 4 * (Ny - 2) + 2 * (Ny - 4); // JL and here
+            N += 2 * (Ny - 2); // JL x = 0 modes
     for (int kx = -Kx; kx <= Kx; ++kx) {
         if (kx == 0)
             continue;
@@ -4503,14 +4503,14 @@ int field2vector_size(const FlowField& u) {
         for (int kz = 1; kz <= Kz; ++kz) {
             int mz = u.mz(kz);
             if (u.taskid() == u.task_coeff(mx, mz)) {
-                N += 4 * (Ny - 2) + 2 * (Ny - 4); // JL and here
+                N += 2 * (Ny - 2); // JL x,z != 0 modes
             }
         }
     }
     return N;
 }
 
-void field2vector(const FlowField& u, VectorXd& a) {
+void field2vector(const FlowField& rho, VectorXd& a) {
     // Transform a 3D FlowField into a vector, neglecting all redundant components
     // The implementation minimizes the necessary communication operations (acutally 0 in
     // field2vector and Kz when restoring in vector2field) but results
@@ -4518,13 +4518,13 @@ void field2vector(const FlowField& u, VectorXd& a) {
     // number of vector elements per process - would require a lot of communication, which
     // is way less time-efficient in most situations.
 
-    assert(u.xzstate() == Spectral && u.ystate() == Spectral);
-    assert(u.Nd() == 4);  // JL must be 3+1 dim field to enforce div(u)=0
-    int Kx = u.kxmaxDealiased();
-    int Kz = u.kzmaxDealiased();
-    int Ny = u.Ny();
+    assert(rho.xzstate() == Spectral && rho.ystate() == Spectral);
+    assert(rho.Nd() == 1);  // JL must be 1 dim density field
+    int Kx = rho.kxmaxDealiased();
+    int Kz = rho.kzmaxDealiased();
+    int Ny = rho.Ny();
 
-    int N = field2vector_size(u);
+    int N = field2vector_size(rho);
 
     if (a.size() < N)
         a.resize(N, true);
@@ -4533,56 +4533,32 @@ void field2vector(const FlowField& u, VectorXd& a) {
     int n = 0;
     // These loops follow Gibson, Halcrow, Cvitanovic table 1.
     for (int ny = 2; ny < Ny; ++ny)
-        // Ny-2 modes (line 1 of table)
-        if (u.taskid() == u.task_coeff(0, 0))
-            a(n++) = Re(u.cmplx(0, ny, 0, 0));
-    for (int ny = 2; ny < Ny; ++ny)
-        // Ny-2 modes (line 2)
-        if (u.taskid() == u.task_coeff(0, 0))
-            a(n++) = Re(u.cmplx(0, ny, 0, 2));
-    for (int ny = 2; ny < Ny; ++ny)
         // Ny-2 modes (density)
-        if (u.taskid() == u.task_coeff(0, 0))
-            a(n++) = Re(u.cmplx(0, ny, 0, 3));
+        if (rho.taskid() == rho.task_coeff(0, 0))
+            a(n++) = Re(rho.cmplx(0, ny, 0, 0));
 
     // Some coefficients from the FlowField are linearly dependent due
-    // to BCs and divergence constraint. Omit these from a(n), and reconstruct
+    // to BCs. Omit these from a(n), and reconstruct
     // them in vector2field(v,u) using the constraint equations. In what follows,
     // which coefficients are omitted is determined by the changing ny loop index
     // e.g. (ny=3; n<Ny-1; ++ny) omits ny=0,1 and Ny-1, and the constraint eqns
     // that allow their reconstruction are mentioned in comments to the right
     // of the loop. 2007-06-07 jfg.
     for (int kx = 1; kx <= Kx; ++kx) {
-        int mx = u.mx(kx);
-        if (u.taskid() == u.task_coeff(mx, 0)) {
-            for (int ny = 2; ny < Ny; ++ny) {        // w BCs => ny=0,1 coefficients
-                a(n++) = Re(u.cmplx(mx, ny, 0, 2));  // J(Ny-2) modes (line 3a)
-                a(n++) = Im(u.cmplx(mx, ny, 0, 2));  // J(Ny-2) modes (line 3b)
-            }
-            for (int ny = 3; ny < Ny - 1; ++ny) {    // u BCs => 0,1; v BC => 2; div => Ny-1
-                a(n++) = Re(u.cmplx(mx, ny, 0, 0));  // J(Ny-4) modes (line 4a)
-                a(n++) = Im(u.cmplx(mx, ny, 0, 0));  // J(Ny-4) modes (line 4b)
-            }
+        int mx = rho.mx(kx);
+        if (rho.taskid() == rho.task_coeff(mx, 0)) {
             for (int ny = 2; ny < Ny; ++ny) {        // rho BCs => ny=0,1 coefficients
-                a(n++) = Re(u.cmplx(mx, ny, 0, 3));  // J(Ny-2) modes (density)
-                a(n++) = Im(u.cmplx(mx, ny, 0, 3));  // J(Ny-2) modes (density)
+                a(n++) = Re(rho.cmplx(mx, ny, 0, 0));  // J(Ny-2) modes (density)
+                a(n++) = Im(rho.cmplx(mx, ny, 0, 0));  // J(Ny-2) modes (density)
             }
         }
     }
     for (int kz = 1; kz <= Kz; ++kz) {
-        int mz = u.mz(kz);
-        if (u.taskid() == u.task_coeff(0, mz)) {
-            for (int ny = 2; ny < Ny; ++ny) {        // u BCs => 0,1; v BC => 2; div => Ny-1
-                a(n++) = Re(u.cmplx(0, ny, mz, 0));  // K(Ny-2)  (line 5a)
-                a(n++) = Im(u.cmplx(0, ny, mz, 0));  // K(Ny-2)  (line 5b)
-            }
-            for (int ny = 3; ny < Ny - 1; ++ny) {    // w BCs => 0,1; v BC => 2; div => Ny-1
-                a(n++) = Re(u.cmplx(0, ny, mz, 2));  // K(Ny-2)  (line 6a)
-                a(n++) = Im(u.cmplx(0, ny, mz, 2));  // K(Ny-2)  (line 6b)
-            }
+        int mz = rho.mz(kz);
+        if (rho.taskid() == rho.task_coeff(0, mz)) {
             for (int ny = 2; ny < Ny; ++ny) {        // rho BCs => 0,1
-                a(n++) = Re(u.cmplx(0, ny, mz, 3));  // K(Ny-2)  (density)
-                a(n++) = Im(u.cmplx(0, ny, mz, 3));  // K(Ny-2)  (density)
+                a(n++) = Re(rho.cmplx(0, ny, mz, 0));  // K(Ny-2)  (density)
+                a(n++) = Im(rho.cmplx(0, ny, mz, 0));  // K(Ny-2)  (density)
             }
         }
     }
@@ -4590,21 +4566,13 @@ void field2vector(const FlowField& u, VectorXd& a) {
         if (kx == 0)
             continue;
 
-        int mx = u.mx(kx);
+        int mx = rho.mx(kx);
         for (int kz = 1; kz <= Kz; ++kz) {
-            int mz = u.mz(kz);
-            if (u.taskid() == u.task_coeff(mx, mz)) {
-                for (int ny = 2; ny < Ny; ++ny) {         // u BCs => 0,1;
-                    a(n++) = Re(u.cmplx(mx, ny, mz, 0));  // JK(Ny-2)  (line 7a)
-                    a(n++) = Im(u.cmplx(mx, ny, mz, 0));  // JK(Ny-2)  (line 7b)
-                }
-                for (int ny = 3; ny < Ny - 1; ++ny) {     // w BCs => 0,1; v BC => 2; div => Ny-1
-                    a(n++) = Re(u.cmplx(mx, ny, mz, 2));  // JK(Ny-4)  (line 8a)
-                    a(n++) = Im(u.cmplx(mx, ny, mz, 2));  // JK(Ny-4)  (line 8b)
-                }
+            int mz = rho.mz(kz);
+            if (rho.taskid() == rho.task_coeff(mx, mz)) {
                 for (int ny = 2; ny < Ny; ++ny) {         // rho BCs => 0,1;
-                    a(n++) = Re(u.cmplx(mx, ny, mz, 3));  // JK(Ny-2)  (density)
-                    a(n++) = Im(u.cmplx(mx, ny, mz, 3));  // JK(Ny-2)  (density)
+                    a(n++) = Re(rho.cmplx(mx, ny, mz, 0));  // JK(Ny-2)  (density)
+                    a(n++) = Im(rho.cmplx(mx, ny, mz, 0));  // JK(Ny-2)  (density)
                 }
             }
         }
@@ -4612,7 +4580,7 @@ void field2vector(const FlowField& u, VectorXd& a) {
 }
 
 void vector2field(const VectorXd& a, FlowField& u) {
-    assert(u.Nd() == 4);  // JL must be 3+1 dim field to enforce div(u)=0
+    assert(u.Nd() == 1);  // JL 1D rho field
     u.setToZero();
 
     int Kx = u.kxmaxDealiased();
@@ -4620,13 +4588,10 @@ void vector2field(const VectorXd& a, FlowField& u) {
     int Ny = u.Ny();  // max polynomial order == number y gridpoints - 1
     Real ya = u.a();
     Real yb = u.b();
-    Real Lx = u.Lx();
-    Real Lz = u.Lz();
+//    Real Lx = u.Lx();
+//    Real Lz = u.Lz();
 
     ComplexChebyCoeff f0(Ny, ya, yb, Spectral);
-    ComplexChebyCoeff f1(Ny, ya, yb, Spectral);
-    ComplexChebyCoeff f2(Ny, ya, yb, Spectral);
-    ComplexChebyCoeff f3(Ny, ya, yb, Spectral);
 
     // These loops follow Gibson, Halcrow, Cvitanovic table 1.
     // The vector contains the linearly independent real numbers in a
@@ -4639,24 +4604,12 @@ void vector2field(const VectorXd& a, FlowField& u) {
     // =========================================================
     // (0,0) Fourier mode
     if (u.taskid() == u.task_coeff(0, 0)) {
+        // JL density modes
         for (int ny = 2; ny < Ny; ++ny)
             f0.re[ny] = a(n++);
         fixDiri(f0.re);
         for (int ny = 0; ny < Ny; ++ny)
             u.cmplx(0, ny, 0, 0) = f0[ny];
-
-        for (int ny = 2; ny < Ny; ++ny)
-            f2.re[ny] = a(n++);
-        fixDiri(f2.re);
-        for (int ny = 0; ny < Ny; ++ny)
-            u.cmplx(0, ny, 0, 2) = f2[ny];
-
-        // JL density modes
-        for (int ny = 2; ny < Ny; ++ny)
-            f3.re[ny] = a(n++);
-        fixDiri(f3.re);
-        for (int ny = 0; ny < Ny; ++ny)
-            u.cmplx(0, ny, 0, 3) = f3[ny];
     }
 
     // =========================================================
@@ -4665,39 +4618,15 @@ void vector2field(const VectorXd& a, FlowField& u) {
         int mx = u.mx(kx);
 
         if (u.taskid() == u.task_coeff(mx, 0)) {
+            // JL density modes
             for (int ny = 2; ny < Ny; ++ny) {
-                f2.re[ny] = a(n++);
-                f2.im[ny] = a(n++);
-            }
-            fixDiri(f2);
-
-            for (int ny = 3; ny < Ny - 1; ++ny) {
                 f0.re[ny] = a(n++);
                 f0.im[ny] = a(n++);
             }
-            f0.re[Ny - 1] = 0.0;
-            f0.im[Ny - 1] = 0.0;
-            fixDiriMean(f0);
-
-            integrate(f0, f1);
-            f1.sub(0, 0.5 * (f1.eval_a() + f1.eval_b()));
-            f1 *= Complex(0.0, -(2 * pi * kx) / Lx);
-
-            // JL density modes
-            for (int ny = 2; ny < Ny; ++ny) {
-                f3.re[ny] = a(n++);
-                f3.im[ny] = a(n++);
-            }
-            fixDiri(f3);
+            fixDiri(f0);
 
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(mx, ny, 0, 0) = f0[ny];
-            for (int ny = 0; ny < Ny; ++ny)
-                u.cmplx(mx, ny, 0, 1) = f1[ny];
-            for (int ny = 0; ny < Ny; ++ny)
-                u.cmplx(mx, ny, 0, 2) = f2[ny];
-            for (int ny = 0; ny < Ny; ++ny)
-                u.cmplx(mx, ny, 0, 3) = f3[ny];
         }
 
         // ------------------------------------------------------
@@ -4709,33 +4638,18 @@ void vector2field(const VectorXd& a, FlowField& u) {
         for (int ny = 0; ny < Ny; ++ny) {
             if (u.taskid() == send_id && send_id == rec_id) {  // all is on the same process -> just copy
                 u.cmplx(mxm, ny, 0, 0) = conj(f0[ny]);
-                u.cmplx(mxm, ny, 0, 1) = conj(f1[ny]);
-                u.cmplx(mxm, ny, 0, 2) = conj(f2[ny]);
-                u.cmplx(mxm, ny, 0, 3) = conj(f3[ny]);
             }
 #ifdef HAVE_MPI     // send_id != rec_id requires multiple processes
             else {  // Transfer the conjugates via MPI
                 if (u.taskid() == send_id) {
                     Complex tmp0 = conj(f0[ny]);
-                    Complex tmp1 = conj(f1[ny]);
-                    Complex tmp2 = conj(f2[ny]);
-                    Complex tmp3 = conj(f3[ny]);
                     MPI_Send(&tmp0, 1, MPI_DOUBLE_COMPLEX, rec_id, 0, MPI_COMM_WORLD);
-                    MPI_Send(&tmp1, 1, MPI_DOUBLE_COMPLEX, rec_id, 1, MPI_COMM_WORLD);
-                    MPI_Send(&tmp2, 1, MPI_DOUBLE_COMPLEX, rec_id, 2, MPI_COMM_WORLD);
-                    MPI_Send(&tmp3, 1, MPI_DOUBLE_COMPLEX, rec_id, 3, MPI_COMM_WORLD);
                 }
                 if (u.taskid() == rec_id) {
-                    Complex tmp0, tmp1, tmp2, tmp3;
+                    Complex tmp0;
                     MPI_Status status;
                     MPI_Recv(&tmp0, 1, MPI_DOUBLE_COMPLEX, send_id, 0, MPI_COMM_WORLD, &status);
-                    MPI_Recv(&tmp1, 1, MPI_DOUBLE_COMPLEX, send_id, 1, MPI_COMM_WORLD, &status);
-                    MPI_Recv(&tmp2, 1, MPI_DOUBLE_COMPLEX, send_id, 2, MPI_COMM_WORLD, &status);
-                    MPI_Recv(&tmp3, 1, MPI_DOUBLE_COMPLEX, send_id, 3, MPI_COMM_WORLD, &status);
                     u.cmplx(mxm, ny, 0, 0) = tmp0;
-                    u.cmplx(mxm, ny, 0, 1) = tmp1;
-                    u.cmplx(mxm, ny, 0, 2) = tmp2;
-                    u.cmplx(mxm, ny, 0, 3) = tmp3;
                 }
             }
 #endif
@@ -4748,38 +4662,15 @@ void vector2field(const VectorXd& a, FlowField& u) {
         int mz = u.mz(kz);
 
         if (u.taskid() == u.task_coeff(0, mz)) {
+            // JL density modes
             for (int ny = 2; ny < Ny; ++ny) {
                 f0.re[ny] = a(n++);
                 f0.im[ny] = a(n++);
             }
             fixDiri(f0);
-            for (int ny = 3; ny < Ny - 1; ++ny) {
-                f2.re[ny] = a(n++);
-                f2.im[ny] = a(n++);
-            }
-            f2.re[Ny - 1] = 0.0;
-            f2.im[Ny - 1] = 0.0;
-            fixDiriMean(f2);
-
-            integrate(f2, f1);
-            f1.sub(0, 0.5 * (f1.eval_a() + f1.eval_b()));
-            f1 *= Complex(0.0, -(2 * pi * kz) / Lz);
-
-            // JL density modes
-            for (int ny = 2; ny < Ny; ++ny) {
-                f3.re[ny] = a(n++);
-                f3.im[ny] = a(n++);
-            }
-            fixDiri(f3);
 
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(0, ny, mz, 0) = f0[ny];
-            for (int ny = 0; ny < Ny; ++ny)
-                u.cmplx(0, ny, mz, 1) = f1[ny];
-            for (int ny = 0; ny < Ny; ++ny)
-                u.cmplx(0, ny, mz, 2) = f2[ny];
-            for (int ny = 0; ny < Ny; ++ny)
-                u.cmplx(0, ny, mz, 3) = f3[ny];
         }
     }
 
@@ -4793,56 +4684,15 @@ void vector2field(const VectorXd& a, FlowField& u) {
             int mz = u.mz(kz);
 
             if (u.taskid() == u.task_coeff(mx, mz)) {
+                // JL density modes
                 for (int ny = 2; ny < Ny; ++ny) {
                     f0.re[ny] = a(n++);
                     f0.im[ny] = a(n++);
                 }
                 fixDiri(f0);
 
-                // f0 is complete. Load it into u.
                 for (int ny = 0; ny < Ny; ++ny)
                     u.cmplx(mx, ny, mz, 0) = f0[ny];
-
-                for (int ny = 3; ny < Ny - 1; ++ny) {
-                    f2.re[ny] = a(n++);
-                    f2.im[ny] = a(n++);
-                }
-                f2.re[Ny - 1] = -f0.re[Ny - 1] * (kx * Lz) / (kz * Lx);
-                f2.im[Ny - 1] = -f0.im[Ny - 1] * (kx * Lz) / (kz * Lx);
-
-                // Adjust 0,1,2 coeffs of f2 so that f2(+/-1) = 0 and
-                // kz/Lz mean(f2) + kx/Lx mean(f0) == 0 (so that  v(1)==v(-1))
-                Complex f2a = f2.eval_a();
-                Complex f2b = f2.eval_b();
-                Complex f0m = f0.mean();
-                Complex f2m = f2.mean() + (kx * Lz) / (kz * Lx) * f0m;
-
-                f2.sub(0, 0.125 * (f2a + f2b) + 0.75 * f2m);
-                f2.sub(1, 0.5 * (f2b - f2a));
-                f2.sub(2, 0.375 * (f2a + f2b) - 0.75 * f2m);
-
-                for (int ny = 0; ny < Ny; ++ny)
-                    u.cmplx(mx, ny, mz, 2) = f2[ny];
-
-                f0 *= Complex(0, -2 * pi * kx / Lx);
-                f2 *= Complex(0, -2 * pi * kz / Lz);
-                f0 += f2;
-
-                integrate(f0, f1);
-                f1.sub(0, 0.5 * (f1.eval_a() + f1.eval_b()));
-
-                for (int ny = 0; ny < Ny; ++ny)
-                    u.cmplx(mx, ny, mz, 1) = f1[ny];
-
-                // JL density modes
-                for (int ny = 2; ny < Ny; ++ny) {
-                    f3.re[ny] = a(n++);
-                    f3.im[ny] = a(n++);
-                }
-                fixDiri(f3);
-
-                for (int ny = 0; ny < Ny; ++ny)
-                    u.cmplx(mx, ny, mz, 3) = f3[ny];
             }
         }
     }

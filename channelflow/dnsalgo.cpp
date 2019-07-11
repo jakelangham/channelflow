@@ -93,6 +93,7 @@ MultistepDNS::MultistepDNS(const MultistepDNS& dns)
       beta_(dns.beta_),
       fields_(dns.fields_),
       nonlf_(dns.nonlf_),
+      rhs_(dns.rhs_),
       //   nse_ (new NSE( * dns.nse_)),
       countdown_(dns.countdown_) {}
 
@@ -171,6 +172,7 @@ MultistepDNS::MultistepDNS(const vector<FlowField>& fields, const shared_ptr<NSE
         fields_[j] = tmpar;
         nonlf_[j] = tmpar;
     }
+    rhs_ = {fields[0]};
     // if (order_ > 0)  // should always be true
     // u_[0] = u;
     //   cfl_ = fields[0].CFLfactor (nse_->Ubase(),nse_->Wbase());
@@ -204,8 +206,8 @@ void MultistepDNS::reset_dt(Real dt) {
 void MultistepDNS::advance(vector<FlowField>& fieldsn, int Nsteps) {
     // This calculation follows Peyret section 4.5.1(b) pg 131.
     const int J = order_ - 1;
-    vector<FlowField> rhs(nse_->createRHS(fieldsn));  // Number of fields and number of RHS's can be different
-    int len = rhs.size();
+    //vector<FlowField> rhs(nse_->createRHS(fieldsn));  // Number of fields and number of RHS's can be different
+    int len = rhs_.size();
     fields_[0] = fieldsn;
     // Start of time stepping loop
 
@@ -217,15 +219,15 @@ void MultistepDNS::advance(vector<FlowField>& fieldsn, int Nsteps) {
 
         // Add up multistepping terms of linear and nonlinear terms
         for (int l = 0; l < len; ++l) {
-            rhs[l].setToZero();  // RHS must be zero before sum over multistep loop
+            rhs_[l].setToZero();  // RHS must be zero before sum over multistep loop
             for (int j = 0; j < order_; ++j) {
                 const Real a = -alpha_[j] / flags_.dt;
                 const Real b = -beta_[j];
-                rhs[l].add(a, fields_[j][l], b, nonlf_[j][l]);
+                rhs_[l].add(a, fields_[j][l], b, nonlf_[j][l]);
             }
         }
         // Solve the implicit problem
-        nse_->solve(fields_[J], rhs);
+        nse_->solve(fields_[J], rhs_);
         // The solution is currently stored in fields_[J]. Shift entire fields and nonlf vectors
         // to move it into fields_[0]. Ie shift fields_[J] <- fields_[J-1] <- ... <- fields_[0] <- fields_[J]
         for (int j = order_ - 1; j > 0; --j) {

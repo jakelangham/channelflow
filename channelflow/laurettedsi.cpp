@@ -11,7 +11,7 @@ using namespace Eigen;
 namespace chflow {
 
 LauretteDSI::LauretteDSI(FlowField& u, DNSFlags& flags, Real dt, bool xrel, bool zrel, FieldSymmetry sigma)
-    : cfDSI(flags, sigma, NULL, TimeStep(), false, xrel, zrel, false, false, u, &cout),
+    : cfDSI(flags, sigma, NULL, TimeStep(), false, xrel, zrel, false, false, u, u, &cout),
       fieldst_(0),
       fieldsdt_(0),
       U_(u),

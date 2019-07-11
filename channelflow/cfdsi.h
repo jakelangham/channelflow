@@ -53,9 +53,9 @@ enum class continuationParameter {
     Rot
 };
 
-Real GMRESHookstep_vector(FlowField& u, FieldSymmetry& sigma, PoincareCondition* h,
-                          const NewtonSearchFlags& searchflags, DNSFlags& dnsflags, TimeStep& dt, Real& CFL,
-                          Real Unormalize);
+//Real GMRESHookstep_vector(FlowField& u, FieldSymmetry& sigma, PoincareCondition* h,
+//                          const NewtonSearchFlags& searchflags, DNSFlags& dnsflags, TimeStep& dt, Real& CFL,
+//                          Real Unormalize);
 
 // converts the string from "fieldstats" in diffops to a vector of Reals
 std::vector<Real> fieldstats_vector(const FlowField& u);
@@ -68,7 +68,7 @@ class cfDSI : public DSI {
 
     /** \brief Initialize cfDSI */
     cfDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, TimeStep dt, bool Tsearch, bool xrelative,
-          bool zrelative, bool Tnormalize, Real Unormalize, const FlowField& u, std::ostream* os = &std::cout);
+          bool zrelative, bool Tnormalize, Real Unormalize, const FlowField& u, const FlowField& rho, std::ostream* os = &std::cout);
 
     Eigen::VectorXd eval(const Eigen::VectorXd& x) override;
     Eigen::VectorXd eval(const Eigen::VectorXd& x0, const Eigen::VectorXd& x1, bool symopt) override;
@@ -128,6 +128,7 @@ class cfDSI : public DSI {
     Real azinit_;
     bool Tnormalize_;
     Real Unormalize_;
+    FlowField velfields_;
     int fcount_;
     int Nx_;
     int Ny_;
@@ -155,10 +156,10 @@ inline void cfDSI::setPhaseShifts(bool xphasehack, bool zphasehack, bool uUbaseh
 void f(const FlowField& u, int N, Real dt, FlowField& f_u, const DNSFlags& flags_, std::ostream& os);
 
 // Versions of f, G, DG that handle Poincare section calculations, additionally.
-void f(const FlowField& u, Real& T, PoincareCondition* h, FlowField& fu, const DNSFlags& flags, const TimeStep& dt,
+void f(const FlowField& rho, const FlowField& vel, Real& T, PoincareCondition* h, FlowField& fu, const DNSFlags& flags, const TimeStep& dt,
        int& fcount, Real& CFL, std::ostream& os = std::cout);
 
-void G(const FlowField& u, Real& T, PoincareCondition* h, const FieldSymmetry& sigma, FlowField& Gu,
+void G(const FlowField& rho, const FlowField& vel, Real& T, PoincareCondition* h, const FieldSymmetry& sigma, FlowField& Gu,
        const DNSFlags& flags, const TimeStep& dt, bool Tnormalize, Real Unormalize, int& fcount, Real& CFL,
        std::ostream& os = std::cout);
 

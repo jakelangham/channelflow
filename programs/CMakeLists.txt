@@ -5,15 +5,15 @@
 # License is GNU GPL version 2 or later: https://channelflow.org/license
 #
 set(program_APPS
-  simulateflow
+#  simulateflow
   edgetracking
   )
 
 if (WITH_NSOLVER)
     set(program_APPS ${program_APPS}
-         continuesoln
-         findsoln
-         findeigenvals)
+#         continuesoln
+#         findeigenvals
+         findsoln)
 endif ()
 
 

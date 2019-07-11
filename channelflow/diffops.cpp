@@ -2566,7 +2566,7 @@ void cross(const FlowField& f_, const FlowField& g_, FlowField& fcg, fieldstate 
     fieldstate fy = f.ystate();
     fieldstate gxz = g.xzstate();
     fieldstate gy = g.ystate();
-    assert(g.congruent(f));
+    //assert(g.congruent(f));
     assert(f.Nd() >= 3 && g.Nd() >= 3);
 
     f.makePhysical();
@@ -2887,57 +2887,72 @@ void convectionNL(const FlowField& u_, FlowField& f, FlowField& tmp, const field
     dotgrad(u_, u_, f, tmp);
 }
 
-// set f[3] = u dot grad(rho)
-// where rho = u[3], u = u{0,1,2}
-void densityAdvection(const FlowField& u_, FlowField& f, FlowField& tmp, const fieldstate finalstate) {
+// st f[0] = vel dot grad(rho)
+void densityAdvection(const FlowField& rho_, const FlowField& vel_, FlowField& f, FlowField& tmp, const fieldstate finalstate) {
 //    dotgradScalar(u_, u_[3], f, tmp);
-    FlowField& u = (FlowField&)u_;
-//    FlowField& rho = (FlowField&)u[3];
+    FlowField& rho = (FlowField&)rho_;
+    FlowField& vel = (FlowField&)vel_;
     FlowField& grad_rho = tmp;
 
-    assert(u.Nd() == 4);
+    assert(rho.Nd() == 1);
 
-    if (!u.geomCongruent(f) || f.Nd() != 4)
-        f.resize(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
-    else
-        f[3].setToZero();
+    if (!rho.geomCongruent(f) || f.Nd() != 1)
+        f.resize(rho.Nx(), rho.Ny(), rho.Nz(), 1, rho.Lx(), rho.Lz(), rho.a(), rho.b(), rho.cfmpi());
 
-    if (!u.geomCongruent(grad_rho) || grad_rho.Nd() < 3)
-        grad_rho.resize(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+    if (!rho.geomCongruent(grad_rho) || grad_rho.Nd() < 3)
+        grad_rho.resize(rho.Nx(), rho.Ny(), rho.Nz(), 3, rho.Lx(), rho.Lz(), rho.a(), rho.b(), rho.cfmpi());
 
-    fieldstate uxzstate = u.xzstate();
-    fieldstate uystate = u.ystate();
+    fieldstate rxzstate = rho.xzstate();
+    fieldstate rystate = rho.ystate();
 
-    u.makeSpectral();
-    grad(u[3], grad_rho);
+    rho.makeSpectral();
+    grad(rho[0], grad_rho);
     grad_rho.makePhysical();
-    u.makePhysical();
+    vel.makePhysical();
 
     f.makePhysical();
 
-    lint Nz = u.Nz();
-    lint nxlocmin = u.nxlocmin();
-    lint nxlocmax = u.nxlocmin() + u.Nxloc();
-    lint nylocmin = u.nylocmin();
-    lint nylocmax = u.nylocmax();
+    lint Nz = rho.Nz();
+    lint nxlocmin = rho.nxlocmin();
+    lint nxlocmax = rho.nxlocmin() + rho.Nxloc();
+    lint nylocmin = rho.nylocmin();
+    lint nylocmax = rho.nylocmax();
+
+    Real v_s = 0.0;
 
 #ifdef HAVE_MPI
-    for (int j = 0; j < 3; ++j)
-        for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
-            for (lint nz = 0; nz < Nz; ++nz)
-                for (lint ny = nylocmin; ny < nylocmax; ++ny)
-                    f(nx, ny, nz, 3) += u(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
+    for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
+        for (lint nz = 0; nz < Nz; ++nz)
+            for (lint ny = nylocmin; ny < nylocmax; ++ny) {
+                f(nx, ny, nz, 3) = 0.0;
+                for (int j = 0; j < 3; ++j) {
+                    f(nx, ny, nz, 0) += vel(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
+                }
+
+                f(nx, ny, nz, 0) -= vel(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
+                //f(nx, ny, nz, 3) -= u(nx, ny, nz, 2); // advective term -w from horiz strat
+                f(nx, ny, nz, 0) -= v_s * grad_rho(nx, ny, nz, 1);
+            }
 #else
-    for (int j = 0; j < 3; ++j)
-        for (lint ny = nylocmin; ny < nylocmax; ++ny)
-            for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
-                for (lint nz = 0; nz < Nz; ++nz)
-                    f(nx, ny, nz, 3) += u(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
+    for (lint ny = nylocmin; ny < nylocmax; ++ny)
+        for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
+            for (lint nz = 0; nz < Nz; ++nz) {
+                f(nx, ny, nz, 0) = 0.0;
+                for (int j = 0; j < 3; ++j) {
+                    f(nx, ny, nz, 0) += vel(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
+                }
+
+                f(nx, ny, nz, 0) -= vel(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
+                //f(nx, ny, nz, 3) -= u(nx, ny, nz, 2); // advective term -w from horiz strat
+                f(nx, ny, nz, 0) -= v_s * grad_rho(nx, ny, nz, 1);
+            }
 #endif
 
     f.makeSpectral();
 
-    u.makeState(uxzstate, uystate);
+    rho.makeState(rxzstate, rystate);
+    // TODO Ultimately we should just keep vel field physical all the time
+    vel.makeState(rxzstate, rystate);
 }
 
 void adjointTerms(const FlowField& u_, FlowField& u_dir_, FlowField& f, FlowField& tmp, FlowField& tmpadj,

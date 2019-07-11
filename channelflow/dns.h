@@ -55,8 +55,8 @@ class DNS {
     // void reset();                  // flush state, prepare for new integration
     virtual void reset_dt(Real dt);
     virtual void reset_time(Real t);
-    virtual void reset_gradp(Real dPdx, Real dPdz);    // change dPdx and enforce const dPdx
-    virtual void reset_bulkv(Real Ubulk, Real Wbulk);  // change Ubulk and enforce const Ubulk
+//    virtual void reset_gradp(Real dPdx, Real dPdz);    // change dPdx and enforce const dPdx
+//    virtual void reset_bulkv(Real Ubulk, Real Wbulk);  // change Ubulk and enforce const Ubulk
 
     bool push(const std::vector<FlowField>& fields);  // push into u[j] stack from another DNS,
     virtual bool full() const;                        // is u[j] full, can we commence timestepping?
@@ -68,13 +68,13 @@ class DNS {
     virtual Real dt() const;
     virtual Real CFL(FlowField& u) const;
     virtual Real time() const;
-    virtual Real dPdx() const;  // the mean pressure gradient at the current time
+//    virtual Real dPdx() const;  // the mean pressure gradient at the current time
     Real dPdz() const;
-    virtual Real Ubulk() const;  // the actual bulk velocity at the current time
+//    virtual Real Ubulk() const;  // the actual bulk velocity at the current time
     Real Wbulk() const;
-    virtual Real dPdxRef() const;  // the mean press grad enforced during integration
+//    virtual Real dPdxRef() const;  // the mean press grad enforced during integration
     Real dPdzRef() const;
-    virtual Real UbulkRef() const;  // the bulk velocity enforced during integ.
+ //   virtual Real UbulkRef() const;  // the bulk velocity enforced during integ.
     Real WbulkRef() const;          // the bulk velocity enforced during integ.
 
     virtual const ChebyCoeff& Ubase() const;
