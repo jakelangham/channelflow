@@ -1,6 +1,8 @@
 /**
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
+ *
+ * Original author: John F. Gibson
  */
 
 #include "channelflow/diffops.h"
@@ -1792,7 +1794,7 @@ void grad(const FlowField& f_, FlowField& gradf) {
 
     // compute gradf(nx,ny,nz,i) = df(nx,ny,nz,0)/dx_i for scalar-valued f
     if (f.Nd() == 1) {
-        if (!f.geomCongruent(gradf) || gradf.vectorDim() != 3)
+        if (!f.geomCongruent(gradf) || gradf.vectorDim() < 3)
             gradf.resize(f.Nx(), f.Ny(), f.Nz(), 3, f.Lx(), f.Lz(), f.a(), f.b(), f.cfmpi());
         else
             gradf.setToZero();
@@ -2228,12 +2230,12 @@ void curl(const FlowField& f_, FlowField& curlf) {
 
 void curl(const FlowField& f_, FlowField& curlf) {
     FlowField& f = (FlowField&)f_;
-    assert(f.Nd() == 3);
+    assert(f.Nd() >= 3);
     fieldstate sxz = f.xzstate();
     fieldstate sy = f.ystate();
     f.makeSpectral();
 
-    if (!f.geomCongruent(curlf) || curlf.vectorDim() != 3)
+    if (!f.geomCongruent(curlf) || curlf.vectorDim() < 3)
         curlf.resize(f.Nx(), f.Ny(), f.Nz(), 3, f.Lx(), f.Lz(), f.a(), f.b(), f.cfmpi());
     // else
     // curlf.setToZero();
@@ -2564,13 +2566,13 @@ void cross(const FlowField& f_, const FlowField& g_, FlowField& fcg, fieldstate 
     fieldstate fy = f.ystate();
     fieldstate gxz = g.xzstate();
     fieldstate gy = g.ystate();
-    assert(g.congruent(f));
-    assert(f.Nd() == 3 && g.Nd() == 3);
+    //assert(g.congruent(f));
+    assert(f.Nd() >= 3 && g.Nd() >= 3);
 
     f.makePhysical();
     g.makePhysical();
 
-    if (!f.geomCongruent(fcg) || fcg.Nd() != 3)
+    if (!f.geomCongruent(fcg) || fcg.Nd() < 3)
         fcg.resize(f.Nx(), f.Ny(), f.Nz(), 3, f.Lx(), f.Lz(), f.a(), f.b(), f.cfmpi());
     // else
     // fcg.setToZero();
@@ -2580,7 +2582,8 @@ void cross(const FlowField& f_, const FlowField& g_, FlowField& fcg, fieldstate 
     //     int Nx = f.Nx();
     //     int Ny = f.Ny();
     lint Nz = f.Nz();
-    lint Nd = f.Nd();
+//    lint Nd = f.Nd();
+    lint Nd = 3;
     lint nxlocmin = f.nxlocmin();
     lint nxlocmax = f.nxlocmin() + f.Nxloc();
     lint nylocmin = f.nylocmin();
@@ -2853,15 +2856,15 @@ void rotationalNL(const FlowField& u_, FlowField& f, FlowField& tmp, const field
     FlowField& u = (FlowField&)u_;
     FlowField& vort = tmp;
 
-    assert(u.Nd() == 3);
+    assert(u.Nd() == 4);
     fieldstate uxzstate = u.xzstate();
     fieldstate uystate = u.ystate();
 
-    if (!u.geomCongruent(f) || f.Nd() != 3)
-        f.resize(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+    if (!u.geomCongruent(f) || f.Nd() != 4)
+        f.resize(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
     f.setState(Physical, Physical);
 
-    if (!u.geomCongruent(vort) || vort.Nd() < 3)
+    if (!u.geomCongruent(vort) || vort.Nd() != 3)
         vort.resize(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
 
     u.makeSpectral();
@@ -2882,6 +2885,65 @@ void rotationalNL(const FlowField& u_, FlowField& f, FlowField& tmp, const field
 
 void convectionNL(const FlowField& u_, FlowField& f, FlowField& tmp, const fieldstate finalstate) {
     dotgrad(u_, u_, f, tmp);
+}
+
+// set f[3] = u dot grad(rho)
+// where rho = u[3], u = u{0,1,2}
+void densityAdvection(const FlowField& u_, FlowField& f, FlowField& tmp, const fieldstate finalstate) {
+    FlowField& u = (FlowField&)u_;
+    FlowField& grad_rho = tmp;
+
+    assert(u.Nd() == 4);
+
+    if (!u.geomCongruent(f) || f.Nd() != 4)
+        f.resize(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+
+    if (!u.geomCongruent(grad_rho) || grad_rho.Nd() < 3)
+        grad_rho.resize(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+
+    fieldstate uxzstate = u.xzstate();
+    fieldstate uystate = u.ystate();
+
+    u.makeSpectral();
+    grad(u[3], grad_rho);
+    grad_rho.makePhysical();
+    u.makePhysical();
+
+    f.makePhysical();
+
+
+    lint Nz = u.Nz();
+    lint nxlocmin = u.nxlocmin();
+    lint nxlocmax = u.nxlocmin() + u.Nxloc();
+    lint nylocmin = u.nylocmin();
+    lint nylocmax = u.nylocmax();
+
+#ifdef HAVE_MPI
+    for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
+        for (lint nz = 0; nz < Nz; ++nz)
+            for (lint ny = nylocmin; ny < nylocmax; ++ny) {
+                f(nx, ny, nz, 3) = 0.0;
+                for (int j = 0; j < 3; ++j)
+                    f(nx, ny, nz, 3) += u(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
+
+                f(nx, ny, nz, 3) -= u(nx, ny, nz, 1); // advective term -v from vert strat
+            }
+#else
+    for (lint ny = nylocmin; ny < nylocmax; ++ny)
+        for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
+            for (lint nz = 0; nz < Nz; ++nz) {
+                f(nx, ny, nz, 3) = 0.0;
+                for (int j = 0; j < 3; ++j) {
+                    f(nx, ny, nz, 3) += u(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
+                }
+
+                f(nx, ny, nz, 3) -= u(nx, ny, nz, 1); // advective term -v from vert strat
+            }
+#endif
+
+    f.makeSpectral();
+
+    u.makeState(uxzstate, uystate);
 }
 
 void adjointTerms(const FlowField& u_, FlowField& u_dir_, FlowField& f, FlowField& tmp, FlowField& tmpadj,
@@ -3647,7 +3709,7 @@ void dotgradScalar(const FlowField& u_, const FlowField& s_, FlowField& f, FlowF
     FlowField& s = (FlowField&)s_;
     FlowField& grad_s = tmp;
 
-    assert(u.Nd() == 3 && s.Nd() == 1);
+    assert(u.Nd() >= 3 && s.Nd() == 1);
     assert(u.geomCongruent(s));
 
     if (!u.geomCongruent(f) || f.Nd() != 1)

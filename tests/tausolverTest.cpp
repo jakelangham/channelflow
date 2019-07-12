@@ -1,6 +1,6 @@
 /**
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
  */
 #include <fstream>
 #include <iomanip>
@@ -13,8 +13,9 @@ using namespace chflow;
 
 void randomVprofile(ComplexChebyCoeff& v, Real decay);
 void randomUprofile(ComplexChebyCoeff& u, Real decay);
-void randomProfile(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, int kx,
-                   int kz, Real Lx, Real Lz, Real decay);
+void randomProfile(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, 
+                   ComplexChebyCoeff& P, ComplexChebyCoeff& rho, 
+                   int kx, int kz, Real Lx, Real Lz, Real decay);
 
 void uniformsave(const ComplexChebyCoeff& u, const string& filebase);
 
@@ -54,17 +55,23 @@ int main(int argc, char* argv[]) {
             int kz = rand() % 32;
             Real dt = 0.02;
             Real nu = 1.0 / 1000.0;
-            Real lambda = 2.0 / dt + 4 * pi * pi * nu * (square(kx / Lx) + square(kz / Lz));
+            Real Pr = 1 + 10.0 * drand48();
+            Real Ri = 0.0; // for now
+            Real lambda_t = 2.0 / dt;
+            Real lambda = lambda_t + 4 * pi * pi * nu * (square(kx / Lx) + square(kz / Lz));
+            Real lambda_rho = lambda_t + 4 * pi * pi * (nu / Pr) * (square(kx / Lx) + square(kz / Lz));
             Real decay = 0.5;
 
             if (verbose) {
                 cout << "Tausolver test #" << test << endl;
-                cout << "a b    == " << a << ' ' << b << endl;
-                cout << "Lx Lz  == " << Lx << ' ' << Lz << endl;
-                cout << "kx Lz  == " << kx << ' ' << kz << endl;
-                cout << "lambda == " << lambda << endl;
-                cout << "nu     == " << nu << endl;
-                cout << "decay  == " << decay << endl;
+                cout << "a b        == " << a << ' ' << b << endl;
+                cout << "Lx Lz      == " << Lx << ' ' << Lz << endl;
+                cout << "kx Lz      == " << kx << ' ' << kz << endl;
+                cout << "lambda     == " << lambda << endl;
+                cout << "lambda_rho == " << lambda_rho << endl;
+                cout << "nu         == " << nu << endl;
+                cout << "Pr         == " << Pr << endl;
+                cout << "decay      == " << decay << endl;
             }
 
             // Construct a div-free field (u,v,w) with zero BCS at +/-1 and a
@@ -76,31 +83,38 @@ int main(int argc, char* argv[]) {
             ComplexChebyCoeff u(N, a, b, Spectral);
             ComplexChebyCoeff v(N, a, b, Spectral);
             ComplexChebyCoeff w(N, a, b, Spectral);
+            ComplexChebyCoeff rho(N, a, b, Spectral);
 
-            randomProfile(u, v, w, P, kx, kz, Lx, Lz, decay);
+            randomProfile(u, v, w, P, rho, kx, kz, Lx, Lz, decay);
 
             ComplexChebyCoeff vy = diff(v);
             // Calculate R = nu lapl u'' - lambda u - grad P
             ComplexChebyCoeff Rx(u);
             ComplexChebyCoeff Ry(v);
             ComplexChebyCoeff Rz(w);
+            ComplexChebyCoeff Rrho(rho);
             Rx *= lambda;
             Ry *= lambda;
             Rz *= lambda;
+            Rrho *= lambda_rho;
 
             ComplexChebyCoeff nu_uyy(N, a, b, Spectral);
             ComplexChebyCoeff nu_vyy(N, a, b, Spectral);
             ComplexChebyCoeff nu_wyy(N, a, b, Spectral);
+            ComplexChebyCoeff nu_rhoyy(N, a, b, Spectral);
             diff2(u, nu_uyy);
             diff2(v, nu_vyy);
             diff2(w, nu_wyy);
+            diff2(rho, nu_rhoyy);
             nu_uyy *= -nu;
             nu_vyy *= -nu;
             nu_wyy *= -nu;
+            nu_rhoyy *= -(nu / Pr);
 
             Rx += nu_uyy;
             Ry += nu_vyy;
             Rz += nu_wyy;
+            Rrho += nu_rhoyy;
 
             ComplexChebyCoeff Px(P);
             ComplexChebyCoeff Pz(P);
@@ -118,11 +132,12 @@ int main(int argc, char* argv[]) {
             ComplexChebyCoeff vysolve(N, a, b, Spectral);
             ComplexChebyCoeff wsolve(N, a, b, Spectral);
             ComplexChebyCoeff Psolve(N, a, b, Spectral);
+            ComplexChebyCoeff rsolve(N, a, b, Spectral);
             // Real sigma0 = 0;
             // Real sigma1 = 0;
             if (verbose)
                 cout << "Constructing TauSolver {" << endl;
-            TauSolver tausolver(kx, kz, Lx, Lz, a, b, lambda, nu, N, taucorrect);
+            TauSolver tausolver(kx, kz, Lx, Lz, a, b, lambda_t, nu, Pr, Ri, N, taucorrect);
             if (verbose) {
                 cout << "} done ctoring TauSolver" << endl;
                 cout << "----------------------------------------------------" << endl;
@@ -130,19 +145,19 @@ int main(int argc, char* argv[]) {
 
             if (verbose)
                 cout << "Verifying analytic Tau solution {" << endl;
-            tausolver.verify(u, v, w, P, Rx, Ry, Rz);
+            tausolver.verify(u, v, w, P, rho, Rx, Ry, Rz, Rrho);
             if (verbose) {
                 cout << "} done verifying analytic Tau problem" << endl;
                 cout << "----------------------------------------------------" << endl;
                 cout << "Solving Tau problem numerically {" << endl;
             }
-            tausolver.solve(usolve, vsolve, wsolve, Psolve, Rx, Ry, Rz);
+            tausolver.solve(usolve, vsolve, wsolve, Psolve, rsolve, Rx, Ry, Rz, Rrho);
             if (verbose) {
                 cout << "} done solving Tau problem numerically" << endl;
                 cout << "----------------------------------------------------" << endl;
                 cout << "Verifying numerical Tau solution {" << endl;
             }
-            if (tausolver.verify(usolve, vsolve, wsolve, Psolve, Rx, Ry, Rz, verbose) > epsilon)
+            if (tausolver.verify(usolve, vsolve, wsolve, Psolve, rsolve, Rx, Ry, Rz, Rrho, verbose) > epsilon)
                 failure = true;
 
             if (verbose) {
@@ -347,13 +362,15 @@ void randomVprofile(ComplexChebyCoeff& v, Real decay) {
     v.setBounds(a, b);
 }
 
-void randomProfile(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, int kx,
+void randomProfile(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, 
+                   ComplexChebyCoeff& P, ComplexChebyCoeff& rho, int kx,
                    int kz, Real Lx, Real Lz, Real decay) {
     int N = u.length();
     ChebyTransform trans(N);
     Real magn = 1.0;
 
     P.randomize(magn, decay, Diri, Diri);
+    randomUprofile(rho, decay);
 
     if (kx == 0 && kz == 0) {
         // Assign an odd perturbation to u, so as not to change mean(U).

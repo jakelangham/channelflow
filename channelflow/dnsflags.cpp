@@ -1,6 +1,8 @@
 /**
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
+ *
+ * Original author: John F. Gibson
  */
 
 #include "channelflow/dnsflags.h"
@@ -107,7 +109,7 @@ void BodyForce::eval(Real t, FlowField& f) {
 // virtual
 bool BodyForce::isOn(Real t) { return true; }
 
-DNSFlags::DNSFlags(Real nu_, Real dPdx_, Real dPdz_, Real Ubulk_, Real Wbulk_, Real Uwall_, Real ulowerwall_,
+DNSFlags::DNSFlags(Real nu_, Real Pr_, Real Ri_, Real dPdx_, Real dPdz_, Real Ubulk_, Real Wbulk_, Real Uwall_, Real ulowerwall_,
                    Real uupperwall_, Real wlowerwall_, Real wupperwall_, Real theta_, Real Vsuck_, Real rotation_,
                    Real t0_, Real T_, Real dT_, Real dt_, bool variabledt_, Real dtmin_, Real dtmax_, Real CFLmin_,
                    Real CFLmax_, Real symmetryprojectioninterval_, BaseFlow baseflow_, MeanConstraint constraint_,
@@ -123,6 +125,8 @@ DNSFlags::DNSFlags(Real nu_, Real dPdx_, Real dPdz_, Real Ubulk_, Real Wbulk_, R
       bodyforce(bodyforce_),
       taucorrection(taucorrection_),
       nu(nu_),
+      Pr(Pr_),
+      Ri(Ri_),
       Vsuck(Vsuck_),
       rotation(rotation_),
       theta(theta_),
@@ -168,6 +172,8 @@ DNSFlags::DNSFlags(ArgList& args, const bool laurette)
     const Real nuarg =
         args.getreal("-nu", "--nu", 0, "kinematic viscosity (takes precedence over Reynolds, if nonzero)");
     nu = (nuarg != 0) ? nuarg : 1.0 / Reynolds;
+    Pr = args.getreal("-pr", "--pr", 1, "Prandtl number");
+    Ri = args.getreal("-ri", "--ri", 0, "Richardson number");
     // more general dnsflags
     args2BC(args);
     args2numerics(args, laurette);
@@ -978,7 +984,8 @@ ostream& operator<<(ostream& os, const DNSFlags& flags) {
     string tau = (flags.taucorrection) ? "TauCorrection" : "NoTauCorrection";
     const int p = os.precision();
     os.precision(16);
-    os << "nu==" << flags.nu << s << "Vsuck==" << flags.Vsuck << s << "rotation==" << flags.rotation << s
+    os << "nu==" << flags.nu << s << "Pr==" << flags.Pr << s << "Ri==" << flags.Ri << s 
+       << "Vsuck==" << flags.Vsuck << s << "rotation==" << flags.rotation << s
        << "theta==" << flags.theta << s << "dPdx==" << flags.dPdx << s << "dPdz==" << flags.dPdz << s
        << "Ubulk==" << flags.Ubulk << s << "Wbulk==" << flags.Wbulk << s << "uwall==" << flags.Uwall << s
        << "uupper==" << flags.uupperwall << s << "ulower==" << flags.ulowerwall << s << "wupper==" << flags.wupperwall

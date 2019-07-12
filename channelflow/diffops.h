@@ -1,8 +1,10 @@
 /**
  * Differential operators for FlowFields
  *
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
+ *
+ * Original author: John F. Gibson
  */
 
 #ifndef CHANNELFLOW_DIFFOPS_H
@@ -229,6 +231,7 @@ void divergenceNL(const FlowField& u, FlowField& f, FlowField& tmp, const fields
 void skewsymmetricNL(const FlowField& u, FlowField& f, FlowField& tmp, const fieldstate finalstate = Spectral);
 void linearizedNL(const FlowField& u, const ChebyCoeff& U, const ChebyCoeff& Wbase, FlowField& f,
                   const fieldstate finalstate = Spectral);
+void densityAdvection(const FlowField& u, FlowField& f, FlowField& tmp, const fieldstate finalstate = Spectral);
 
 // Adjoint terms
 // u+ is the adjoint velocity

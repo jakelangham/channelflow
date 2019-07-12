@@ -1,6 +1,6 @@
 /**
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
  */
 #include <string.h>  // for strdupa
 #include <fstream>
@@ -52,7 +52,7 @@ FieldSymmetry::FieldSymmetry(const string& filebase) : s_(1), sx_(1), sy_(1), sz
 }
 
 int FieldSymmetry::s(int i) const {
-    assert(i >= 0 && i < 3);
+    assert(i >= 0 && i <= 3);
     int rtn = 0;
     switch (i) {
         case 0:
@@ -63,6 +63,9 @@ int FieldSymmetry::s(int i) const {
             break;
         case 2:
             rtn = sz_;
+            break;
+        case 3:
+            rtn = sx_;
             break;
         default:
             cerr << "error in FieldSymmetry::s(int i) : i == " << i << " != 0,1, or 2" << endl;

@@ -1,8 +1,10 @@
 /**
  * Solves vector "tau" eqns (Canuto & Hussaini eqn 7.3.18-20)
  *
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
+ *
+ * Original author: John F. Gibson
  */
 
 #ifndef CHANNELFLOW_TAUSOLVER_H
@@ -30,28 +32,31 @@ Real divcheck(std::string& label, int kx, int kz, Real Lx, Real Lz, const Comple
 class TauSolver {
    public:
     TauSolver();
-    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, int Ny,
+    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real Pr, Real Ri, int Ny,
               bool tauCorrection = true);
     // TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda,
     // Real nu, int nChebyModes, bool dx_on=true, bool dz_on=true,
     // bool tauCorrection=true);
 
-    void solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P,
-               const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz) const;
+    void solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, 
+               ComplexChebyCoeff& P, ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rx, 
+               const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho) const;
 
     Real verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
-                const ComplexChebyCoeff& P, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
-                const ComplexChebyCoeff& Rz, bool verbose = false) const;
+                const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, 
+                const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
+                const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho, bool verbose = false) const;
 
     // Solve tau eqns with additional unknown, time-varying, -dPdx on LHS.
     // and additional constraint mean(u) = umean.
-    void solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, Real& dPdx,
+    void solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho, Real& dPdx,
                Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz,
                Real umean, Real wmean) const;
 
     Real verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
-                const ComplexChebyCoeff& P, Real dPdx, Real dPdz, const ComplexChebyCoeff& Rx,
-                const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz, Real umean, Real wmean,
+                const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, Real dPdx, Real dPdz, 
+                const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz, 
+                const ComplexChebyCoeff& Rrho, Real umean, Real wmean,
                 bool verbose = false) const;
 
     // Enforce v'(+-1)==0 with influence matrix method, leaving v(+-1)==0 and RHS unchanged.
@@ -59,7 +64,7 @@ class TauSolver {
 
     // These are helper functions for the above, not meant to be used alone,
     // but provided as public for testing purposes. r == div(R).
-    void solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, Real& sigmaNb1,
+    void solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, const ChebyCoeff& rho, Real& sigmaNb1,
                        Real& sigmaNb) const;
 
     Real verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry,
@@ -83,11 +88,15 @@ class TauSolver {
     Real a_;
     Real b_;
     Real lambda_;
+    Real lambda_rho_;     // lambda analogue for the stratification equation
     Real nu_;             // viscosity
+    Real Pr_;             // Prandtl number
+    Real Ri_;             // Richardson number
     bool tauCorrection_;  // Try to eliminate tau errors in (P,v) solutions
 
     HelmholtzSolver pressureHelmholtz_;
     HelmholtzSolver velocityHelmholtz_;
+    HelmholtzSolver densityHelmholtz_;
 
     // These quantities are constant in time in the tau algorithm.
     // So they're initialized in the constructor and kept fixed.

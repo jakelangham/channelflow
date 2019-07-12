@@ -1,6 +1,8 @@
 /**
- * This file is a part of channelflow version 2.0 https://channelflow.ch.
- * License is GNU GPL version 2 or later: ./LICENCE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
+ *
+ * Original author: Tobias Kreilos
  */
 
 #include <channelflow/laurettedsi.h>
@@ -61,6 +63,15 @@ int main(int argc, char* argv[]) {
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
 
         FlowField u(uname, cfmpi);
+        // JL check if there's a density field. If not, add a zero density field
+        FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
+        vector<int> vel_indices = {0, 1, 2};
+        vector<int> all_indices = {0, 1, 2, 3};
+        if (u.Nd() == 3) {
+            u_with_density.copySubfields(u, vel_indices, vel_indices);
+        } else {
+            u_with_density.copySubfields(u, all_indices, all_indices);
+        }
 
         FieldSymmetry sigma;
         if (sigmastr.length() != 0)
@@ -70,22 +81,23 @@ int main(int argc, char* argv[]) {
          * either standard (f(u) via forward time integration) or Laurette (f(u) via Laurettes method)
          */
         unique_ptr<cfDSI> dsi;
-        dsi = unique_ptr<cfDSI>(new cfDSI(dnsflags, sigma, 0, dt, Tsearch, Rxsearch, Rzsearch, Tnormalize, unormalize,
-                                          u, N->getLogstream()));
+        dsi = unique_ptr<cfDSI>(new cfDSI(dnsflags, sigma, 0, dt, Tsearch, 
+            Rxsearch, Rzsearch, Tnormalize, unormalize,
+            u_with_density, N->getLogstream()));
 
         VectorXd x_singleShot;
         VectorXd x;
         VectorXd yvec;
         MatrixXd y;
         MultishootingDSI* msDSI = N->getMultishootingDSI();
-        dsi->makeVector(u, sigma, dnsflags.T, x_singleShot);
+        dsi->makeVector(u_with_density, sigma, dnsflags.T, x_singleShot);
         msDSI->setDSI(*dsi, x_singleShot.size());
         if (msinit) {
             int nSh = msDSI->nShot();
             y.resize(x_singleShot.size(), nSh);
             Real Tms = dnsflags.T / nSh;
             vector<FlowField> u_ms(nSh);
-            u_ms[0] = u;
+            u_ms[0] = u_with_density;
             for (int i = 1; i < nSh; i++) {
                 string uname_ms = "./Multishooting/" + uname + i2s(i);
                 FlowField ui(uname_ms, cfmpi);

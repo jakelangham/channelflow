@@ -2,8 +2,10 @@
  * Control parameters for time-integration by spectral Navier-Stokes simulator
  * DNSFlags specifies all relevant parameters for integrating Navier-Stokes equation in standard channel domains.
  *
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
+ *
+ * Original author: John F. Gibson
  */
 
 #ifndef CHANNELFLOW_DNSFLAGS_H
@@ -81,7 +83,7 @@ class BodyForce {
 class DNSFlags {
    public:
     //        type name       default
-    DNSFlags(Real nu = 0.0025, Real dPdx = 0.0, Real dPdz = 0.0, Real Ubulk = 0.0, Real Wbulk = 0.0, Real Uwall = 1.0,
+    DNSFlags(Real nu = 0.0025, Real Pr = 1.0, Real Ri = 0.0, Real dPdx = 0.0, Real dPdz = 0.0, Real Ubulk = 0.0, Real Wbulk = 0.0, Real Uwall = 1.0,
              Real ulowerwall = 0.0, Real uupperwall = 0.0, Real wlowerwall = 0.0, Real wupperwall = 0.0,
              Real theta = 0.0, Real Vsuck = 0.0, Real rotation = 0.0, Real t0 = 0.0, Real T = 20.0, Real dT = 1.0,
              Real dt = 0.03125, bool variabledt = true, Real dtmin = 0.001, Real dtmax = 0.2, Real CFLmin = 0.4,
@@ -113,6 +115,8 @@ class DNSFlags {
     bool taucorrection;            // Remove divergence caused by discretization
 
     Real nu;                            // Kinematic viscosity nu
+    Real Pr;                            // Prandtl number
+    Real Ri;                            // Richardson number
     Real Vsuck;                         // suction velocity
     Real rotation;                      // dimensionless rotation around the z-axis
     Real theta;                         // tilt of the domain relative to downstream

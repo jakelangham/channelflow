@@ -3,8 +3,10 @@
  * TimeStep manages variable time-stepping, adjusting dt to keep CFL in range
  * DNSAlgorithm is the parent class of all time-stepper classes
  *
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
+ *
+ * Original author: John F. Gibson
  */
 
 #ifndef CHANNELFLOW_DNSALGO_H
@@ -112,6 +114,7 @@ class MultistepDNS : public DNSAlgorithm {
     cfarray<Real> beta_;                      // coefficients of nonlin. field history
     cfarray<std::vector<FlowField>> fields_;  // u[j] == u at t-j*dt for multistep algorithms
     cfarray<std::vector<FlowField>> nonlf_;   // f[j] == f at t-j*dt for multistep algorithms (nonlinear term)
+    std::vector<FlowField> rhs_;
 
     int countdown_;
 };
