@@ -2924,13 +2924,13 @@ void densityAdvection(const FlowField& rho_, const FlowField& vel_, FlowField& f
     for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
         for (lint nz = 0; nz < Nz; ++nz)
             for (lint ny = nylocmin; ny < nylocmax; ++ny) {
-                f(nx, ny, nz, 3) = 0.0;
+                f(nx, ny, nz, 0) = 0.0;
                 for (int j = 0; j < 3; ++j) {
                     f(nx, ny, nz, 0) += vel(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
                 }
 
-                f(nx, ny, nz, 0) -= vel(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
-                //f(nx, ny, nz, 3) -= u(nx, ny, nz, 2); // advective term -w from horiz strat
+                //f(nx, ny, nz, 0) -= vel(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
+                f(nx, ny, nz, 0) -= vel(nx, ny, nz, 2); // advective term -w from horiz strat
                 f(nx, ny, nz, 0) -= v_s * grad_rho(nx, ny, nz, 1);
             }
 #else
@@ -2942,8 +2942,8 @@ void densityAdvection(const FlowField& rho_, const FlowField& vel_, FlowField& f
                     f(nx, ny, nz, 0) += vel(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
                 }
 
-                f(nx, ny, nz, 0) -= vel(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
-                //f(nx, ny, nz, 3) -= u(nx, ny, nz, 2); // advective term -w from horiz strat
+                //f(nx, ny, nz, 0) -= vel(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
+                f(nx, ny, nz, 0) -= vel(nx, ny, nz, 2); // advective term -w from horiz strat
                 f(nx, ny, nz, 0) -= v_s * grad_rho(nx, ny, nz, 1);
             }
 #endif
