@@ -199,6 +199,10 @@ void cfDSI::updateMu(Real mu) {
         dnsflags_.Pr = mu;
     } else if (cPar_ == continuationParameter::Ri) {
         dnsflags_.Ri = mu;
+    } else if (cPar_ == continuationParameter::vs) {
+        dnsflags_.vs = mu;
+    } else if (cPar_ == continuationParameter::kappa) {
+        dnsflags_.kappa = mu;
     } else if (cPar_ == continuationParameter::T) {
         Tinit_ = mu;
     } else if (cPar_ == continuationParameter::P) {
@@ -309,6 +313,12 @@ void cfDSI::chooseMu(continuationParameter mu) {
         case continuationParameter::Ri:
             updateMu(dnsflags_.Ri);
             break;
+        case continuationParameter::vs:
+            updateMu(dnsflags_.vs);
+            break;
+        case continuationParameter::kappa:
+            updateMu(dnsflags_.kappa);
+            break;
         case continuationParameter::T:
             updateMu(Tinit_);
             break;
@@ -380,6 +390,10 @@ continuationParameter cfDSI::s2cPar(string muname) {
         return continuationParameter::Pr;
     else if (muname == "ri")
         return continuationParameter::Ri;
+    else if (muname == "vs")
+        return continuationParameter::vs;
+    else if (muname == "kappa")
+        return continuationParameter::kappa;
     else if (muname == "T")
         return continuationParameter::T;
     else if (muname == "p")
@@ -431,6 +445,10 @@ string cfDSI::cPar2s(continuationParameter cPar) {
         return "Pr";
     else if (cPar == continuationParameter::Ri)
         return "Ri";
+    else if (cPar == continuationParameter::vs)
+        return "vs";
+    else if (cPar == continuationParameter::kappa)
+        return "kappa";
     else if (cPar == continuationParameter::P)
         return "P";
     else if (cPar == continuationParameter::Ub)

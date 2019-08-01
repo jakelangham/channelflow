@@ -33,6 +33,8 @@ enum class continuationParameter {
     Re,
     Pr,
     Ri,
+    vs,
+    kappa,
     P,
     Ub,
     Uw,
