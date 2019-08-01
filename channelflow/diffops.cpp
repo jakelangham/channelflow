@@ -2888,7 +2888,8 @@ void convectionNL(const FlowField& u_, FlowField& f, FlowField& tmp, const field
 }
 
 // st f[0] = vel dot grad(rho)
-void densityAdvection(const FlowField& rho_, const FlowField& vel_, FlowField& f, FlowField& tmp, const fieldstate finalstate) {
+// input settling velocity
+void densityAdvection(const FlowField& rho_, const FlowField& vel_, Real v_s, FlowField& f, FlowField& tmp, const fieldstate finalstate) {
 //    dotgradScalar(u_, u_[3], f, tmp);
     FlowField& rho = (FlowField&)rho_;
     FlowField& vel = (FlowField&)vel_;
@@ -2917,8 +2918,6 @@ void densityAdvection(const FlowField& rho_, const FlowField& vel_, FlowField& f
     lint nxlocmax = rho.nxlocmin() + rho.Nxloc();
     lint nylocmin = rho.nylocmin();
     lint nylocmax = rho.nylocmax();
-
-    Real v_s = 0.0;
 
 #ifdef HAVE_MPI
     for (lint nx = nxlocmin; nx < nxlocmax; ++nx)

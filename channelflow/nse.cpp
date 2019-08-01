@@ -71,7 +71,7 @@ void navierstokesNL(const FlowField& rho_, const FlowField& vel_, ChebyCoeff Uba
         //        cferror("navierstokesNL(method, u,U,f,tmp) : unknown method");
         //}
 
-        densityAdvection(rho, vel, f, tmp, finalstate);
+        densityAdvection(rho, vel, flags.vs, f, tmp, finalstate);
         // add rotation term -(omega x u) = - flags.rotation * flags.nu (y e_y + e_z x u)
 //        if (flags.rotation != 0.0) {
 //            u.makePhysical();
