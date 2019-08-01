@@ -22,7 +22,7 @@ HelmholtzSolver::HelmholtzSolver()
 // 2. test recoupled problem with DIRICHLET conds
 // 3. replace Dirichlet conds with Robin BCs
 
-HelmholtzSolver::HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, Real nu)
+HelmholtzSolver::HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, Real nu, Real vs_o_kappa)
     : N_(numberModes - 1),
       nModes_(numberModes),
       nEvenModes_(N_ / 2 + 1),
@@ -31,6 +31,7 @@ HelmholtzSolver::HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, R
       b_(b),
       lambda_(lambda),
       nu_(nu),
+      vs_o_kappa_(vs_o_kappa),
       Ae_(nEvenModes_),
       Ao_(nOddModes_),
       Be_(nEvenModes_),
@@ -55,10 +56,11 @@ HelmholtzSolver::HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, R
 
     // Boundary conditions
     for (i = 0; i < nModes_; ++i) {
+        A_.elem(0, i) = i * i + vs_o_kappa_;
         if (i % 2 == 0)
-            A_.elem(0, i) = 1.0;
-        else
             A_.elem(1, i) = 1.0;
+        else
+            A_.elem(1, i) = -1.0;
     }
 
     // Assign first through rows of Ae_ and Be_
