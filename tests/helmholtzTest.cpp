@@ -94,7 +94,7 @@ int main() {
         HelmholtzSolver helmholtz(N, a, b, lambda, nu);
 
         ChebyCoeff vs(N, a, b, Spectral);
-        helmholtz.solve(vs, r, va, vb);
+        helmholtz.solve(vs, r, 0.5 * (vb + va), 0.5 * (vb - va));
 
         Real vas = vs.eval_a();
         Real vbs = vs.eval_b();
@@ -126,38 +126,38 @@ int main() {
         // Also, construct, solve, and verify a problem of the form
         // nu v'' - lambda v = r + mu, mean(v) = vmean, v(+-1) = a,b.
 
-        if (verbose)
-            cout << "problem 2: nu v'' - lambda v = f + mu, mean(v) = vmean, v(a),v(b) = va,vb" << endl;
-
-        Real mu = drand48();
-
-        ChebyCoeff rhs(r);
-        rhs[0] -= mu;
-        Real vmean = v.mean();
-
-        Real mus;
-        helmholtz.solve(vs, mus, rhs, vmean, va, vb);
-
-        errL1 = L1Dist(v, vs) / L1Norm(v);
-        errTau = tauDist(v, vs) / L1Norm(v);
-        aerr = fabs(va - vas);
-        berr = fabs(vb - vbs);
-        Real meanerr = fabs(vmean - v.mean());
-        Real muerr = fabs(mus - mu);
-
-        if (errL1 > EPSILON || aerr > EPSILON || berr > EPSILON || meanerr > EPSILON || muerr > EPSILON) {
-            ++failures;
-            if (verbose)
-                cout << "ERROR : " << endl;
-        }
-        if (verbose) {
-            cout << "tauDist(v,vs)/L1Norm(v) == " << errTau << endl;
-            cout << " L1Dist(v,vs)/L1Norm(v) == " << errL1 << endl;
-            cout << "fabs(va-vas)            == " << aerr << endl;
-            cout << "fabs(vb-vbs)            == " << berr << endl;
-            cout << "fabs(mu-ms)             == " << muerr << endl;
-            cout << "fabs(mean-means)        == " << meanerr << endl;
-        }
+//        if (verbose)
+//            cout << "problem 2: nu v'' - lambda v = f + mu, mean(v) = vmean, v(a),v(b) = va,vb" << endl;
+//
+//        Real mu = drand48();
+//
+//        ChebyCoeff rhs(r);
+//        rhs[0] -= mu;
+//        Real vmean = v.mean();
+//
+//        Real mus;
+//        helmholtz.solve(vs, mus, rhs, vmean, va, vb);
+//
+//        errL1 = L1Dist(v, vs) / L1Norm(v);
+//        errTau = tauDist(v, vs) / L1Norm(v);
+//        aerr = fabs(va - vas);
+//        berr = fabs(vb - vbs);
+//        Real meanerr = fabs(vmean - v.mean());
+//        Real muerr = fabs(mus - mu);
+//
+//        if (errL1 > EPSILON || aerr > EPSILON || berr > EPSILON || meanerr > EPSILON || muerr > EPSILON) {
+//            ++failures;
+//            if (verbose)
+//                cout << "ERROR : " << endl;
+//        }
+//        if (verbose) {
+//            cout << "tauDist(v,vs)/L1Norm(v) == " << errTau << endl;
+//            cout << " L1Dist(v,vs)/L1Norm(v) == " << errL1 << endl;
+//            cout << "fabs(va-vas)            == " << aerr << endl;
+//            cout << "fabs(vb-vbs)            == " << berr << endl;
+//            cout << "fabs(mu-ms)             == " << muerr << endl;
+//            cout << "fabs(mean-means)        == " << meanerr << endl;
+//        }
     }
 
     if (failures == 0) {
