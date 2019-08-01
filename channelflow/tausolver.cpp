@@ -66,11 +66,12 @@ TauSolver::TauSolver()
       b_(0),
       lambda_(0),
       nu_(0),
-      Pr_(1),
-      Ri_(0),
+      conc_diffusivity_(1.0),
+//      Pr_(1),
+//      Ri_(0),
       densityHelmholtz_() {}
 
-TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real Pr, Real Ri, int nChebyModes,
+TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real conc_diffusivity, int nChebyModes,
                      bool tauCorrection)
     : N_(nChebyModes),
       Nb_(nChebyModes - 1),
@@ -82,14 +83,15 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
       a_(a),
       b_(b),
       lambda_(lambda_t + nu * kappa2_),
-      lambda_rho_(lambda_t + (nu / Pr) * kappa2_),
-      nu_(nu),
-      Pr_(Pr),
-      Ri_(Ri),
+      lambda_rho_(lambda_t + conc_diffusivity * kappa2_),
+      conc_diffusivity_(conc_diffusivity),
+      //nu_(nu),
+      //Pr_(Pr),
+      //Ri_(Ri),
       //tauCorrection_(tauCorrection),
     //  pressureHelmholtz_(N_, a_, b_, kappa2_),
     //  velocityHelmholtz_(N_, a_, b_, lambda_, nu_),
-      densityHelmholtz_(N_, a_, b_, lambda_rho_, nu_ / Pr_) {
+      densityHelmholtz_(N_, a_, b_, lambda_rho_, conc_diffusivity_) {
     //  P_0_(N_, a_, b_, Spectral),
     //  v_0_(N_, a_, b_, Spectral),
     //  P_plus_(N_, a_, b_, Spectral),
@@ -356,6 +358,7 @@ void TauSolver::solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho) con
     int n;  // MSVC++ FOR-SCOPE BUG
     for (n = 0; n < N_; ++n)
         r.set(n, -Rrho[n]);
+    // JL note new BCs on rhs
     densityHelmholtz_.solve(rho.re, r.re, 0.0, 0.0);
     densityHelmholtz_.solve(rho.im, r.im, 0.0, 0.0);
 
@@ -597,15 +600,15 @@ Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, c
     lhs = rho;
     lhs *= lambda_rho_;
     diff2(rho, tmp);
-    tmp *= nu_ / Pr_;
+    tmp *= conc_diffusivity_;
     lhs -= tmp;
     terr = tauDist(lhs, Rrho);
     lerr = L2Dist(lhs, Rrho);
     error += lerr;
     if (verbose) {
         cout << "L2Norm(Rrho) == " << L2Norm(Rrho) << endl;
-        cout << "tauDist((nu / Pr) rho'' - lambda_rho rho, -Rrho) == " << terr << endl;
-        cout << " L2Dist((nu / Pr) rho'' - lambda_rho rho, -Rrho) == " << lerr << endl;
+        cout << "tauDist(conc_diffusivity rho'' - lambda_rho rho, -Rrho) == " << terr << endl;
+        cout << " L2Dist(conc_diffusivity rho'' - lambda_rho rho, -Rrho) == " << lerr << endl;
     }
 
     // Verify divergence

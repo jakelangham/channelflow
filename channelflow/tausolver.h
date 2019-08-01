@@ -32,7 +32,7 @@ Real divcheck(std::string& label, int kx, int kz, Real Lx, Real Lz, const Comple
 class TauSolver {
    public:
     TauSolver();
-    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real Pr, Real Ri, int Ny,
+    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real conc_diffusivity, int Ny,
               bool tauCorrection = true);
     // TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda,
     // Real nu, int nChebyModes, bool dx_on=true, bool dz_on=true,
@@ -72,7 +72,7 @@ class TauSolver {
     int kz() const { return kz_; }
     // Real kxLx() const{return kxLx_;}
     // Real kzLz() const{return kzLz_;}
-    Real lambda() const { return lambda_; }
+    //Real lambda() const { return lambda_; }
     Real nu() const { return nu_; }
 
    private:
@@ -87,9 +87,8 @@ class TauSolver {
     Real b_;
     Real lambda_;
     Real lambda_rho_;     // lambda analogue for the stratification equation
-    Real nu_;             // viscosity
-    Real Pr_;             // Prandtl number
-    Real Ri_;             // Richardson number
+    Real nu_;
+    Real conc_diffusivity_; 
 //    bool tauCorrection_;  // Try to eliminate tau errors in (P,v) solutions
 
 //    HelmholtzSolver pressureHelmholtz_;
