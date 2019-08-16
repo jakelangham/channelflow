@@ -14,7 +14,7 @@ set(tool_APPS
 #  findsymmetries
   L2op
 #  optphaseshift
-#  perturbfield
+  perturbfield
 #  pressure
 #  randomfield
 #  symmetrize
