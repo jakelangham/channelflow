@@ -1000,7 +1000,7 @@ ostream& operator<<(ostream& os, const DNSFlags& flags) {
     string tau = (flags.taucorrection) ? "TauCorrection" : "NoTauCorrection";
     const int p = os.precision();
     os.precision(16);
-    os << "nu==" << flags.nu << s << "Pr==" << flags.Pr << s << "Ri==" << flags.Ri <<  "v_s==" << flags.vs << s << "kappa==" << flags.kappa << s 
+    os << "nu==" << flags.nu << s << "Pr==" << flags.Pr << s << "Ri==" << flags.Ri << s << "v_s==" << flags.vs << s << "kappa==" << flags.kappa << s
        << "Vsuck==" << flags.Vsuck << s << "rotation==" << flags.rotation << s
        << "theta==" << flags.theta << s << "dPdx==" << flags.dPdx << s << "dPdz==" << flags.dPdz << s
        << "Ubulk==" << flags.Ubulk << s << "Wbulk==" << flags.Wbulk << s << "uwall==" << flags.Uwall << s
