@@ -14,7 +14,6 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/dns.h"
 #include "channelflow/flowfield.h"
-#include "channelflow/poissonsolver.h"
 #include "channelflow/symmetry.h"
 #include "channelflow/tausolver.h"
 #include "channelflow/utilfuncs.h"
@@ -22,9 +21,8 @@
 using namespace std;
 using namespace chflow;
 
-string printdiagnostics(FlowField& u, const DNS& dns, Real t, const TimeStep& dt, Real nu, Real umin, bool vardt,
-                        bool pl2norm, bool pchnorm, bool pdissip, bool pshear, bool pdiverge, bool pUbulk, bool pubulk,
-                        bool pdPdx, bool pcfl);
+string printdiagnostics(FlowField& rho, FlowField& u, const DNS& dns, Real t, const TimeStep& dt, Real nu, Real umin, bool vardt,
+                        bool pl2norm, bool pchnorm, bool pdissip, bool pshear, bool pcfl);
 
 int main(int argc, char* argv[]) {
     cfMPI_Init(&argc, &argv);
@@ -42,26 +40,21 @@ int main(int argc, char* argv[]) {
         args.section("Program options");
         const string outdir = args.getpath("-o", "--outdir", "data/", "output directory");
         const string label = args.getstr("-l", "--label", "u", "output field prefix");
-        const bool savep = args.getflag("-sp", "--savepressure", "save pressure fields");
 
         const bool pcfl = args.getflag("-cfl", "--cfl", "print CFL number each dT");
         const bool pl2norm = args.getflag("-l2", "--l2norm", "print L2Norm(u) each dT");
         const bool pchnorm = args.getbool("-ch", "--chebyNorm", true, "print chebyNorm(u) each dT");
         const bool pdissip = args.getflag("-D", "--dissipation", "print dissipation each dT");
         const bool pshear = args.getflag("-I", "--input", "print wall shear power input each dT");
-        const bool pdiverge = args.getflag("-dv", "--divergence", "print divergence each dT");
-        const bool pubulk = args.getflag("-u", "--ubulk", "print ubulk each dT");
-        const bool pUbulk = args.getflag("-Up", "--Ubulk-print", "print Ubulk each dT");
-        const bool pdPdx = args.getflag("-p", "--pressure", "print pressure gradient each dT");
-        const Real umin = args.getreal("-u", "--umin", 0.0, "stop if chebyNorm(u) < umin");
+        const Real rhomin = args.getreal("-rm", "--rhomin", 0.0, "stop if chebyNorm(rho) < rhomin");
 
-        const Real ecfmin = args.getreal("-e", "--ecfmin", 0.0, "stop if Ecf(u) < ecfmin");
         const int saveint = args.getint("-s", "--saveinterval", 1, "save fields every s dT");
 
         const int nproc0 =
             args.getint("-np0", "--nproc0", 0, "number of MPI-processes for transpose/number of parallel ffts");
         const int nproc1 = args.getint("-np1", "--nproc1", 0, "number of MPI-processes for one fft");
-        const string uname = args.getstr(1, "<flowfield>", "initial condition");
+        const string rhofile = args.getstr(1, "<flowfield>", "initial concentration/density field");
+        const string velfile = args.getstr(2, "<flowfield>", "precomputed velocity field");
 
         args.check();
         args.save("./");
@@ -72,17 +65,44 @@ int main(int argc, char* argv[]) {
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
 
         printout("Constructing u,q, and optimizing FFTW...");
-        FlowField u(uname, cfmpi);
 
-        const int Nx = u.Nx();
-        const int Ny = u.Ny();
-        const int Nz = u.Nz();
-        const Real Lx = u.Lx();
-        const Real Lz = u.Lz();
-        const Real a = u.a();
-        const Real b = u.b();
+        // load concentration/density field
+        FlowField rhoin(rhofile, cfmpi);
+        Real vs_o_kappa = flags.vs / flags.kappa;
+        BoundaryCond bc(Mixed, 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
+        FlowField rho(rhoin.Nx(), rhoin.Ny(), rhoin.Nz(), 1, 
+                      rhoin.Lx(), rhoin.Lz(), rhoin.a(), rhoin.b(), bc, cfmpi);
+        // JL if rhofile has 4 dimensions assume 4th is the initial density,
+        // else assume the 1st
+        if (rhoin.Nd() == 4) {
+            rho.copySubfields(rhoin, {3}, {0});
+        } else if (rhoin.Nd() == 1) {
+            rho = rhoin;
+        } else {
+            cout << "rho file must have 1 or 4 dimensions\n";
+            cfMPI_Finalize();
+            return 1;
+        }
 
-        FlowField q(Nx, Ny, Nz, 1, Lx, Lz, a, b, cfmpi);
+        const int Nx = rho.Nx();
+        const int Ny = rho.Ny();
+        const int Nz = rho.Nz();
+        const Real Lx = rho.Lx();
+        const Real Lz = rho.Lz();
+        const Real a = rho.a();
+        const Real b = rho.b();
+ 
+        // load velocity field, upscaling 
+        // if necessary for the later dot product in physical space
+        FlowField uin(velfile, cfmpi);
+        if (Lx != uin.Lx() || Lz != uin.Lz() || a != uin.a() || b != uin.b()) {
+            cout << "velocity field geometry must match rho geometry\n";
+            cfMPI_Finalize();
+            return 1;
+        }
+        FlowField u(Nx, Ny, Nz, uin.Nd(), Lx, Lz, a, b, uin.BC(), rho.cfmpi());
+        u.interpolate(uin);
+
         const bool inttime =
             (abs(saveint * dt.dT() - int(saveint * dt.dT())) < 1e-12) && (abs(flags.t0 - int(flags.t0)) < 1e-12)
                 ? true
@@ -92,18 +112,13 @@ int main(int argc, char* argv[]) {
         cout << "Wwall == " << flags.wupperwall << endl;
         cout << "dnsflags == " << flags << endl;
         cout << "constructing DNS..." << endl;
-        DNS dns({u, q}, flags);
-        //     u.setnu (flags.nu);
+        vector<FlowField> fields = {rho, u};
+        DNS dns(fields, flags);
 
         dns.Ubase().save(outdir + "Ubase");
         dns.Wbase().save(outdir + "Wbase");
 
         ChebyCoeff Ubase = laminarProfile(flags, u.a(), u.b(), u.Ny());
-        // Ubase.save("Ubase2");
-
-        PressureSolver psolver(u, dns.Ubase(), dns.Wbase(), flags.nu, flags.Vsuck, flags.nonlinearity);
-        psolver.solve(q, u);
-        vector<FlowField> fields = {u, q};
 
         ios::openmode openflag = (flags.t0 > 0) ? ios::app : ios::out;
 
@@ -111,34 +126,26 @@ int main(int argc, char* argv[]) {
         openfile(eout, outdir + "energy.asc", openflag);
         eout << fieldstatsheader_t() << endl;
 
-        FlowField u0, du, tmp;
-
         int i = 0;
         for (Real t = flags.t0; t <= flags.T; t += dt.dT()) {
             string s;
-            s = printdiagnostics(fields[0], dns, t, dt, flags.nu, umin, dt.variable(), pl2norm, pchnorm, pdissip,
-                                 pshear, pdiverge, pUbulk, pubulk, pdPdx, pcfl);
-            if (ecfmin > 0 && Ecf(fields[0]) < ecfmin) {
-                cferror("Ecf < ecfmin == " + r2s(ecfmin) + ", exiting");
-            }
+            s = printdiagnostics(fields[0], fields[1], dns, t, dt, flags.nu, rhomin, 
+                dt.variable(), pl2norm, pchnorm, pdissip,
+                pshear, pcfl);
 
             cout << s;
-            // fields[0] += dns.Ubase(); //////////////////// ONLY
-            s = fieldstats_t(fields[0], t);
-            // fields[0] -= dns.Ubase(); //////////////////// ONLY
-            eout << s << endl;
 
             if (saveint != 0 && i % saveint == 0) {
                 fields[0].save(outdir + label + t2s(t, inttime));
-                if (savep)
-                    fields[1].save(outdir + "p" + t2s(t, inttime));
+                //if (savep)
+                //    fields[1].save(outdir + "p" + t2s(t, inttime));
             }
             i++;
 
             dns.advance(fields, dt.n());
 
             if (dt.variable() &&
-                dt.adjust(dns.CFL(fields[0])))  // TODO: dt.variable()==true is checked twice here, remove it.
+                dt.adjust(dns.CFL(fields[1])))  // TODO: dt.variable()==true is checked twice here, remove it.
                 dns.reset_dt(dt);
         }
         cout << "done!" << endl;
@@ -146,48 +153,40 @@ int main(int argc, char* argv[]) {
     cfMPI_Finalize();
 }
 
-string printdiagnostics(FlowField& u, const DNS& dns, Real t, const TimeStep& dt, Real nu, Real umin, bool vardt,
-                        bool pl2norm, bool pchnorm, bool pdissip, bool pshear, bool pdiverge, bool pUbulk, bool pubulk,
-                        bool pdPdx, bool pcfl) {
+string printdiagnostics(FlowField& rho, FlowField& u, const DNS& dns, Real t, const TimeStep& dt, Real nu, Real rhomin, bool vardt,
+                        bool pl2norm, bool pchnorm, bool pdissip, bool pshear, //bool pUbulk, bool pubulk,
+                        //bool pdPdx, 
+                        bool pcfl) {
     // Printing diagnostics
     stringstream sout;
     sout << "           t == " << t << endl;
     if (vardt)
         sout << "          dt == " << Real(dt) << endl;
     if (pl2norm)
-        sout << "   L2Norm(u) == " << L2Norm(u) << endl;
+        sout << "   L2Norm(rho) == " << L2Norm(rho) << endl;
 
-    if (pchnorm || umin != 0.0) {
-        Real chnorm = chebyNorm(u);
-        sout << "chebyNorm(u) == " << chnorm << endl;
-        if (chnorm < umin) {
-            cout << "Exiting: chebyNorm(u) < umin." << endl;
+    if (pchnorm || rhomin != 0.0) {
+        Real chnorm = chebyNorm(rho);
+        sout << "chebyNorm(rho) == " << chnorm << endl;
+        if (chnorm < rhomin) {
+            cout << "Exiting: chebyNorm(rho) < rhomin." << endl;
             exit(0);
         }
     }
+
     Real h = 0.5 * (u.b() - u.a());
-    u += dns.Ubase();
+    rho -= dns.Ubase();
     if (pl2norm)
-        sout << "   energy(u+U) == " << 0.5 * L2Norm(u) << endl;
+        sout << "   energy(rho+rBase) == " << 0.5 * L2Norm(rho) << endl;
     if (pdissip)
-        sout << "   dissip(u+U) == " << dissipation(u) << endl;
+        sout << "   dissip(rho+rBase) == " << dissipation(rho) << endl;
     if (pshear)
-        sout << "wallshear(u+U) == " << abs(wallshearLower(u)) + abs(wallshearUpper(u)) << endl;
-    if (pdiverge)
-        sout << "  divNorm(u+U) == " << divNorm(u) << endl;
-    if (pUbulk)
-        sout << "mean u+U Ubulk == " << dns.Ubulk() << endl;
-    u -= dns.Ubase();
-    if (u.taskid() == u.task_coeff(0, 0)) {
-        if (pubulk)
-            sout << "         ubulk == " << Re(u.profile(0, 0, 0)).mean() << endl;
-    }
-    if (pdPdx)
-        sout << "          dPdx == " << dns.dPdx() << endl;
+        sout << "wallshear(rho+rBase) == " << abs(wallshearLower(rho)) + abs(wallshearUpper(rho)) << endl;
+    rho += dns.Ubase();
     if (pl2norm)
-        sout << "     L2Norm(u) == " << L2Norm(u) << endl;
+        sout << "     L2Norm(rho) == " << L2Norm(rho) << endl;
     if (pl2norm)
-        sout << "   L2Norm3d(u) == " << L2Norm3d(u) << endl;
+        sout << "   L2Norm3d(rho) == " << L2Norm3d(rho) << endl;
 
     Real cfl = dns.CFL(u);
     if (u.taskid() == u.task_coeff(0, 0)) {
@@ -201,10 +200,8 @@ string printdiagnostics(FlowField& u, const DNS& dns, Real t, const TimeStep& dt
         Real Umean = U.mean();
         sout << "        1/nu == " << 1 / nu << endl;
         sout << "  Uwall h/nu == " << Uwall * h / nu << endl;
-        sout << "  Ubulk h/nu == " << dns.Ubulk() * h / nu << endl;
         sout << "  Umean h/nu == " << Umean << " * " << h << " / " << nu << endl;
         sout << "  Umean h/nu == " << Umean * h / nu << endl;
-        sout << " Uparab h/nu == " << 1.5 * dns.Ubulk() * h / nu << endl;
         sout << "Ucenter h/nu == " << Ucenter * h / nu << endl;
     }
     sout << "         CFL == " << cfl << endl;

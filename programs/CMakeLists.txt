@@ -5,7 +5,7 @@
 # License is GNU GPL version 2 or later: https://channelflow.org/license
 #
 set(program_APPS
-#  simulateflow
+  simulateflow
 #  edgetracking
   )
 
