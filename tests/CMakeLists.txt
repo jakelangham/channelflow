@@ -19,9 +19,9 @@ set(
 #    dnsZeroTest
     helmholtzTest
     ioTest
-    poissonTest
+#    poissonTest
 #    pressureTest
-    realprofileTest
+#    realprofileTest
     stratTest
 #    tausolverTest
     timeIntegrationTest

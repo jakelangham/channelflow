@@ -17,12 +17,7 @@ const Real EPSILON = 1.0;
 HelmholtzSolver::HelmholtzSolver()
     : N_(0), nModes_(0), nEvenModes_(0), nOddModes_(0), a_(0), b_(0), lambda_(0), nu_(0), Ae_(), Ao_(), Be_(), Bo_() {}
 
-// Tasks for Weds
-// 1. recouple odd/even by replacing Ae Bo etc with A, B
-// 2. test recoupled problem with DIRICHLET conds
-// 3. replace Dirichlet conds with Robin BCs
-
-HelmholtzSolver::HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, Real nu, Real vs_o_kappa)
+HelmholtzSolver::HelmholtzSolver(int numberModes, BoundaryCond bc, Real a, Real b, Real lambda, Real nu, Real vs_o_kappa)
     : N_(numberModes - 1),
       nModes_(numberModes),
       nEvenModes_(N_ / 2 + 1),
@@ -53,15 +48,6 @@ HelmholtzSolver::HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, R
     // Neumann
     //for (i = 1; i < nEvenModes_; ++i)
     //    Ae_.band(i) = (Real) (4 * i * i);
-
-    // Boundary conditions
-    for (i = 0; i < nModes_; ++i) {
-        A_.elem(0, i) = i * i + vs_o_kappa_;
-        if (i % 2 == 0)
-            A_.elem(1, i) = 1.0;
-        else
-            A_.elem(1, i) = -1.0;
-    }
 
     // Assign first through rows of Ae_ and Be_
     for (i = 1; i < nEvenModes_; ++i) {
@@ -116,6 +102,37 @@ HelmholtzSolver::HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, R
         A_.elem(n, n) = Ao_.diag(i);
         if (beta(n + 2))
             A_.elem(n, n + 2) = Ao_.updiag(i);
+    }
+
+    // Boundary conditions
+    // Dirichlet
+    if (bc.type_ == Diri) {
+        for (i = 0; i < nModes_; ++i) {
+            if (i % 2 == 0)
+                A_.elem(0, i) = 1.0;
+            else
+                A_.elem(0, i) = -1.0;
+                
+            A_.elem(1, i) = 1.0;
+        }
+    // Neumann
+    //for (i = 0; i < nModes_; ++i) {
+    //    A_.elem(0, i) = i * i;
+    //    if (i % 2 == 0)
+    //        A_.elem(1, i) = i * i;
+    //    else
+    //        A_.elem(1, i) = -i * i;
+    //}
+    // Mixed
+    } else if (bc.type_ == Mixed) {
+        for (i = 0; i < nModes_; ++i) {
+            if (i % 2 == 0)
+                A_.elem(0, i) = 1.0;
+            else
+                A_.elem(0, i) = -1.0;
+
+            A_.elem(1, i) = i * i + vs_o_kappa_;
+        }
     }
 
     //Ae_.ULdecomp();

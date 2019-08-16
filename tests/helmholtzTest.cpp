@@ -91,10 +91,12 @@ int main() {
         ChebyCoeff r = interpolate(rt, N);
 
         // Use Helmholtz solver to solve above eqn for vs ("vsolve").
-        HelmholtzSolver helmholtz(N, a, b, lambda, nu);
+        BoundaryCond bc(Diri, 0.0, 0.0);
+        HelmholtzSolver helmholtz(N, bc, a, b, lambda, nu);
 
         ChebyCoeff vs(N, a, b, Spectral);
-        helmholtz.solve(vs, r, 0.5 * (vb + va), 0.5 * (vb - va));
+        //helmholtz.solve(vs, r, 0.5 * (vb + va), 0.5 * (vb - va));
+        helmholtz.solve(vs, r, vb, va);
 
         Real vas = vs.eval_a();
         Real vbs = vs.eval_b();

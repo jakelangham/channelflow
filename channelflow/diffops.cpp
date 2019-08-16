@@ -955,7 +955,7 @@ void coeff2field(const std::vector<RealProfileNG>& basis, const std::vector<Real
 
     std::vector<RealProfileNG>::const_iterator ei = basis.begin();
     std::vector<Real>::const_iterator ai = a.begin();
-    FlowField tmp(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+    FlowField tmp(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
     tmp += *ei;
     tmp *= *ai;
     u += tmp;
@@ -2703,7 +2703,7 @@ FlowField xyavg(FlowField& u) {
     // const Real a = u.a();
     // const Real b = u.b();
 
-    FlowField uxyavg(4, 1, Nz, Nd, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+    FlowField uxyavg(4, 1, Nz, Nd, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
     u.makeSpectral();
 
     for (int i = 0; i < Nd; ++i)
@@ -2928,8 +2928,8 @@ void densityAdvection(const FlowField& rho_, const FlowField& vel_, Real v_s, Fl
                     f(nx, ny, nz, 0) += vel(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
                 }
 
-                //f(nx, ny, nz, 0) -= vel(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
-                f(nx, ny, nz, 0) -= vel(nx, ny, nz, 2); // advective term -w from horiz strat
+                f(nx, ny, nz, 0) -= vel(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
+                //f(nx, ny, nz, 0) -= vel(nx, ny, nz, 2); // advective term -w from horiz strat
                 f(nx, ny, nz, 0) -= v_s * grad_rho(nx, ny, nz, 1);
             }
 #else
@@ -2941,8 +2941,8 @@ void densityAdvection(const FlowField& rho_, const FlowField& vel_, Real v_s, Fl
                     f(nx, ny, nz, 0) += vel(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
                 }
 
-                //f(nx, ny, nz, 0) -= vel(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
-                f(nx, ny, nz, 0) -= vel(nx, ny, nz, 2); // advective term -w from horiz strat
+                f(nx, ny, nz, 0) -= vel(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
+                //f(nx, ny, nz, 0) -= vel(nx, ny, nz, 2); // advective term -w from horiz strat
                 f(nx, ny, nz, 0) -= v_s * grad_rho(nx, ny, nz, 1);
             }
 #endif
@@ -3886,7 +3886,7 @@ void calc_dedt(const FlowField& u, const ChebyCoeff& U, const FlowField& p,
 ***********************************************************************/
 FlowField extractRolls(const FlowField& u) {
     assert(u.xzstate() == Spectral && u.Nd() == 3);
-    FlowField rolls(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+    FlowField rolls(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
     rolls.makeSpectral();
     rolls.setToZero();
     const lint mxlocmin = u.mxlocmin();

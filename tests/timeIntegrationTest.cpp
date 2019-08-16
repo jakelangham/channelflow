@@ -90,14 +90,14 @@ int main(int argc, char* argv[]) {
         flags.verbosity = Silent;
 
         FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), 
-                                 u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
+                                 u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
         vector<int> vel_indices = {0, 1, 2};
         u_with_density.copySubfields(u, vel_indices, vel_indices);
 
         if (u_with_density.taskid() == 0 && verbose)
             cout << "Building FlowField q..." << flush;
         vector<FlowField> fields = {
-            u_with_density, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral)};
+            u_with_density, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral)};
         if (u_with_density.taskid() == 0 && verbose)
             cout << "done" << endl;
         if (u_with_density.taskid() == 0 && verbose)
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
         }
 
         FlowField v(dir + "/ufinal", cfmpi);
-        FlowField v_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
+        FlowField v_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), cfmpi);
         v_with_density.copySubfields(v, vel_indices, vel_indices);
 
         fields[0][3].save("data/density.nc");

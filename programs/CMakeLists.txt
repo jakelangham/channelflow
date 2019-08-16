@@ -6,7 +6,7 @@
 #
 set(program_APPS
 #  simulateflow
-  edgetracking
+#  edgetracking
   )
 
 if (WITH_NSOLVER)

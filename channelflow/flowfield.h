@@ -13,6 +13,7 @@
 #include "cfbasics/cfvector.h"
 #include "cfbasics/mathdefs.h"
 #include "channelflow/basisfunc.h"
+#include "channelflow/boundarycond.h"
 #include "channelflow/cfmpi.h"
 #include "channelflow/chebyshev.h"
 #include "channelflow/realprofile.h"
@@ -55,10 +56,10 @@ class FlowField {
    public:
     FlowField();
 
-    FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi = NULL,
+    FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, BoundaryCond BC, CfMPI* cfmpi = NULL,
               fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE);
 
-    FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi = NULL,
+    FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, BoundaryCond BC, CfMPI* cfmpi = NULL,
               fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE);
 
     FlowField(const FlowField& u);
@@ -101,6 +102,7 @@ class FlowField {
     FlowField operator[](const cfarray<int>& i) const;  // extract {i}th components,
 
     Real eval(Real x, Real y, Real z, int i) const;
+    Real eval_ddy(Real x, Real y, Real z, int i) const;
 
     ComplexChebyCoeff profile(int mx, int mz, int i) const;
     BasisFunc profile(int mx, int mz) const;
@@ -174,6 +176,9 @@ class FlowField {
     inline Real Lz() const;
     inline Real a() const;
     inline Real b() const;
+    inline Real ga() const;
+    inline Real gb() const;
+    inline BoundaryCond BC() const;
     inline Real x(int nx) const;  // the x coord of the nxth gridpoint
     inline Real y(int ny) const;
     inline Real z(int nz) const;
@@ -311,6 +316,8 @@ class FlowField {
     Real Lz_ = 0;
     Real a_ = 0;
     Real b_ = 0;
+
+    BoundaryCond BC_;
 
     // size parameters for dealiased I/O
     int Nx_io_;
@@ -463,6 +470,9 @@ inline Real FlowField::Ly() const { return b_ - a_; }
 inline Real FlowField::Lz() const { return Lz_; }
 inline Real FlowField::a() const { return a_; }
 inline Real FlowField::b() const { return b_; }
+inline Real FlowField::ga() const { return BC_.ga_; }
+inline Real FlowField::gb() const { return BC_.gb_; }
+inline BoundaryCond FlowField::BC() const { return BC_; }
 
 inline int FlowField::kx(int mx) const {
     assert(mx >= 0 && mx < Nx_);

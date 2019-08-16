@@ -72,7 +72,7 @@ TauSolver::TauSolver()
 //      Ri_(0),
       densityHelmholtz_() {}
 
-TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real vs, Real conc_diffusivity, int nChebyModes,
+TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real vs, Real conc_diffusivity, BoundaryCond bc, int nChebyModes,
                      bool tauCorrection)
     : N_(nChebyModes),
       Nb_(nChebyModes - 1),
@@ -93,7 +93,7 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
       //tauCorrection_(tauCorrection),
     //  pressureHelmholtz_(N_, a_, b_, kappa2_),
     //  velocityHelmholtz_(N_, a_, b_, lambda_, nu_),
-      densityHelmholtz_(N_, a_, b_, lambda_rho_, conc_diffusivity_, vs_o_k_) {
+      densityHelmholtz_(N_, bc, a_, b_, lambda_rho_, conc_diffusivity_, vs_o_k_) {
     //  P_0_(N_, a_, b_, Spectral),
     //  v_0_(N_, a_, b_, Spectral),
     //  P_plus_(N_, a_, b_, Spectral),
@@ -349,7 +349,7 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
 //    return error;
 //}
 
-void TauSolver::solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho) const {
+void TauSolver::solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho, Real ga, Real gb) const {
     ComplexChebyCoeff r(N_, a_, b_, Spectral);
     //Real sigmaNb1;
     //Real sigmaNb;
@@ -360,9 +360,10 @@ void TauSolver::solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho) con
     int n;  // MSVC++ FOR-SCOPE BUG
     for (n = 0; n < N_; ++n)
         r.set(n, -Rrho[n]);
+
     // JL note new BCs on rhs
-    densityHelmholtz_.solve(rho.re, r.re, 1.0 + vs_o_k_, 0.0);
-    densityHelmholtz_.solve(rho.im, r.im, 1.0 + vs_o_k_, 0.0);
+    densityHelmholtz_.solve(rho.re, r.re, ga, gb);
+    densityHelmholtz_.solve(rho.im, r.im, 0.0, 0.0);
 
 //    diff(Ry.re, rr);
 //

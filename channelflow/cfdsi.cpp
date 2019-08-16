@@ -48,29 +48,31 @@ cfDSI::cfDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, Time
       Lz_(rho.Lz()),
       ya_(rho.a()),
       yb_(rho.b()),
+      BC_(rho.BC()),
       CFL_(0),
       uunk_(rho.taskid() == 0 ? xrelative_ + zrelative_ + Tsearch_ : 0) {}
 
 VectorXd cfDSI::eval(const VectorXd& x) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     Real T;
     extractVector(x, u, sigma_, T);
-    FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     G(u, velfields_, T, h_, sigma_, Gu, dnsflags_, dt_, Tnormalize_, Unormalize_, fcount_, CFL_, *os_);
     VectorXd Gx(VectorXd::Zero(x.rows()));
+
     field2vector(Gu, Gx);  // This does not change the size of Gx and automatically leaves the last entries zero
     return Gx;
 }
 
 VectorXd cfDSI::eval(const VectorXd& x0, const VectorXd& x1, bool symopt) {
-    FlowField u0(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
-    FlowField u1(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u0(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u1(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     Real T0, T1;
     FieldSymmetry sigma0, sigma1;
     extractVector(x0, u0, sigma0, T0);
     extractVector(x1, u1, sigma1, T1);
 
-    FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
 
     f(u0, velfields_, T0, h_, Gu, dnsflags_, dt_, fcount_, CFL_, *os_);
     Real funorm = L2Norm3d(Gu);
@@ -91,7 +93,7 @@ VectorXd cfDSI::eval(const VectorXd& x0, const VectorXd& x1, bool symopt) {
 }
 
 void cfDSI::save(const VectorXd& x, const string filebase, const string outdir, const bool fieldsonly) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     FieldSymmetry sigma;
     Real T;
     extractVector(x, u, sigma, T);
@@ -119,7 +121,7 @@ void cfDSI::save(const VectorXd& x, const string filebase, const string outdir, 
 }
 
 void cfDSI::saveEigenvec(const VectorXd& ev, const string label, const string outdir) {
-    FlowField ef(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField ef(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     vector2field(ev, ef);
     ef *= 1.0 / L2Norm(ef);
     ef.save(outdir + "ef" + label);
@@ -127,8 +129,8 @@ void cfDSI::saveEigenvec(const VectorXd& ev, const string label, const string ou
 
 void cfDSI::saveEigenvec(const VectorXd& evA, const VectorXd& evB, const string label1, const string label2,
                          const string outdir) {
-    FlowField efA(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
-    FlowField efB(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField efA(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField efB(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     vector2field(evA, efA);
     vector2field(evB, efB);
     Real c = 1.0 / sqrt(L2Norm2(efA) + L2Norm2(efB));
@@ -139,13 +141,13 @@ void cfDSI::saveEigenvec(const VectorXd& evA, const VectorXd& evB, const string 
 }
 
 string cfDSI::stats(const VectorXd& x) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     vector2field(x, u);
     return fieldstats_t(u, mu_);
 }
 
 pair<string, string> cfDSI::stats_minmax(const VectorXd& x) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     FlowField Gu(u);
     FieldSymmetry sigma;
     Real T;
@@ -493,7 +495,7 @@ void cfDSI::saveParameters(string searchdir) { dnsflags_.save(searchdir); }
 
 /// after finding new solution fix phases
 void cfDSI::phaseShift(VectorXd& x) {
-    FlowField unew(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField unew(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     FieldSymmetry sigma;
     Real T;
     extractVector(x, unew, sigma, T);
@@ -530,7 +532,7 @@ void cfDSI::phaseShift(VectorXd& x) {
 }
 
 void cfDSI::phaseShift(MatrixXd& y) {
-    FlowField unew(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField unew(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     VectorXd yvec;
     FieldSymmetry sigma;
     Real T;
@@ -563,7 +565,7 @@ void cfDSI::phaseShift(MatrixXd& y) {
 }
 
 Real cfDSI::DSIL2Norm(const VectorXd& x) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     vector2field(x, u);
     return L2Norm(u);
 }
@@ -621,7 +623,7 @@ void cfDSI::extractVector(const VectorXd& x, FlowField& u, FieldSymmetry& sigma,
 Real cfDSI::extractT(const VectorXd& x) {
     Real Tvec;
     FieldSymmetry sigma;
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     extractVector(x, u, sigma, Tvec);
     return Tvec;
 }
@@ -629,7 +631,7 @@ Real cfDSI::extractT(const VectorXd& x) {
 Real cfDSI::extractXshift(const VectorXd& x) {
     Real Tvec;
     FieldSymmetry sigma;
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     extractVector(x, u, sigma, Tvec);
     return sigma.ax();
 }
@@ -637,13 +639,13 @@ Real cfDSI::extractXshift(const VectorXd& x) {
 Real cfDSI::extractZshift(const VectorXd& x) {
     Real Tvec;
     FieldSymmetry sigma;
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     extractVector(x, u, sigma, Tvec);
     return sigma.az();
 }
 
 VectorXd cfDSI::xdiff(const VectorXd& a) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     vector2field(a, u);
     VectorXd dadx(a.size());
     dadx.setZero();
@@ -654,7 +656,7 @@ VectorXd cfDSI::xdiff(const VectorXd& a) {
 }
 
 VectorXd cfDSI::zdiff(const VectorXd& a) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     vector2field(a, u);
     VectorXd dadx(a.size());
     dadx.setZero();
@@ -665,7 +667,7 @@ VectorXd cfDSI::zdiff(const VectorXd& a) {
 }
 
 VectorXd cfDSI::tdiff(const VectorXd& a, Real epsDt) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     FlowField edudtf(u);
     vector2field(a, u);
     f(u, velfields_, epsDt, 0, edudtf, dnsflags_, dt_, fcount_, CFL_, *os_);
@@ -678,7 +680,7 @@ VectorXd cfDSI::tdiff(const VectorXd& a, Real epsDt) {
 
 Real cfDSI::observable(VectorXd& x) {
     printout("computing mean dissipation", false);
-    FlowField uarg(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField uarg(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     Real T;
     extractVector(x, uarg, sigma_, T);
 
@@ -707,7 +709,7 @@ Real cfDSI::observable(VectorXd& x) {
 }
 
 Real cfDSI::tph_observable(VectorXd& x) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     Real T;
     extractVector(x, u, sigma_, T);
     return Ecf(u);

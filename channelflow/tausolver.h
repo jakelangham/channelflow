@@ -32,13 +32,13 @@ Real divcheck(std::string& label, int kx, int kz, Real Lx, Real Lz, const Comple
 class TauSolver {
    public:
     TauSolver();
-    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real vs, Real conc_diffusivity, int Ny,
+    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real vs, Real conc_diffusivity, BoundaryCond bc, int Ny,
               bool tauCorrection = true);
     // TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda,
     // Real nu, int nChebyModes, bool dx_on=true, bool dz_on=true,
     // bool tauCorrection=true);
 
-    void solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho) const;
+    void solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho, Real ga, Real gb) const;
 
     Real verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                 const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, 

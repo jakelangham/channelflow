@@ -5,20 +5,20 @@
 # License is GNU GPL version 2 or later: https://channelflow.org/license
 #
 set(tool_APPS
-  addfields
+#  addfields
   changegrid
-  diffop
-  extrapolatefields
+#  diffop
+#  extrapolatefields
   fieldconvert
   fieldprops
-  findsymmetries
+#  findsymmetries
   L2op
-  optphaseshift
-  perturbfield
-  pressure
-  randomfield
-  symmetrize
-  symmetryop
+#  optphaseshift
+#  perturbfield
+#  pressure
+#  randomfield
+#  symmetrize
+#  symmetryop
   )
 
 foreach (program ${tool_APPS})

@@ -29,7 +29,7 @@ namespace chflow {
 class HelmholtzSolver {
    public:
     HelmholtzSolver();
-    HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, Real nu = 1.0, Real vs_o_kappa = 0.0);
+    HelmholtzSolver(int numberModes, BoundaryCond bc, Real a, Real b, Real lambda, Real nu = 1.0, Real vs_o_kappa = 0.0);
 
     // g0 and g1 are rhs BC terms
     void solve(ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1) const;

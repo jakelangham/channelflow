@@ -330,7 +330,7 @@ void PressureSolver::solve(FlowField& p, FlowField u) {
     assert(u.xzstate() == Spectral && u.ystate() == Spectral);
     assert(geomCongruent(u));
     if (!congruent(p))
-        p = FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+        p = FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
     else {
         p.setToZero();
         p.setState(Spectral, Spectral);

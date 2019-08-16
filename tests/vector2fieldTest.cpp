@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     {
         CfMPI* cfmpi = &CfMPI::getInstance();
         FlowField u("data/eq1strat", cfmpi);
-        FlowField rho(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
+        FlowField rho(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), cfmpi);
         VectorXd v, v2, v3;
         FlowField u2(rho);
         FlowField u3(rho);

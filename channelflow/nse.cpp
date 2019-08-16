@@ -134,6 +134,7 @@ NSE::NSE()
       kzmax_(0),
       kxloc_(0),
       kzloc_(0),
+      BC_(),
       // Base flow members
       //dPdxRef_(0),
       //dPdxAct_(0),
@@ -189,6 +190,7 @@ NSE::NSE(const NSE& nse)
       kzmax_(nse.kzmax_),
       kxloc_(nse.kxloc_),
       kzloc_(nse.kzloc_),
+      BC_(nse.BC_),
       // Base flow members
       //dPdxRef_(nse.dPdxRef_),
       //dPdxAct_(nse.dPdxAct_),
@@ -257,6 +259,7 @@ NSE::NSE(const vector<FlowField>& fields, const DNSFlags& flags)
       kzmax_(fields[0].kzmax()),
       kxloc_(0),
       kzloc_(0),
+      BC_(fields[0].BC()),
       // Base flow members
       //dPdxRef_(0),
       //dPdxAct_(0),
@@ -522,7 +525,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
 
             // Solve the tau equations
             if (kx != 0 || kz != 0) {
-                tausolver_[s][ix][iz].solve(rk_, Rrk_);
+                tausolver_[s][ix][iz].solve(rk_, Rrk_, 0.0, 0.0);
             }
             // 		solve(ix,iz,uk_,vk_,wk_,Pk_, Ruk_,Rvk_,Rwk_);
             else {  // kx,kz == 0,0
@@ -538,7 +541,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                     // pressure is supplied, put on RHS of tau eqn
                     //Ruk_.re[0] -= dPdxRef_;
                     //Rwk_.re[0] -= dPdzRef_;
-                    tausolver_[s][ix][iz].solve(rk_, Rrk_);
+                    tausolver_[s][ix][iz].solve(rk_, Rrk_, outfields[0].ga(), outfields[0].gb());
                     // 	  	solve(ix,iz,uk_, vk_, wk_, Pk_, Ruk_,Rvk_,Rwk_);
                     // Bulk vel is free variable determined from soln of tau eqn //TODO: write method that computes
                     // UbulkAct everytime it is needed
@@ -581,7 +584,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                 }
             }
             // The normal case, for general kx,kz
-            else
+            else {
                 for (int ny = 0; ny < Nyd_; ++ny) {
                     //outfields[0].cmplx(mx, ny, mz, 0) = uk_[ny];
                     //outfields[0].cmplx(mx, ny, mz, 1) = vk_[ny];
@@ -589,6 +592,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                     outfields[0].cmplx(mx, ny, mz, 0) = rk_[ny];
                     //outfields[1].cmplx(mx, ny, mz, 0) = Pk_[ny];
                 }
+            }
         }
     }
 }
@@ -712,7 +716,7 @@ void NSE::reset_lambda(vector<Real> lambda_t) {
                 if ((kx != kxmax_ || kz != kzmax_) && (!flags_.dealias_xz() || !isAliasedMode(kx, kz)))
 
                     tausolver_[j][mx][mz] =
-                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.vs, flags_.kappa, Nyd_, flags_.taucorrection);
+                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.vs, flags_.kappa, BC_, Nyd_, flags_.taucorrection);
             }
         }
     }

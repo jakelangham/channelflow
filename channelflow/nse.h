@@ -101,6 +101,7 @@ class NSE {
     int kzmax_;
     std::vector<int> kxloc_;
     std::vector<int> kzloc_;
+    BoundaryCond BC_;
 
     // Base flow members
 ///    Real dPdxRef_;    // Enforced mean pressure gradient (0.0 if unused).

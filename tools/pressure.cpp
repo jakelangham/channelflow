@@ -40,10 +40,14 @@ int main(int argc, char* argv[]) {
         FlowField u(uname);
         vector<ChebyCoeff> base_Flow = baseFlow(u.Ny(), u.a(), u.b(), baseflags, Uname, Wname);
 
-        // compute pressure
-        PressureSolver poisson(u, base_Flow[0], base_Flow[1], baseflags.nu, baseflags.Vsuck, baseflags.nonlinearity);
+        FlowField uvel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+        vector<int> vel_indices = {0, 1, 2};
+        uvel.copySubfields(u, vel_indices, vel_indices);
 
-        FlowField q = poisson.solve(u);
+        // compute pressure
+        PressureSolver poisson(uvel, base_Flow[0], base_Flow[1], baseflags.nu, baseflags.Vsuck, baseflags.nonlinearity);
+
+        FlowField q = poisson.solve(uvel);
 
         q.setPadded(true);
         q.save(pname);
