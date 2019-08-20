@@ -74,7 +74,7 @@ void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, Flo
         }
 //        f.copySubfields(f3d, vel_indices, vel_indices);
 
-        densityAdvection(u, f, tmp, finalstate);
+        densityAdvection(u, f, flags.vs, tmp, finalstate);
 //        vector<int> zero_index = {0};
 //        vector<int> density_index = {3};
 //        f.copySubfields(f1d, zero_index, density_index);
@@ -141,6 +141,7 @@ NSE::NSE()
       kzmax_(0),
       kxloc_(0),
       kzloc_(0),
+      BC_(),
       // Base flow members
       dPdxRef_(0),
       dPdxAct_(0),
@@ -196,6 +197,7 @@ NSE::NSE(const NSE& nse)
       kzmax_(nse.kzmax_),
       kxloc_(nse.kxloc_),
       kzloc_(nse.kzloc_),
+      BC_(nse.BC_),
       // Base flow members
       dPdxRef_(nse.dPdxRef_),
       dPdxAct_(nse.dPdxAct_),
@@ -264,6 +266,7 @@ NSE::NSE(const vector<FlowField>& fields, const DNSFlags& flags)
       kzmax_(fields[0].kzmax()),
       kxloc_(0),
       kzloc_(0),
+      BC_(fields[0].BC()),
       // Base flow members
       dPdxRef_(0),
       dPdxAct_(0),
@@ -540,7 +543,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
 
             // Solve the tau equations
             if (kx != 0 || kz != 0) {
-                tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_);
+                tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_, 0.0, 0.0);
             }
             // 		solve(ix,iz,uk_,vk_,wk_,Pk_, Ruk_,Rvk_,Rwk_);
             else {  // kx,kz == 0,0
@@ -556,29 +559,31 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                     // pressure is supplied, put on RHS of tau eqn
                     Ruk_.re[0] -= dPdxRef_;
                     Rwk_.re[0] -= dPdzRef_;
-                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_);
+                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_, 
+                                                outfields[0].ga(), outfields[0].gb());
                     // 	  	solve(ix,iz,uk_, vk_, wk_, Pk_, Ruk_,Rvk_,Rwk_);
                     // Bulk vel is free variable determined from soln of tau eqn //TODO: write method that computes
                     // UbulkAct everytime it is needed
 
-                } else {  // const bulk velocity
-                    // bulk velocity is supplied, use alternative tau solver
-
-                    // Use tausolver with additional variable and constraint:
-                    // free variable: dPdxAct at next time-step,
-                    // constraint:    UbulkBase + mean(u) = UbulkRef.
-                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, dPdxAct_, dPdzAct_, Ruk_, Rvk_, Rwk_,
-                                                UbulkRef_ - UbulkBase_, WbulkRef_ - WbulkBase_);
-                    // 		  solve(ix,iz,uk_, vk_, wk_, Pk_, dPdxAct_, dPdzAct_,
-                    // 					    Ruk_, Rvk_, Rwk_,
-                    // 					    UbulkRef_ - UbulkBase_,
-                    // 					    WbulkRef_ - WbulkBase_);
-
-                    assert((UbulkRef_ - UbulkBase_ - uk_.re.mean()) <
-                           1e-15);  // test if UbulkRef == UbulkAct = UbulkBase_ + uk_.re.mean()
-                    assert((WbulkRef_ - WbulkBase_ - wk_.re.mean()) <
-                           1e-15);  // test if WbulkRef == WbulkAct = WbulkBase_ + wk_.re.mean()
-                }
+                } 
+//                    else {  // const bulk velocity
+//                    // bulk velocity is supplied, use alternative tau solver
+//
+//                    // Use tausolver with additional variable and constraint:
+//                    // free variable: dPdxAct at next time-step,
+//                    // constraint:    UbulkBase + mean(u) = UbulkRef.
+//                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, dPdxAct_, dPdzAct_, Ruk_, Rvk_, Rwk_,
+//                                                UbulkRef_ - UbulkBase_, WbulkRef_ - WbulkBase_);
+//                    // 		  solve(ix,iz,uk_, vk_, wk_, Pk_, dPdxAct_, dPdzAct_,
+//                    // 					    Ruk_, Rvk_, Rwk_,
+//                    // 					    UbulkRef_ - UbulkBase_,
+//                    // 					    WbulkRef_ - WbulkBase_);
+//
+//                    assert((UbulkRef_ - UbulkBase_ - uk_.re.mean()) <
+//                           1e-15);  // test if UbulkRef == UbulkAct = UbulkBase_ + uk_.re.mean()
+//                    assert((WbulkRef_ - WbulkBase_ - wk_.re.mean()) <
+//                           1e-15);  // test if WbulkRef == WbulkAct = WbulkBase_ + wk_.re.mean()
+//                }
             }
             // Load solutions into u and p.
             // Because of FFTW complex symmetries
@@ -729,7 +734,7 @@ void NSE::reset_lambda(vector<Real> lambda_t) {
                 if ((kx != kxmax_ || kz != kzmax_) && (!flags_.dealias_xz() || !isAliasedMode(kx, kz)))
 
                     tausolver_[j][mx][mz] =
-                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.Pr, flags_.Ri, Nyd_, flags_.taucorrection);
+                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.Pr, flags_.Ri, flags_.vs, flags_.kappa, BC_, Nyd_, flags_.taucorrection);
             }
         }
     }

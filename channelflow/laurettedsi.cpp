@@ -17,7 +17,7 @@ LauretteDSI::LauretteDSI(FlowField& u, DNSFlags& flags, Real dt, bool xrel, bool
       U_(u),
       //   p(fields[1]),
       dt_(dt) {
-    FlowField p(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
+    FlowField p(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
     fieldst_ = {u, p};
     fieldsdt_ = {u, p};
 
@@ -110,10 +110,10 @@ void LauretteDSI::updateMu(Real mu) {
                                     dnsflags_.wupperwall, fieldsdt_[0].Ny()));
 
     // Adapt FlowFields to new size if the size changed
-    fieldsdt_[0] = FlowField(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
-    fieldst_[0] = FlowField(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
-    U_ = FlowField(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
-    fieldsdt_[1] = FlowField(Nx_, Ny_, Nz_, 1, Lx_, Lz_, ya_, yb_, cfmpi_);
+    fieldsdt_[0] = FlowField(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    fieldst_[0] = FlowField(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    U_ = FlowField(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    fieldsdt_[1] = FlowField(Nx_, Ny_, Nz_, 1, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
 
     //   vector<FlowField> fields={udt_,p};
     vector<ChebyCoeff> base = {Ubase, Wbase};

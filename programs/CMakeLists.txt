@@ -5,13 +5,13 @@
 # License is GNU GPL version 2 or later: ./LICENCE
 #
 set(program_APPS
-  simulateflow
-  edgetracking
+#simulateflow
+#  edgetracking
   )
 
 if (WITH_NSOLVER)
     set(program_APPS ${program_APPS}
-         continuesoln
+#         continuesoln
          findsoln
          findeigenvals)
 endif ()

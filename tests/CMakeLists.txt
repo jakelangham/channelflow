@@ -14,17 +14,17 @@ set(
     test_APPS
     chebyTest
     laminarTest
-    dnsOrrsommTest
-    dnsParabolaTest
-    dnsSinusoidTest
-    dnsZeroTest
+#    dnsOrrsommTest
+#    dnsParabolaTest
+#    dnsSinusoidTest
+#    dnsZeroTest
     helmholtzTest
     ioTest
-    poissonTest
-    pressureTest
-    realprofileTest
-    tausolverTest
-    timeIntegrationTest
+#    poissonTest
+#    pressureTest
+#    realprofileTest
+#    tausolverTest
+#    timeIntegrationTest
     tridiagTest
     vector2fieldTest
 )

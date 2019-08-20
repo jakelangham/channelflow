@@ -10,6 +10,7 @@
 
 #include "cfbasics/cfvector.h"
 #include "cfbasics/mathdefs.h"
+#include "channelflow/boundarycond.h"
 #include "channelflow/cfmpi.h"
 
 #include <fftw3.h>
@@ -22,7 +23,6 @@
 
 namespace chflow {
 
-enum BC { Free, Diri };
 enum NormType { Uniform, Chebyshev };  // Uniform weighting in y or 1/sqrt(1-y^2)
 
 void fftw_loadwisdom(const char* filename = 0);  // defaults to ~/.fftw_wisdom

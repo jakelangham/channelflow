@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 
         srand48(seed);
 
-        FlowField u(Nx, Ny, Nz, 3, Lx, Lz, ymin, ymax);
+        FlowField u(Nx, Ny, Nz, 4, Lx, Lz, ymin, ymax, BoundaryCond());
         u.addPerturbations(u.kxmaxDealiased(), u.kzmaxDealiased(), 1.0, 1 - smooth, meanfl);
 
         SymmetryList s;

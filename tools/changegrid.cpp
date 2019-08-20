@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
         const Real a = (aarg == 0 ? u0.a() : aarg);
         const Real b = (barg == 0 ? u0.b() : barg);
 
-        FlowField u1(Nx, Ny, Nz, u0.Nd(), u0.Lx(), u0.Lz(), u0.a(), u0.b(), cfmpi);
+        FlowField u1(Nx, Ny, Nz, u0.Nd(), u0.Lx(), u0.Lz(), u0.a(), u0.b(), u0.BC(), cfmpi);
         u1.interpolate(u0);
 
         if (Lx == 0)
@@ -69,14 +69,14 @@ int main(int argc, char* argv[]) {
         cout << "bcNorm(u0)  == " << bcNorm(u0) << endl;
         cout << "bcNorm(u1)  == " << bcNorm(u1) << endl;
 
-        if (u0.Nd() == 3) {
+        if (u0.Nd() >= 3) {
             cout << "divNorm(u0) == " << divNorm(u0) << endl;
             cout << "divNorm(u1) == " << divNorm(u1) << endl;
 
             // if ((Ny < u0.Ny() || a != u0.a() || b != u0.b()) & fixdiv) {
             if (fixdiv) {
                 VectorXd v;
-                FlowField foo(Nx, Ny, Nz, u1.Nd(), Lx, Lz, a, b);
+                FlowField foo(Nx, Ny, Nz, u1.Nd(), Lx, Lz, a, b, u1.BC());
                 field2vector(u1, v);
                 vector2field(v, foo);
                 // cout << "L2Dist(u1,2)== " << L2Dist(u1,foo) << endl;   //Commented by Sajjad: becuase this program

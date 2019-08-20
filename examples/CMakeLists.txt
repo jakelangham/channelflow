@@ -5,7 +5,7 @@
 # License is GNU GPL version 2 or later: ./LICENSE
 #
 set(example_APPS
-  couette
+#  couette
   )
 
 foreach (program ${example_APPS})

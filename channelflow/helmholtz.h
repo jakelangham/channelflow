@@ -1,8 +1,10 @@
 /**
  * Solution of Helmholtz eqn in Chebyshev expansions
  *
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
+ *
+ * Original author:
  */
 
 #ifndef CHANNELFLOW_HELMHOLTZ_H
@@ -11,6 +13,7 @@
 #include "cfbasics/mathdefs.h"
 #include "channelflow/bandedtridiag.h"
 #include "channelflow/chebyshev.h"
+#include "channelflow/realdensematrix.h"
 
 namespace chflow {
 
@@ -26,18 +29,18 @@ namespace chflow {
 class HelmholtzSolver {
    public:
     HelmholtzSolver();
-    HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, Real nu = 1.0);
+    HelmholtzSolver(int numberModes, BoundaryCond bc, Real a, Real b, Real lambda, Real nu = 1.0, Real vs_o_kappa = 0.0);
 
-    // a and b are dirichlet BCs for u: ua = u(a), ub = u(b)
-    void solve(ChebyCoeff& u, const ChebyCoeff& f, Real ua, Real ub) const;
-    void verify(const ChebyCoeff& u, const ChebyCoeff& f, Real ua, Real ub, bool verbose = false) const;
-    Real residual(const ChebyCoeff& u, const ChebyCoeff& f, Real ua, Real ub) const;
+    // g0 and g1 are rhs BC terms
+    void solve(ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1) const;
+//    void verify(const ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1, bool verbose = false) const;
+    Real residual(const ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1) const;
 
     // Solve nu u''(y) - lambda u(y) - mu = f(y), mean(u) = umean, u(-+1)=a,b
     // for u and mu, given nu, lambda, f, ua, ub, and umean.
-    void solve(ChebyCoeff& u, Real& mu, const ChebyCoeff& f, Real umean, Real ua, Real ub) const;
-    void verify(ChebyCoeff& u, Real& mu, const ChebyCoeff& f, Real umean, Real ua, Real ub) const;
-    Real residual(const ChebyCoeff& u, Real mu, const ChebyCoeff& f, Real umean, Real ua, Real ub) const;
+//    void solve(ChebyCoeff& u, Real& mu, const ChebyCoeff& f, Real umean, Real ua, Real ub) const;
+//    void verify(ChebyCoeff& u, Real& mu, const ChebyCoeff& f, Real umean, Real ua, Real ub) const;
+//    Real residual(const ChebyCoeff& u, Real mu, const ChebyCoeff& f, Real umean, Real ua, Real ub) const;
 
     Real lambda() const;
 
@@ -50,6 +53,7 @@ class HelmholtzSolver {
     Real b_;
     Real lambda_;
     Real nu_;
+    Real vs_o_kappa_;
     inline int beta(int n) const;
     inline int c(int n) const;
 
@@ -58,6 +62,7 @@ class HelmholtzSolver {
     BandedTridiag Ao_;  // LHS Tridiag for odd  modes: Ao uhat_odd  = Bo fhat_odd
     BandedTridiag Be_;  // RHS Tridiag for even modes
     BandedTridiag Bo_;  // RHS Tridiag for odd modes
+    RealDenseMatrix A_;
 };
 
 // Canuto & Hussaini pg 67 and 130

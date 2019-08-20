@@ -291,7 +291,7 @@ void plotxavg(const FlowField& u_, const std::string& outdir, const std::string&
     fieldstate ys = u.ystate();
     u.makeSpectral();
 
-    FlowField uxavg(4, u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
+    FlowField uxavg(4, u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
     for (int i = 0; i < u.Nd(); ++i)
         for (int my = 0; my < u.My(); ++my)
             for (int mz = 0; mz < u.Mz(); ++mz)
@@ -308,7 +308,7 @@ void plotxavg(const FlowField& u_, const std::string& outdir, const std::string&
     uxavg.saveSlice(0, 2, 0, preface + "w_yz_xavg");
 
     uxavg.makeSpectral();
-    FlowField uxyavg(4, 1, u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
+    FlowField uxyavg(4, 1, u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
     for (int mz = 0; mz < u.Mz(); ++mz)
         uxyavg.cmplx(0, 0, mz, 0) = uxavg.cmplx(0, 0, mz, 0);
 
@@ -709,6 +709,21 @@ Real optPhaseShiftx(const FlowField& u0, const FlowField& u1, Real amin, Real am
     return brent.minimize(100, tolerance, 0);
 }
 
+// JL selector funcs
+void fixBC(ChebyCoeff& f, BoundaryCond bc) {
+    if (bc.type_ == Diri)
+        fixDiri(f);
+    else if (bc.type_ == Mixed)
+        fixMixed(f, 0.0, 0.0, bc.alpha_); // JL important to retain alpha here!
+}
+
+void fixBC(ChebyCoeff& f, Real ga, Real gb, BoundaryCond bc) {
+    if (bc.type_ == Diri)
+        fixDiri(f, ga, gb);
+    else if (bc.type_ == Mixed)
+        fixMixed(f, ga, gb, bc.alpha_);
+}
+
 void fixDiri(ChebyCoeff& f) {
     Real fa = f.eval_a();
     Real fb = f.eval_b();
@@ -716,6 +731,27 @@ void fixDiri(ChebyCoeff& f) {
     Real slop = 0.5 * (fb - fa);
     f[0] -= mean;
     f[1] -= slop;
+}
+
+// JL cater for nonzero Dirichlet boundary values ga, gb
+void fixDiri(ChebyCoeff& f, Real ga, Real gb) {
+    Real fa = f.eval_a();
+    Real fb = f.eval_b();
+    Real mean = 0.5 * (fb + fa);
+    Real slop = 0.5 * (fb - fa);
+    f[0] -= mean - 0.5 * (gb + ga);
+    f[1] -= slop - 0.5 * (gb - ga);
+}
+
+// JL mixed condition with Dirichlet at ya and Robin at yb defined by
+// df/dy + alpha * f = gb
+void fixMixed(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
+    Real fa = f.eval_a();
+    Real fb = f.eval_b();
+    Real sb = f.slope_b();
+
+    f[0] -= (sb + (1.0 + alpha) * fa + alpha * fb - (gb + (1.0 + alpha) * ga)) / (1.0 + 2.0 * alpha);
+    f[1] -= (sb + alpha * fb - alpha * fa - gb + alpha * ga) / (1.0 + 2.0 * alpha);
 }
 
 void fixDiriMean(ChebyCoeff& f) {
@@ -752,6 +788,11 @@ void fixDiriNeum(ChebyCoeff& f) {
     f[2] -= s2;
     f[3] -= s3;
     f.setBounds(ya, yb);
+}
+
+void fixBC(ComplexChebyCoeff& f, BoundaryCond bc) {
+    fixBC(f.re, bc);
+    fixBC(f.im, bc);
 }
 
 void fixDiri(ComplexChebyCoeff& f) {

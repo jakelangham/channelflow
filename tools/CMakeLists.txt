@@ -6,20 +6,20 @@
 #
 set(tool_APPS
   addfields
-  benchmark
+#  benchmark
   changegrid
-  diffop
-  extrapolatefields
+#  diffop
+#  extrapolatefields
   fieldconvert
   fieldprops
   findsymmetries
   L2op
-  optphaseshift
+#  optphaseshift
   perturbfield
-  pressure
+# pressure
   randomfield
-  symmetrize
-  symmetryop
+#  symmetrize
+#  symmetryop
   )
 
 foreach (program ${tool_APPS})

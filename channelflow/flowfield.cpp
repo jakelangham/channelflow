@@ -73,9 +73,9 @@ FlowField::FlowField() {
 #endif
 }
 
-FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi, fieldstate xzstate,
+FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, BoundaryCond BC, CfMPI* cfmpi, fieldstate xzstate,
                      fieldstate ystate, uint fftw_flags)
-    : xzstate_(xzstate), ystate_(ystate) {
+    : BC_(BC), xzstate_(xzstate), ystate_(ystate) {
 #ifdef HAVE_MPI
     if (cfmpi == nullptr)
         cfmpi = &CfMPI::getInstance();
@@ -84,9 +84,9 @@ FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, R
     resize(Nx, Ny, Nz, Nd, Lx, Lz, a, b, cfmpi, fftw_flags);
 }
 
-FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi,
+FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, BoundaryCond BC, CfMPI* cfmpi,
                      fieldstate xzstate, fieldstate ystate, uint fftw_flags)
-    : Nd_(intpow(Nd, tensorOrder)), xzstate_(xzstate), ystate_(ystate) {
+    : Nd_(intpow(Nd, tensorOrder)), BC_(BC), xzstate_(xzstate), ystate_(ystate) {
 #ifdef HAVE_MPI
     if (cfmpi == nullptr)
         cfmpi = &CfMPI::getInstance();
@@ -95,7 +95,7 @@ FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, R
     resize(Nx, Ny, Nz, Nd_, Lx, Lz, a, b, cfmpi, fftw_flags);
 }
 
-FlowField::FlowField(const FlowField& f) : padded_(f.padded_), cfmpi_(f.cfmpi_) {
+FlowField::FlowField(const FlowField& f) : BC_(f.BC_), padded_(f.padded_), cfmpi_(f.cfmpi_) {
     resize(f.Nx_, f.Ny_, f.Nz_, f.Nd_, f.Lx_, f.Lz_, f.a_, f.b_, f.cfmpi_);
 
     setState(f.xzstate_, f.ystate_);
@@ -196,7 +196,7 @@ FlowField::FlowField(const string& filebase, CfMPI* cfmpi) {
         if (Nx == Nx_ && Ny == Ny_ && Nz == Nz_) {  // means that FlowField isn't padded
 #ifdef HAVE_MPI
             CfMPI_single* CfMPI_one = &CfMPI_single::getInstance();
-            FlowField v(Nx, Ny, Nz, Nd_, Lx_, Lz_, a_, b_, CfMPI_one, Physical, Physical);
+            FlowField v(Nx, Ny, Nz, Nd_, Lx_, Lz_, a_, b_, BC_, CfMPI_one, Physical, Physical);
             hdf5read(v, "data/u", h5file);
             this->interpolate(v);
 #else
@@ -208,7 +208,7 @@ FlowField::FlowField(const string& filebase, CfMPI* cfmpi) {
 #ifdef HAVE_MPI
             CfMPI_one = &CfMPI_single::getInstance();
 #endif
-            FlowField v(Nx, Ny, Nz, Nd_, Lx_, Lz_, a_, b_, CfMPI_one, Physical, Physical);
+            FlowField v(Nx, Ny, Nz, Nd_, Lx_, Lz_, a_, b_, BC_, CfMPI_one, Physical, Physical);
             hdf5read(v, "data/u", h5file);
 
             this->interpolate(v);
@@ -253,7 +253,7 @@ FlowField::FlowField(const string& filebase, CfMPI* cfmpi) {
         resize(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, a_, b_, cfmpi_);
 #ifdef HAVE_MPI
         CfMPI_single* CfMPI_one = &CfMPI_single::getInstance();
-        FlowField v(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, a_, b_, CfMPI_one);
+        FlowField v(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, a_, b_, BC_, CfMPI_one);
         v.setState(xzstate_, ystate_);
 
         if (taskid() == 0) {
@@ -1064,7 +1064,7 @@ ComplexChebyCoeff FlowField::profile(int mx, int mz, int i) const {
         }
     } else {
         CfMPI_single* CfMPI_one = &CfMPI_single::getInstance();
-        FlowField v(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, a_, b_, CfMPI_one);  // FlowField v is only on process 0
+        FlowField v(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, a_, b_, BC_, CfMPI_one);  // FlowField v is only on process 0
         v.interpolate(*this);
         if (taskid() == 0) {
             Real vmxnymzi;
@@ -1803,7 +1803,7 @@ FlowField& FlowField::operator-=(const FlowField& u) {
 }
 
 FlowField FlowField::operator[](int i) const {
-    FlowField ui(Nx_, Ny_, Nz_, 1, Lx_, Lz_, a_, b_, cfmpi_, xzstate_, ystate_);
+    FlowField ui(Nx_, Ny_, Nz_, 1, Lx_, Lz_, a_, b_, BC_, cfmpi_, xzstate_, ystate_);
 
     if (xzstate_ == Spectral)
         for (int my = 0; my < My(); ++my)
@@ -1820,7 +1820,7 @@ FlowField FlowField::operator[](int i) const {
 
 FlowField FlowField::operator[](const cfarray<int>& indices) const {
     const int Nd = indices.length();
-    FlowField rtn(Nx_, Ny_, Nz_, Nd, Lx_, Lz_, a_, b_, cfmpi_, xzstate_, ystate_);
+    FlowField rtn(Nx_, Ny_, Nz_, Nd, Lx_, Lz_, a_, b_, BC_, cfmpi_, xzstate_, ystate_);
 
     if (xzstate_ == Spectral) {
         for (int i = 0; i < Nd; ++i) {
@@ -1877,6 +1877,44 @@ Real FlowField::eval(Real x, Real y, Real z, int i) const {
     }
     uprof.makeSpectral();
     return uprof.eval(y);
+}
+
+Real FlowField::eval_ddy(Real x, Real y, Real z, int i) const {
+    assertState(Spectral, Spectral);
+
+    Real alpha_x = 2 * pi * x / Lx_;
+    Real gamma_z = 2 * pi * z / Lz_;
+
+    ChebyCoeff uprof(My(), a_, b_, Spectral);
+
+    // At a given (x,z), collect u(y) as Chebyshev expansion
+    // by evaluating complex exponentials of Fourier expansion
+
+    for (int my = 0; my < My(); ++my) {
+        // Compute u_my = myth Chebyshev coefficient as tmp.
+        // tmp += 2*Re(cmplx(mx,my,mz,i) in the mx,mz loop double-counts
+        // the 0,0 mode, so presubtract it
+        // Real u_my = -Re(u.cmplx(0,0,0,i));
+        Real u_my = 0;
+
+        for (int mx = 0; mx < Mx(); ++mx) {
+            int kx = this->kx(mx);
+            Real cx = kx * alpha_x;  // cx = 2pi kx x /Lx
+
+            // Unroll kz=0 terms, so as not to double-count the real part
+            u_my += Re(this->cmplx(mx, my, 0, i) * exp(Complex(0.0, cx)));
+
+            for (int mz = 1; mz < Mz(); ++mz) {
+                // RHS = u_{kx,kz} exp(2pi i (x kx/Lx + z kz/Lz)) + complex conj
+                Real cz = mz * gamma_z;
+                u_my += 2 * Re(this->cmplx(mx, my, mz, i) * exp(Complex(0.0, (cx + cz))));
+            }
+        }
+        uprof[my] = u_my;
+    }
+    uprof.makeSpectral();
+    ChebyCoeff duprof = diff(uprof);
+    return duprof.eval(y);
 }
 
 void FlowField::makeSpectral_xz() {
@@ -2785,7 +2823,7 @@ void FlowField::hdf5Save(const string& filebase) const {
 #ifdef HAVE_MPI
     CfMPI_one = &CfMPI_single::getInstance();
 #endif
-    v = FlowField(Nx, Ny_, Nz, Nd_, Lx_, Lz_, a_, b_, CfMPI_one);  // FlowField is only on process 0 -- serial io
+    v = FlowField(Nx, Ny_, Nz, Nd_, Lx_, Lz_, a_, b_, BC_, CfMPI_one);  // FlowField is only on process 0 -- serial io
     v.interpolate(u);
 
     v.makePhysical();
@@ -4218,7 +4256,7 @@ FlowField quadraticInterpolate(cfarray<FlowField>& un, const cfarray<Real>& mun,
     const Real b = isconst(fn) ? fn[0] : quadraticInterpolate(fn, mun, mu);
 
     // Extrapolate gridpoint values as function of mu
-    FlowField u(Nx, Ny, Nz, Nd, Lx, Lz, a, b, un[0].cfmpi(), Physical, Physical);
+    FlowField u(Nx, Ny, Nz, Nd, Lx, Lz, a, b, BoundaryCond(), un[0].cfmpi(), Physical, Physical);
 
     lint nylocmin = u.nylocmin();
     lint nylocmax = u.nylocmax();
@@ -4296,7 +4334,7 @@ FlowField polynomialInterpolate(cfarray<FlowField>& un, cfarray<Real>& mun, Real
     const Real b = polynomialInterpolate(fn, mun, mu);
 
     // Extrapolate gridpoint values as function of mu
-    FlowField u(Nx, Ny, Nz, Nd, Lx, Lz, a, b, un[0].cfmpi(), Physical, Physical);
+    FlowField u(Nx, Ny, Nz, Nd, Lx, Lz, a, b, BoundaryCond(), un[0].cfmpi(), Physical, Physical);
     // u.makeState(Physical,Physical);
     // ug.binarySave("uginit");
 
@@ -4654,7 +4692,8 @@ void vector2field(const VectorXd& a, FlowField& u) {
         // JL density modes
         for (int ny = 2; ny < Ny; ++ny)
             f3.re[ny] = a(n++);
-        fixDiri(f3.re);
+        //fixDiri(f3.re);
+        fixBC(f3.re, u.ga(), u.gb(), u.BC());
         for (int ny = 0; ny < Ny; ++ny)
             u.cmplx(0, ny, 0, 3) = f3[ny];
     }
@@ -4688,7 +4727,8 @@ void vector2field(const VectorXd& a, FlowField& u) {
                 f3.re[ny] = a(n++);
                 f3.im[ny] = a(n++);
             }
-            fixDiri(f3);
+            //fixDiri(f3);
+            fixBC(f3, u.BC());
 
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(mx, ny, 0, 0) = f0[ny];
@@ -4770,7 +4810,8 @@ void vector2field(const VectorXd& a, FlowField& u) {
                 f3.re[ny] = a(n++);
                 f3.im[ny] = a(n++);
             }
-            fixDiri(f3);
+            //fixDiri(f3);
+            fixBC(f3, u.BC());
 
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(0, ny, mz, 0) = f0[ny];
@@ -4839,7 +4880,8 @@ void vector2field(const VectorXd& a, FlowField& u) {
                     f3.re[ny] = a(n++);
                     f3.im[ny] = a(n++);
                 }
-                fixDiri(f3);
+                //fixDiri(f3);
+                fixBC(f3, u.BC());
 
                 for (int ny = 0; ny < Ny; ++ny)
                     u.cmplx(mx, ny, mz, 3) = f3[ny];

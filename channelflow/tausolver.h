@@ -32,15 +32,15 @@ Real divcheck(std::string& label, int kx, int kz, Real Lx, Real Lz, const Comple
 class TauSolver {
    public:
     TauSolver();
-    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real Pr, Real Ri, int Ny,
-              bool tauCorrection = true);
+    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real Pr, Real Ri, Real vs, Real conc_diffusivity, BoundaryCond bc, int Ny, bool tauCorrection = true);
     // TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda,
     // Real nu, int nChebyModes, bool dx_on=true, bool dz_on=true,
     // bool tauCorrection=true);
 
     void solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, 
                ComplexChebyCoeff& P, ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rx, 
-               const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho) const;
+               const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho,
+               Real ga, Real gb) const;
 
     Real verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                 const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, 
@@ -49,9 +49,9 @@ class TauSolver {
 
     // Solve tau eqns with additional unknown, time-varying, -dPdx on LHS.
     // and additional constraint mean(u) = umean.
-    void solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho, Real& dPdx,
-               Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz,
-               Real umean, Real wmean) const;
+//    void solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho, Real& dPdx,
+//               Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz,
+//               Real umean, Real wmean) const;
 
     Real verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                 const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, Real dPdx, Real dPdz, 
@@ -92,6 +92,8 @@ class TauSolver {
     Real nu_;             // viscosity
     Real Pr_;             // Prandtl number
     Real Ri_;             // Richardson number
+    Real conc_diffusivity_;
+    Real vs_o_k_;         // settling vel / conc diffusivity
     bool tauCorrection_;  // Try to eliminate tau errors in (P,v) solutions
 
     HelmholtzSolver pressureHelmholtz_;

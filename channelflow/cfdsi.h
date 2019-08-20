@@ -33,6 +33,8 @@ enum class continuationParameter {
     Re,
     Ri,
     Pr,
+    vs,
+    kappa,
     P,
     Ub,
     Uw,
@@ -137,6 +139,7 @@ class cfDSI : public DSI {
     Real Lz_;
     Real ya_;
     Real yb_;
+    BoundaryCond BC_;
     Real CFL_;
     int uunk_;
     bool xphasehack_;

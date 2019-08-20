@@ -68,9 +68,12 @@ TauSolver::TauSolver()
       nu_(0),
       Pr_(1),
       Ri_(0),
+      conc_diffusivity_(1.0),
+      vs_o_k_(0),
       tauCorrection_(true),
       pressureHelmholtz_(),
       velocityHelmholtz_(),
+      densityHelmholtz_(),
       P_0_(),
       v_0_(),
       P_plus_(),
@@ -82,8 +85,7 @@ TauSolver::TauSolver()
       i10_(0),
       i11_(0) {}
 
-TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real Pr, Real Ri, int nChebyModes,
-                     bool tauCorrection)
+TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real Pr, Real Ri, Real vs, Real conc_diffusivity, BoundaryCond bc, int nChebyModes, bool tauCorrection)
     : N_(nChebyModes),
       Nb_(nChebyModes - 1),
       kx_(kx),
@@ -94,14 +96,17 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
       a_(a),
       b_(b),
       lambda_(lambda_t + nu * kappa2_),
-      lambda_rho_(lambda_t + (nu / Pr) * kappa2_),
+      //lambda_rho_(lambda_t + (nu / Pr) * kappa2_),
+      lambda_rho_(lambda_t + conc_diffusivity * kappa2_),
       nu_(nu),
       Pr_(Pr),
       Ri_(Ri),
+      conc_diffusivity_(conc_diffusivity),
+      vs_o_k_(vs / conc_diffusivity),
       tauCorrection_(tauCorrection),
-      pressureHelmholtz_(N_, a_, b_, kappa2_),
-      velocityHelmholtz_(N_, a_, b_, lambda_, nu_),
-      densityHelmholtz_(N_, a_, b_, lambda_rho_, nu_ / Pr_),
+      pressureHelmholtz_(N_, BoundaryCond(), a_, b_, kappa2_),
+      velocityHelmholtz_(N_, BoundaryCond(), a_, b_, lambda_, nu_, 0.0),
+      densityHelmholtz_(N_, bc, a_, b_, lambda_rho_, conc_diffusivity_, vs_o_k_),
       P_0_(N_, a_, b_, Spectral),
       v_0_(N_, a_, b_, Spectral),
       P_plus_(N_, a_, b_, Spectral),
@@ -360,7 +365,8 @@ Real TauSolver::verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const C
 void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, 
                       ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
                       const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, 
-                      const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho) const {
+                      const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho,
+                      Real ga, Real gb) const {
     ComplexChebyCoeff r(N_, a_, b_, Spectral);
     Real sigmaNb1;
     Real sigmaNb;
@@ -371,7 +377,7 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     int n;  // MSVC++ FOR-SCOPE BUG
     for (n = 0; n < N_; ++n)
         r.set(n, -Rrho[n]);
-    densityHelmholtz_.solve(rho.re, r.re, 0.0, 0.0);
+    densityHelmholtz_.solve(rho.re, r.re, ga, gb);
     densityHelmholtz_.solve(rho.im, r.im, 0.0, 0.0);
 
     // Always solve v(y) from momentum, and get P.
@@ -422,55 +428,55 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     return;
 }
 
-void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
-                      Real& dPdx, Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
-                      const ComplexChebyCoeff& Rz, Real umean, Real wmean) const {
-    // TODO this hasn't been properly stratified
-    
-    // This function should only be called for kx==kz==0, since the enforcing
-    // const velocity flux makes sense only for that case. Divergence is not a
-    // problem here, so solve everything via momentum.
-    assert(kx_ == 0 && kz_ == 0);
-
-    ComplexChebyCoeff r(N_, a_, b_, Spectral);
-    Real sigmaNb1;  // tau correction term
-    Real sigmaNb;   // tau correction term
-
-    ChebyCoeff rr(N_, a_, b_, Spectral);
-
-    // Re and Im parts of v and P eqns decouple. Solve them seperately.
-    diff(Ry.re, rr);
-    int n;  // MSVC++ FOR-SCOPE BUG
-    for (n = 0; n < N_; ++n)
-        rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
-    solve_P_and_v(P.re, v.re, rr, Ry.re, rho.re, sigmaNb1, sigmaNb);
-
-    diff(Ry.im, rr);
-    for (n = 0; n < N_; ++n)
-        rr[n] += two_pi_kxLx_ * Rx.re[n] + two_pi_kzLz_ * Rz.re[n];
-    solve_P_and_v(P.im, v.im, rr, Ry.im, rho.im, sigmaNb1, sigmaNb);
-
-    // Re and Im parts of u and w eqns seperate.
-    // Use r as temporary space to store RHS of eqns.
-    for (n = 0; n < N_; ++n)
-        r.set(n, two_pi_kxLx_ * I * P[n] - Rx[n]);
-
-    // Real part has added const pressure gradient term, Im does not
-    velocityHelmholtz_.solve(u.re, dPdx, r.re, umean, 0.0, 0.0);
-    velocityHelmholtz_.solve(u.im, r.im, 0.0, 0.0);
-
-    for (n = 0; n < N_; ++n)
-        r.set(n, two_pi_kzLz_ * I * P[n] - Rz[n]);
-
-    velocityHelmholtz_.solve(w.re, dPdz, r.re, wmean, 0.0, 0.0);
-    velocityHelmholtz_.solve(w.im, r.im, 0.0, 0.0);
-
-#ifdef DEBUG
-    // verify(u,v,w,P, dPdx, Rx,Ry,Rz, umean);
-#endif
-
-    return;
-}
+//void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
+//                      Real& dPdx, Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
+//                      const ComplexChebyCoeff& Rz, Real umean, Real wmean) const {
+//    // TODO this hasn't been properly stratified
+//    
+//    // This function should only be called for kx==kz==0, since the enforcing
+//    // const velocity flux makes sense only for that case. Divergence is not a
+//    // problem here, so solve everything via momentum.
+//    assert(kx_ == 0 && kz_ == 0);
+//
+//    ComplexChebyCoeff r(N_, a_, b_, Spectral);
+//    Real sigmaNb1;  // tau correction term
+//    Real sigmaNb;   // tau correction term
+//
+//    ChebyCoeff rr(N_, a_, b_, Spectral);
+//
+//    // Re and Im parts of v and P eqns decouple. Solve them seperately.
+//    diff(Ry.re, rr);
+//    int n;  // MSVC++ FOR-SCOPE BUG
+//    for (n = 0; n < N_; ++n)
+//        rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
+//    solve_P_and_v(P.re, v.re, rr, Ry.re, rho.re, sigmaNb1, sigmaNb);
+//
+//    diff(Ry.im, rr);
+//    for (n = 0; n < N_; ++n)
+//        rr[n] += two_pi_kxLx_ * Rx.re[n] + two_pi_kzLz_ * Rz.re[n];
+//    solve_P_and_v(P.im, v.im, rr, Ry.im, rho.im, sigmaNb1, sigmaNb);
+//
+//    // Re and Im parts of u and w eqns seperate.
+//    // Use r as temporary space to store RHS of eqns.
+//    for (n = 0; n < N_; ++n)
+//        r.set(n, two_pi_kxLx_ * I * P[n] - Rx[n]);
+//
+//    // Real part has added const pressure gradient term, Im does not
+//    velocityHelmholtz_.solve(u.re, dPdx, r.re, umean, 0.0, 0.0);
+//    velocityHelmholtz_.solve(u.im, r.im, 0.0, 0.0);
+//
+//    for (n = 0; n < N_; ++n)
+//        r.set(n, two_pi_kzLz_ * I * P[n] - Rz[n]);
+//
+//    velocityHelmholtz_.solve(w.re, dPdz, r.re, wmean, 0.0, 0.0);
+//    velocityHelmholtz_.solve(w.im, r.im, 0.0, 0.0);
+//
+//#ifdef DEBUG
+//    // verify(u,v,w,P, dPdx, Rx,Ry,Rz, umean);
+//#endif
+//
+//    return;
+//}
 
 Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                        const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, 

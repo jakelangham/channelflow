@@ -82,9 +82,9 @@ int main(int argc, char* argv[]) {
         cout << "Ubase mean == " << Ubase.mean() << endl;
         cout << "Wbase mean == " << Wbase.mean() << endl;
 
-        vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b())};
+        vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC())};
         DNS dns;
-        FlowField uvel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+        FlowField uvel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
         vector<int> vel_indices = {0, 1, 2};
         uvel.copySubfields(u, vel_indices, vel_indices);
 
@@ -513,7 +513,7 @@ int main(int argc, char* argv[]) {
 
             else {
                 TurbStats stats(Ubase, flags.nu);
-                FlowField tmp(u.Nx(), u.Ny(), u.Nz(), 9, u.Lx(), u.Lz(), u.a(), u.b());
+                FlowField tmp(u.Nx(), u.Ny(), u.Nz(), 9, u.Lx(), u.Lz(), u.a(), u.b(), u.BC());
                 stats.addData(u, tmp);
 
                 cout << "ustar == " << stats.ustar() << endl;

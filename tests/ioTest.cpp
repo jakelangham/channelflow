@@ -48,8 +48,8 @@ int main(int argc, char* argv[]) {
         // const int kxmax = 4;
         // const int kzmax = 4;
 
-        FlowField u(Nx, Ny, Nz, 3, Lx, Lz, a, b, cfmpi);
-        FlowField u0(Nx, Ny, Nz, 3, Lx, Lz, a, b, cfmpi1);
+        FlowField u(Nx, Ny, Nz, 3, Lx, Lz, a, b, BoundaryCond(), cfmpi);
+        FlowField u0(Nx, Ny, Nz, 3, Lx, Lz, a, b, BoundaryCond(), cfmpi1);
 
         // Test IO on nonpadded field
         u0.setPadded(false);

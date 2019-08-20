@@ -53,6 +53,7 @@ int main(int argc, char* argv[]) {
         const bool msinit =
             args.getflag("-MSinit", "--MSinitials", "read different files as the initial guesses for different shoots");
         const string uname = args.getstr(1, "<flowfield>", "initial guess for the solution");
+        const string velfile = args.getstr(2, "<flowfield>", "precomputed velocity field");
 
         args.check();
         args.save();
@@ -63,15 +64,23 @@ int main(int argc, char* argv[]) {
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
 
         FlowField u(uname, cfmpi);
+        FlowField vel(velfile, cfmpi);
         // JL check if there's a density field. If not, add a zero density field
-        FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
+        Real vs_o_kappa = dnsflags.vs / dnsflags.kappa;
+        BoundaryCond bc(Mixed, 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
+        //BoundaryCond bc(Diri, 0.0, 0.0);
+        FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), bc, cfmpi);
         vector<int> vel_indices = {0, 1, 2};
         vector<int> all_indices = {0, 1, 2, 3};
         if (u.Nd() == 3) {
             u_with_density.copySubfields(u, vel_indices, vel_indices);
+        } else if (u.Nd() == 1) {
+            u_with_density.copySubfields(u, {0}, {3});
+            u_with_density.copySubfields(vel, vel_indices, vel_indices);
+
         } else {
             u_with_density.copySubfields(u, all_indices, all_indices);
-        }
+        }    
 
         FieldSymmetry sigma;
         if (sigmastr.length() != 0)
