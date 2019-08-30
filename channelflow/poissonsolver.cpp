@@ -13,7 +13,7 @@ PoissonSolver::PoissonSolver() : Mx_(0), My_(0), Mz_(0), Nd_(0), Lx_(0), Lz_(0),
 
 PoissonSolver::PoissonSolver(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi)
     : Mx_(Nx), My_(Ny), Mz_(Nz / 2 + 1), Nd_(Nd), Lx_(Lx), Lz_(Lz), a_(a), b_(b), helmholtz_(0) {
-    FlowField tmp(Nx, Ny, Nz, 1, Lx, Lz, a, b, cfmpi);
+    FlowField tmp(Nx, Ny, Nz, 1, Lx, Lz, a, b, BoundaryCond(), cfmpi);
     Mxloc_ = tmp.Mxloc();
     Mzloc_ = tmp.Mzloc();
     mxlocmin_ = tmp.mxlocmin();
@@ -32,7 +32,7 @@ PoissonSolver::PoissonSolver(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, R
             //             int kz = mz; // same as FlowField::kz(mz)
             int kz = tmp.kz(mz + mzlocmin_);
             Real lambda = 4.0 * pi * pi * (square(kx / Lx_) + square(kz / Lz_));
-            helmholtz_[mx][mz] = HelmholtzSolver(My_, a_, b_, lambda);
+            helmholtz_[mx][mz] = HelmholtzSolver(My_, BoundaryCond(), a_, b_, lambda);
         }
     }
 }
@@ -87,7 +87,7 @@ PoissonSolver::PoissonSolver(const FlowField& u)
         for (int mz = 0; mz < Mzloc_; ++mz) {
             int kz = u.kz(mz + mzlocmin_);
             Real lambda = 4.0 * pi * pi * (square(kx / Lx_) + square(kz / Lz_));
-            helmholtz_[mx][mz] = HelmholtzSolver(My_, a_, b_, lambda);
+            helmholtz_[mx][mz] = HelmholtzSolver(My_, BoundaryCond(), a_, b_, lambda);
         }
     }
 }
@@ -148,7 +148,7 @@ void PoissonSolver::solve(FlowField& u, const FlowField& f) const {
     assert(this->congruent(f));
     f.assertState(Spectral, Spectral);
     if (!(this->congruent(u)))
-        u = FlowField(f.Nx(), f.Ny(), f.Nz(), f.Nd(), f.Lx(), f.Lz(), f.a(), f.b(), f.cfmpi());
+        u = FlowField(f.Nx(), f.Ny(), f.Nz(), f.Nd(), f.Lx(), f.Lz(), f.a(), f.b(), f.BC(), f.cfmpi());
     else {
         u.setToZero();
         u.setState(Spectral, Spectral);
@@ -176,7 +176,7 @@ void PoissonSolver::solve(FlowField& u, const FlowField& f, const FlowField& bc)
     assert(bc.xzstate() == Spectral);
     f.assertState(Spectral, Spectral);
     if (!(this->congruent(u)))
-        u = FlowField(f.Nx(), f.Ny(), f.Nz(), f.Nd(), f.Lx(), f.Lz(), f.a(), f.b(), f.cfmpi());
+        u = FlowField(f.Nx(), f.Ny(), f.Nz(), f.Nd(), f.Lx(), f.Lz(), f.a(), f.b(), f.BC(), f.cfmpi());
     else {
         u.setToZero();
         u.setState(Spectral, Spectral);
@@ -273,9 +273,9 @@ PressureSolver::PressureSolver(int Nx, int Ny, int Nz, Real Lx, Real Lz, Real a,
       U_(U),
       W_(W),
       trans_(Ny),
-      nonl_(Nx, Ny, Nz, 3, Lx, Lz, a, b, cfmpi),
+      nonl_(Nx, Ny, Nz, 3, Lx, Lz, a, b, BoundaryCond(), cfmpi),
       tmp_(),  // geom will be set in call to navierstokesNL
-      div_nonl_(Nx, Ny, Nz, 1, Lx, Lz, a, b, cfmpi),
+      div_nonl_(Nx, Ny, Nz, 1, Lx, Lz, a, b, BoundaryCond(), cfmpi),
       nu_(nu),
       Vsuck_(Vsuck),
       nonl_method_(nonl) {
@@ -290,9 +290,9 @@ PressureSolver::PressureSolver(const FlowField& u, Real nu, Real Vsuck, Nonlinea
       U_(u.Ny(), u.a(), u.b(), Spectral),
       W_(u.Ny(), u.a(), u.b(), Spectral),
       trans_(u.Ny()),
-      nonl_(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi()),
+      nonl_(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi()),
       tmp_(),  // geom will be set in call to navierstokesNL
-      div_nonl_(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi()),
+      div_nonl_(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi()),
       nu_(nu),
       Vsuck_(Vsuck),
       nonl_method_(nl) {}
@@ -303,9 +303,9 @@ PressureSolver::PressureSolver(const FlowField& u, const ChebyCoeff& U, const Ch
       U_(U),
       W_(W),
       trans_(u.Ny()),
-      nonl_(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi()),
+      nonl_(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi()),
       tmp_(),  // geom will be set in call to navierstokesNL
-      div_nonl_(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi()),
+      div_nonl_(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi()),
       nu_(nu),
       Vsuck_(Vsuck),
       nonl_method_(nonl_method) {
@@ -328,7 +328,7 @@ void PressureSolver::solve(FlowField& p, FlowField u) {
     assert(u.xzstate() == Spectral && u.ystate() == Spectral);
     assert(geomCongruent(u));
     if (!congruent(p))
-        p = FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+        p = FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
     else {
         p.setToZero();
         p.setState(Spectral, Spectral);

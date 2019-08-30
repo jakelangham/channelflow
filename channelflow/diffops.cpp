@@ -2487,7 +2487,7 @@ void div(const FlowField& f_, FlowField& divf, const fieldstate finalstate) {
     Real Lx = f.Lx();
     Real Lz = f.Lz();
 
-    if (f.Nd() == 3) {
+    if (f.Nd() == 3 || f.Nd() == 4) {
         if (!f.geomCongruent(divf) || divf.Nd() != 1)
             divf.resize(f.Nx(), f.Ny(), f.Nz(), 1, f.Lx(), f.Lz(), f.a(), f.b(), f.cfmpi());
         else

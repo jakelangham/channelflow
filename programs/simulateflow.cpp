@@ -74,10 +74,12 @@ int main(int argc, char* argv[]) {
         printout("Constructing u,q, and optimizing FFTW...");
         FlowField u(uname, cfmpi);
         // JL check if there's a density field. If not, add a zero density field
-        Real vs_o_kappa = dnsflags.vs / dnsflags.kappa;
+        Real vs_o_kappa = flags.vs / flags.kappa;
         BoundaryCond bc(Mixed, 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
         //BoundaryCond bc(Diri, 0.0, 0.0);
         FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), bc, cfmpi);
+        if (u.padded())
+            u_with_density.setPadded(true);
         vector<int> vel_indices = {0, 1, 2};
         vector<int> all_indices = {0, 1, 2, 3};
         if (u.Nd() == 3) {
@@ -94,7 +96,7 @@ int main(int argc, char* argv[]) {
         const Real a = u.a();
         const Real b = u.b();
 
-        FlowField q(Nx, Ny, Nz, 1, Lx, Lz, a, b, cfmpi);
+        FlowField q(Nx, Ny, Nz, 1, Lx, Lz, a, b, BoundaryCond(), cfmpi);
         const bool inttime =
             (abs(saveint * dt.dT() - int(saveint * dt.dT())) < 1e-12) && (abs(flags.t0 - int(flags.t0)) < 1e-12)
                 ? true
@@ -104,7 +106,7 @@ int main(int argc, char* argv[]) {
         cout << "Wwall == " << flags.wupperwall << endl;
         cout << "dnsflags == " << flags << endl;
         cout << "constructing DNS..." << endl;
-        DNS dns({u, q}, flags);
+        DNS dns({u_with_density, q}, flags);
         //     u.setnu (flags.nu);
 
         dns.Ubase().save(outdir + "Ubase");
@@ -113,9 +115,9 @@ int main(int argc, char* argv[]) {
         ChebyCoeff Ubase = laminarProfile(flags, u.a(), u.b(), u.Ny());
         // Ubase.save("Ubase2");
 
-        PressureSolver psolver(u, dns.Ubase(), dns.Wbase(), flags.nu, flags.Vsuck, flags.nonlinearity);
-        psolver.solve(q, u);
-        vector<FlowField> fields = {u, q};
+        PressureSolver psolver(u_with_density, dns.Ubase(), dns.Wbase(), flags.nu, flags.Vsuck, flags.nonlinearity);
+        psolver.solve(q, u_with_density);
+        vector<FlowField> fields = {u_with_density, q};
 
         ios::openmode openflag = (flags.t0 > 0) ? ios::app : ios::out;
 

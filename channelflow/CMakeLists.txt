@@ -19,7 +19,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/flowfield.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/helmholtz.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/periodicfunc.cpp
-#    ${CMAKE_CURRENT_SOURCE_DIR}/poissonsolver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/poissonsolver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/realdensematrix.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/realprofile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/realprofileng.cpp
@@ -45,7 +45,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/flowfield.h
     ${CMAKE_CURRENT_SOURCE_DIR}/helmholtz.h
     ${CMAKE_CURRENT_SOURCE_DIR}/periodicfunc.h
-#    ${CMAKE_CURRENT_SOURCE_DIR}/poissonsolver.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/poissonsolver.h
     ${CMAKE_CURRENT_SOURCE_DIR}/realdensematrix.h
     ${CMAKE_CURRENT_SOURCE_DIR}/realprofile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/realprofileng.h
