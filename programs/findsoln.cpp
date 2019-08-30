@@ -70,6 +70,8 @@ int main(int argc, char* argv[]) {
         BoundaryCond bc(Mixed, 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
         //BoundaryCond bc(Diri, 0.0, 0.0);
         FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), bc, cfmpi);
+        if (u.padded())
+            u_with_density.setPadded(true);
         vector<int> vel_indices = {0, 1, 2};
         vector<int> all_indices = {0, 1, 2, 3};
         if (u.Nd() == 3) {
