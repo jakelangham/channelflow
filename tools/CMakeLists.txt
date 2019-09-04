@@ -7,6 +7,7 @@
 set(tool_APPS
 #  addfields
   changegrid
+  correlation
 #  diffop
 #  extrapolatefields
   fieldconvert
