@@ -20,6 +20,7 @@ set(tool_APPS
   randomfield
 #  symmetrize
 #  symmetryop
+  wall_shear
   )
 
 foreach (program ${tool_APPS})
