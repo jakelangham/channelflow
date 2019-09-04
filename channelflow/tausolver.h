@@ -38,7 +38,7 @@ class TauSolver {
     // Real nu, int nChebyModes, bool dx_on=true, bool dz_on=true,
     // bool tauCorrection=true);
 
-    void solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho, Real ga, Real gb) const;
+    void solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho, Complex ga, Real gb) const;
 
     Real verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                 const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, 

@@ -1801,6 +1801,20 @@ FlowField& FlowField::operator-=(const FlowField& u) {
         rdata_[i] -= u.rdata_[i];
     return *this;
 }
+FlowField& FlowField::operator*=(const FlowField& u) {
+    assert(congruent(u));
+    assert(xzstate_ == Physical && ystate_ == Physical);
+    for (int i = 0; i < Nloc_; ++i)
+        rdata_[i] *= u.rdata_[i];
+    return *this;
+}
+FlowField& FlowField::operator/=(const FlowField& u) {
+    assert(congruent(u));
+    assert(xzstate_ == Physical && ystate_ == Physical);
+    for (int i = 0; i < Nloc_; ++i)
+        rdata_[i] /= u.rdata_[i];
+    return *this;
+}
 
 FlowField FlowField::operator[](int i) const {
     FlowField ui(Nx_, Ny_, Nz_, 1, Lx_, Lz_, a_, b_, BC_, cfmpi_, xzstate_, ystate_);
@@ -4107,7 +4121,7 @@ Real FlowField::CFLfactor(ChebyCoeff Ubase, ChebyCoeff Wbase) const {
     if (Ubase.N() == 0)
         return CFLfactor();
 
-    assert(Nd_ >= 4);
+    assert(Nd_ >= 3);
     FlowField u(*this);
 
     u.makePhysical();
@@ -4646,7 +4660,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
         // JL density modes
         for (int ny = 2; ny < Ny; ++ny)
             f0.re[ny] = a(n++);
-        fixBC(f0.re, u.ga(), u.gb(), u.BC());
+        fixBC(f0.re, u.gaxz(0, 0).real(), u.gb(), u.BC());
         for (int ny = 0; ny < Ny; ++ny)
             u.cmplx(0, ny, 0, 0) = f0[ny];
     }
@@ -4662,7 +4676,8 @@ void vector2field(const VectorXd& a, FlowField& u) {
                 f0.re[ny] = a(n++);
                 f0.im[ny] = a(n++);
             }
-            fixBC(f0, u.BC());
+           // fixBC(f0, u.BC());
+            fixBC(f0, u.gaxz(mx, 0), 0.0, u.BC());
 
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(mx, ny, 0, 0) = f0[ny];
@@ -4706,7 +4721,8 @@ void vector2field(const VectorXd& a, FlowField& u) {
                 f0.re[ny] = a(n++);
                 f0.im[ny] = a(n++);
             }
-            fixBC(f0, u.BC());
+            //fixBC(f0, u.BC());
+            fixBC(f0, u.gaxz(0, mz), 0.0, u.BC());
 
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(0, ny, mz, 0) = f0[ny];
@@ -4728,7 +4744,8 @@ void vector2field(const VectorXd& a, FlowField& u) {
                     f0.re[ny] = a(n++);
                     f0.im[ny] = a(n++);
                 }
-                fixBC(f0, u.BC());
+                //fixBC(f0, u.BC());
+                fixBC(f0, u.gaxz(mx, mz), 0.0, u.BC());
 
                 for (int ny = 0; ny < Ny; ++ny)
                     u.cmplx(mx, ny, mz, 0) = f0[ny];
@@ -4742,6 +4759,62 @@ void fixdivnoslip(FlowField& u) {
     VectorXd v;
     field2vector(u, v);
     vector2field(v, u);
+}
+
+void FlowField::set_nonconstant_ga(FlowField& u) {
+    assert(u.Nx() == Nx_ && u.Ny() == Ny_ && u.Nz() == Nz_);
+
+    Vector ga_re(u.Mx() * u.Mz());
+    Vector ga_im(u.Mx() * u.Mz());
+
+    FlowField dudy(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), 
+                   u.a(), u.b(), u.BC(), u.cfmpi());
+    dudy.setPadded(u.padded());
+    // add on linear base state derivative
+    if (u.taskid() == u.task_coeff(0, 0))
+        u.cmplx(0, 1, 0, 0) += Complex(1.0, 0.0);
+    ydiff(u, dudy, 1);
+    FlowField dudy_plusone(dudy);
+    dudy_plusone += 1.0;
+
+    FlowField gaxz(dudy);
+    gaxz *= 0.6;
+    gaxz.makePhysical();
+    dudy_plusone.makePhysical();
+    gaxz /= dudy_plusone;
+    // take off linear base state derivative
+    if (u.taskid() == u.task_coeff(0, 0))
+        u.cmplx(0, 1, 0, 0) -= Complex(1.0, 0.0);
+    gaxz.makeSpectral();
+
+    for (lint ix = 0; ix < u.Mxloc(); ++ix) {
+        const lint mx = ix + u.mxlocmin();
+
+        for (lint iz = 0; iz < u.Mzloc(); ++iz) {
+            const lint mz = iz + u.mzlocmin();
+
+            ComplexChebyCoeff tmp = gaxz.profile(mx, mz, 0);
+            // below we set ga to du/dy but it could be an arbitrary func
+//            ComplexChebyCoeff dudy(u.Ny(), u.a(), u.b(), Spectral);
+//            ComplexChebyCoeff tmp = u.profile(mx, mz, 0);
+//            tmp.makeSpectral();
+//            diff(tmp, dudy);
+//
+//            Real mu = 1.0;
+//            Complex stress = dudy.eval_a();
+            Complex stress = tmp.eval_a();
+            
+            if (u.kx(mx) == 0 && u.kz(mz) == 0) {
+                ga_re[mx + mz * u.Mx()] = stress.real() - 1.0;
+                ga_im[mx + mz * u.Mx()] = 0.0;
+            } else {
+                ga_re[mx + mz * u.Mx()] = stress.real();
+                ga_im[mx + mz * u.Mx()] = stress.imag();
+            }
+        }
+    }
+
+    BC_.setgaxz(ga_re, ga_im, u.Mx());
 }
 
 }  // namespace chflow

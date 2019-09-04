@@ -525,7 +525,9 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
 
             // Solve the tau equations
             if (kx != 0 || kz != 0) {
-                tausolver_[s][ix][iz].solve(rk_, Rrk_, 0.0, 0.0);
+                //tausolver_[s][ix][iz].solve(rk_, Rrk_, 0.0, 0.0);
+                // JL new boundary condition!
+                tausolver_[s][ix][iz].solve(rk_, Rrk_, outfields[0].gaxz(mx, mz), 0.0);
             }
             // 		solve(ix,iz,uk_,vk_,wk_,Pk_, Ruk_,Rvk_,Rwk_);
             else {  // kx,kz == 0,0
@@ -541,7 +543,9 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                     // pressure is supplied, put on RHS of tau eqn
                     //Ruk_.re[0] -= dPdxRef_;
                     //Rwk_.re[0] -= dPdzRef_;
-                    tausolver_[s][ix][iz].solve(rk_, Rrk_, outfields[0].ga(), outfields[0].gb());
+                    //tausolver_[s][ix][iz].solve(rk_, Rrk_, outfields[0].ga(), outfields[0].gb());
+                    // JL new boundary condition!
+                    tausolver_[s][ix][iz].solve(rk_, Rrk_, outfields[0].gaxz(mx, mz), outfields[0].gb());
                     // 	  	solve(ix,iz,uk_, vk_, wk_, Pk_, Ruk_,Rvk_,Rwk_);
                     // Bulk vel is free variable determined from soln of tau eqn //TODO: write method that computes
                     // UbulkAct everytime it is needed

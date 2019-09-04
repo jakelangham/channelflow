@@ -91,7 +91,7 @@ int main() {
         ChebyCoeff r = interpolate(rt, N);
 
         // Use Helmholtz solver to solve above eqn for vs ("vsolve").
-        BoundaryCond bc(Diri, 0.0, 0.0);
+        BoundaryCond bc(Diri, 1, 1, 0.0);
         HelmholtzSolver helmholtz(N, bc, a, b, lambda, nu);
 
         ChebyCoeff vs(N, a, b, Spectral);

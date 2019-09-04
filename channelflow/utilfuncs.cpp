@@ -797,6 +797,11 @@ void fixBC(ComplexChebyCoeff& f, BoundaryCond bc) {
     fixBC(f.im, bc);
 }
 
+void fixBC(ComplexChebyCoeff& f, Complex ga, Real gb, BoundaryCond bc) {
+    fixBC(f.re, ga.real(), gb, bc);
+    fixBC(f.im, ga.imag(), gb, bc);
+}
+
 void fixDiri(ComplexChebyCoeff& f) {
     fixDiri(f.re);
     fixDiri(f.im);

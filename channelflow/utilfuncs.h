@@ -78,6 +78,7 @@ void basischeck(const std::vector<RealProfile>& e, bool orthocheck = false);
 void fixBC(ChebyCoeff& f, BoundaryCond bc);
 void fixBC(ComplexChebyCoeff& f, BoundaryCond bc);
 void fixBC(ChebyCoeff& f, Real ga, Real gb, BoundaryCond bc);
+void fixBC(ComplexChebyCoeff& f, Complex ga, Real gb, BoundaryCond bc);
 void fixDiri(ChebyCoeff& f);
 void fixDiri(ChebyCoeff& f, Real ga, Real gb);
 void fixDiriMean(ChebyCoeff& f);

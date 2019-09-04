@@ -349,7 +349,7 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
 //    return error;
 //}
 
-void TauSolver::solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho, Real ga, Real gb) const {
+void TauSolver::solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho, Complex ga, Real gb) const {
     ComplexChebyCoeff r(N_, a_, b_, Spectral);
     //Real sigmaNb1;
     //Real sigmaNb;
@@ -362,8 +362,8 @@ void TauSolver::solve(ComplexChebyCoeff& rho, const ComplexChebyCoeff& Rrho, Rea
         r.set(n, -Rrho[n]);
 
     // JL note new BCs on rhs
-    densityHelmholtz_.solve(rho.re, r.re, ga, gb);
-    densityHelmholtz_.solve(rho.im, r.im, 0.0, 0.0);
+    densityHelmholtz_.solve(rho.re, r.re, ga.real(), gb);
+    densityHelmholtz_.solve(rho.im, r.im, ga.imag(), 0.0);
 
 //    diff(Ry.re, rr);
 //

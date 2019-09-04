@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 
         FlowField rhoin(rhofile, cfmpi);
         Real vs_o_kappa = dnsflags.vs / dnsflags.kappa;
-        BoundaryCond bc(Mixed, 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
+        BoundaryCond bc(Mixed, rhoin.Mx(), rhoin.Mz(), 1.0 + vs_o_kappa, vs_o_kappa);
         FlowField rho(rhoin.Nx(), rhoin.Ny(), rhoin.Nz(), 1, 
                       rhoin.Lx(), rhoin.Lz(), rhoin.a(), rhoin.b(), bc, cfmpi);
         // JL if rhofile has 4 dimensions assume 4th is the initial density,
@@ -84,6 +84,8 @@ int main(int argc, char* argv[]) {
         FlowField uin(velfile, cfmpi);
         FlowField u(rho.Nx(), rho.Ny(), rho.Nz(), uin.Nd(), uin.Lx(), uin.Lz(), uin.a(), uin.b(), uin.BC(), rho.cfmpi());
         u.interpolate(uin);
+
+        rho.set_nonconstant_ga(u);
 
         FieldSymmetry sigma;
         if (sigmastr.length() != 0)

@@ -176,12 +176,14 @@ class FlowField {
     inline Real Lz() const;
     inline Real a() const;
     inline Real b() const;
-    inline Real ga() const;
+    inline Complex gaxz(int mx, int mz) const;
     inline Real gb() const;
     inline BoundaryCond BC() const;
     inline Real x(int nx) const;  // the x coord of the nxth gridpoint
     inline Real y(int ny) const;
     inline Real z(int nz) const;
+
+    void set_nonconstant_ga(FlowField& u);
 
     inline int nproc0() const;
     inline int nproc1() const;
@@ -220,6 +222,8 @@ class FlowField {
     FlowField& operator-=(const RealProfile& U);
     FlowField& operator+=(const FlowField& u);
     FlowField& operator-=(const FlowField& u);
+    FlowField& operator*=(const FlowField& u);
+    FlowField& operator/=(const FlowField& u);
     FlowField& operator+=(const RealProfileNG& U);
     FlowField& operator-=(const RealProfileNG& U);
 
@@ -470,7 +474,7 @@ inline Real FlowField::Ly() const { return b_ - a_; }
 inline Real FlowField::Lz() const { return Lz_; }
 inline Real FlowField::a() const { return a_; }
 inline Real FlowField::b() const { return b_; }
-inline Real FlowField::ga() const { return BC_.ga_; }
+inline Complex FlowField::gaxz(int mx, int mz) const { return BC_.gaxz(mx, mz); }
 inline Real FlowField::gb() const { return BC_.gb_; }
 inline BoundaryCond FlowField::BC() const { return BC_; }
 
