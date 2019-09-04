@@ -12,9 +12,6 @@ namespace chflow {
 void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, FlowField& f, FlowField& tmp,
                     DNSFlags& flags) {
     FlowField& u = const_cast<FlowField&>(u_);
-//    FlowField vel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
-//    FlowField f3d(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
-//    FlowField f1d(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
 
     fieldstate finalstate = Spectral;
     assert(u.xzstate() == Spectral && u.ystate() == Spectral);
