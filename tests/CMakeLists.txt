@@ -23,6 +23,7 @@ set(
 #    poissonTest
 #    pressureTest
 #    realprofileTest
+#    stratTest
 #    tausolverTest
 #    timeIntegrationTest
     tridiagTest
