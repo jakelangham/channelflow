@@ -4771,21 +4771,22 @@ void FlowField::set_nonconstant_ga(FlowField& u) {
                    u.a(), u.b(), u.BC(), u.cfmpi());
     dudy.setPadded(u.padded());
     // add on linear base state derivative
-    if (u.taskid() == u.task_coeff(0, 0))
-        u.cmplx(0, 1, 0, 0) += Complex(1.0, 0.0);
+    //if (u.taskid() == u.task_coeff(0, 0))
+    //    u.cmplx(0, 1, 0, 0) += Complex(1.0, 0.0);
     ydiff(u, dudy, 1);
     FlowField dudy_plusone(dudy);
     dudy_plusone += 1.0;
 
     FlowField gaxz(dudy);
-    gaxz *= 0.6;
+    gaxz *= 0.0; // TODO clearly not the best way to get a zero field..
+    gaxz += 1.0;
     gaxz.makePhysical();
     dudy_plusone.makePhysical();
     gaxz /= dudy_plusone;
-    // take off linear base state derivative
-    if (u.taskid() == u.task_coeff(0, 0))
-        u.cmplx(0, 1, 0, 0) -= Complex(1.0, 0.0);
     gaxz.makeSpectral();
+    // take off linear base state derivative
+    //if (u.taskid() == u.task_coeff(0, 0))
+    //    u.cmplx(0, 1, 0, 0) -= Complex(1.0, 0.0);
 
     for (lint ix = 0; ix < u.Mxloc(); ++ix) {
         const lint mx = ix + u.mxlocmin();
