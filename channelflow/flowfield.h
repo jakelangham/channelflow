@@ -220,6 +220,8 @@ class FlowField {
     FlowField& operator-=(const RealProfile& U);
     FlowField& operator+=(const FlowField& u);
     FlowField& operator-=(const FlowField& u);
+    FlowField& operator*=(const FlowField& u);
+    FlowField& operator/=(const FlowField& u);
     FlowField& operator+=(const RealProfileNG& U);
     FlowField& operator-=(const RealProfileNG& U);
 
