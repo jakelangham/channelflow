@@ -720,7 +720,7 @@ void NSE::reset_lambda(vector<Real> lambda_t) {
                 if ((kx != kxmax_ || kz != kzmax_) && (!flags_.dealias_xz() || !isAliasedMode(kx, kz)))
 
                     tausolver_[j][mx][mz] =
-                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.vs, flags_.kappa, BC_, Nyd_, flags_.taucorrection);
+                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.kappa, BC_, Nyd_, flags_.taucorrection);
             }
         }
     }
