@@ -17,7 +17,7 @@ const Real EPSILON = 1.0;
 HelmholtzSolver::HelmholtzSolver()
     : N_(0), nModes_(0), nEvenModes_(0), nOddModes_(0), a_(0), b_(0), lambda_(0), nu_(0), Ae_(), Ao_(), Be_(), Bo_() {}
 
-HelmholtzSolver::HelmholtzSolver(int numberModes, BoundaryCond bc, Real a, Real b, Real lambda, Real nu, Real vs_o_kappa)
+HelmholtzSolver::HelmholtzSolver(int numberModes, BoundaryCond bc, Real a, Real b, Real lambda, Real nu)
     : N_(numberModes - 1),
       nModes_(numberModes),
       nEvenModes_(N_ / 2 + 1),
@@ -26,7 +26,6 @@ HelmholtzSolver::HelmholtzSolver(int numberModes, BoundaryCond bc, Real a, Real 
       b_(b),
       lambda_(lambda),
       nu_(nu),
-      vs_o_kappa_(vs_o_kappa),
       Ae_(nEvenModes_),
       Ao_(nOddModes_),
       Be_(nEvenModes_),
@@ -123,15 +122,24 @@ HelmholtzSolver::HelmholtzSolver(int numberModes, BoundaryCond bc, Real a, Real 
     //    else
     //        A_.elem(1, i) = -i * i;
     //}
-    // Mixed
-    } else if (bc.type_ == Mixed) {
+    // Dirichlet on bottom, Robin on top
+    } else if (bc.type_ == DiriRobin) {
         for (i = 0; i < nModes_; ++i) {
             if (i % 2 == 0)
                 A_.elem(0, i) = 1.0;
             else
                 A_.elem(0, i) = -1.0;
 
-            A_.elem(1, i) = i * i + vs_o_kappa_;
+            A_.elem(1, i) = i * i + bc.alpha_;
+        }
+    } else if (bc.type_ == NeumRobin) {
+        for (i = 0; i < nModes_; ++i) {
+            if (i % 2 == 0)
+                A_.elem(0, i) = -i * i;
+            else
+                A_.elem(0, i) = i * i;
+
+            A_.elem(1, i) = i * i + bc.alpha_;
         }
     }
 

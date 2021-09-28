@@ -67,12 +67,11 @@ TauSolver::TauSolver()
       lambda_(0),
       nu_(0),
       conc_diffusivity_(1.0),
-      vs_o_k_(0),
 //      Pr_(1),
 //      Ri_(0),
       densityHelmholtz_() {}
 
-TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real vs, Real conc_diffusivity, BoundaryCond bc, int nChebyModes,
+TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real conc_diffusivity, BoundaryCond bc, int nChebyModes,
                      bool tauCorrection)
     : N_(nChebyModes),
       Nb_(nChebyModes - 1),
@@ -86,14 +85,13 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
       lambda_(lambda_t + nu * kappa2_),
       lambda_rho_(lambda_t + conc_diffusivity * kappa2_),
       conc_diffusivity_(conc_diffusivity),
-      vs_o_k_(vs / conc_diffusivity),
       //nu_(nu),
       //Pr_(Pr),
       //Ri_(Ri),
       //tauCorrection_(tauCorrection),
     //  pressureHelmholtz_(N_, a_, b_, kappa2_),
     //  velocityHelmholtz_(N_, a_, b_, lambda_, nu_),
-      densityHelmholtz_(N_, bc, a_, b_, lambda_rho_, conc_diffusivity_, vs_o_k_) {
+      densityHelmholtz_(N_, bc, a_, b_, lambda_rho_, conc_diffusivity_) {
     //  P_0_(N_, a_, b_, Spectral),
     //  v_0_(N_, a_, b_, Spectral),
     //  P_plus_(N_, a_, b_, Spectral),

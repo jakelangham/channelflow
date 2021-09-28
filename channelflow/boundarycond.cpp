@@ -6,17 +6,19 @@ using namespace Eigen;
 namespace chflow {
 
 BoundaryCond::BoundaryCond()
-    : type_(Diri), gb_(0) { 
+    : type_(Diri), ga_(0), gb_(0) { 
 }
 
-BoundaryCond::BoundaryCond(int type, int Mx, int Mz, Real gb)
-    : type_(type), Mx_(Mx), Mz_(Mz), gb_(gb), alpha_(0),
+BoundaryCond::BoundaryCond(int type, int Mx, int Mz, Real ga, Real gb)
+    : type_(type), Mx_(Mx), Mz_(Mz), ga_(ga), gb_(gb), alpha_(0),
     gaxz_re_(Mx_ * Mz_), gaxz_im_(Mx_ * Mz_) { 
+    gaxz_re_[0] = ga;
 }
 
-BoundaryCond::BoundaryCond(int type, int Mx, int Mz, Real gb, Real alpha)
-    : type_(type), Mx_(Mx), Mz_(Mz), gb_(gb), alpha_(alpha),
+BoundaryCond::BoundaryCond(int type, int Mx, int Mz, Real ga, Real gb, Real alpha)
+    : type_(type), Mx_(Mx), Mz_(Mz), ga_(ga), gb_(gb), alpha_(alpha),
     gaxz_re_(Mx_ * Mz_), gaxz_im_(Mx_ * Mz_) { 
+    gaxz_re_[0] = ga;
 }
 
 // Set Fourier components of ga - the bottom wall boundary condition

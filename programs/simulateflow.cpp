@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
         // load concentration/density field
         FlowField rhoin(rhofile, cfmpi);
         Real vs_o_kappa = flags.vs / flags.kappa;
-        BoundaryCond bc(Mixed, 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
+        BoundaryCond bc(DiriRobin, rhoin.Mx(), rhoin.Mz(), 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
         FlowField rho(rhoin.Nx(), rhoin.Ny(), rhoin.Nz(), 1, 
                       rhoin.Lx(), rhoin.Lz(), rhoin.a(), rhoin.b(), bc, cfmpi);
         // JL if rhofile has 4 dimensions assume 4th is the initial density,

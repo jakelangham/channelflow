@@ -86,7 +86,8 @@ void fixDiriNeum(ChebyCoeff& f);
 void fixDiri(ComplexChebyCoeff& f);
 void fixDiriMean(ComplexChebyCoeff& f);
 void fixDiriNeum(ComplexChebyCoeff& f);
-void fixMixed(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
+void fixDiriRobin(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
+void fixNeumRobin(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
 
 class FieldSeries {
    public:
