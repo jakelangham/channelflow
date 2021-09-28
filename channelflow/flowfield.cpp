@@ -1801,6 +1801,20 @@ FlowField& FlowField::operator-=(const FlowField& u) {
         rdata_[i] -= u.rdata_[i];
     return *this;
 }
+FlowField& FlowField::operator*=(const FlowField& u) {
+    assert(congruent(u));
+    assert(xzstate_ == Physical && ystate_ == Physical);
+    for (int i = 0; i < Nloc_; ++i)
+        rdata_[i] *= u.rdata_[i];
+    return *this;
+}
+FlowField& FlowField::operator/=(const FlowField& u) {
+    assert(congruent(u));
+    assert(xzstate_ == Physical && ystate_ == Physical);
+    for (int i = 0; i < Nloc_; ++i)
+        rdata_[i] /= u.rdata_[i];
+    return *this;
+}
 
 FlowField FlowField::operator[](int i) const {
     FlowField ui(Nx_, Ny_, Nz_, 1, Lx_, Lz_, a_, b_, BC_, cfmpi_, xzstate_, ystate_);

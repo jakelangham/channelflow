@@ -8,6 +8,7 @@ set(tool_APPS
   addfields
 #  benchmark
   changegrid
+  correlation
 #  diffop
 #  extrapolatefields
   fieldconvert
