@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
         FlowField u(uname, cfmpi);
         // JL check if there's a density field. If not, add a zero density field
         Real vs_o_kappa = flags.vs / flags.kappa;
-        BoundaryCond bc(Mixed, 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
+        BoundaryCond bc(DiriRobin, u.Mx(), u.Mz(), 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
         //BoundaryCond bc(Diri, 0.0, 0.0);
         FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), bc, cfmpi);
         if (u.padded())

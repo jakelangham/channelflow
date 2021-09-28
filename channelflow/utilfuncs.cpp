@@ -1,6 +1,8 @@
 /**
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
+ *
+ * Original author: John F. Gibson
  */
 
 #include "channelflow/utilfuncs.h"
@@ -713,15 +715,19 @@ Real optPhaseShiftx(const FlowField& u0, const FlowField& u1, Real amin, Real am
 void fixBC(ChebyCoeff& f, BoundaryCond bc) {
     if (bc.type_ == Diri)
         fixDiri(f);
-    else if (bc.type_ == Mixed)
-        fixMixed(f, 0.0, 0.0, bc.alpha_); // JL important to retain alpha here!
+    else if (bc.type_ == DiriRobin)
+        fixDiriRobin(f, 0.0, 0.0, bc.alpha_); // JL important to retain alpha here!
+    else if (bc.type_ == NeumRobin)
+        fixNeumRobin(f, 0.0, 0.0, bc.alpha_); 
 }
 
 void fixBC(ChebyCoeff& f, Real ga, Real gb, BoundaryCond bc) {
     if (bc.type_ == Diri)
         fixDiri(f, ga, gb);
-    else if (bc.type_ == Mixed)
-        fixMixed(f, ga, gb, bc.alpha_);
+    else if (bc.type_ == DiriRobin)
+        fixDiriRobin(f, ga, gb, bc.alpha_);
+    else if (bc.type_ == NeumRobin)
+        fixNeumRobin(f, ga, gb, bc.alpha_);
 }
 
 void fixDiri(ChebyCoeff& f) {
@@ -745,13 +751,23 @@ void fixDiri(ChebyCoeff& f, Real ga, Real gb) {
 
 // JL mixed condition with Dirichlet at ya and Robin at yb defined by
 // df/dy + alpha * f = gb
-void fixMixed(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
+void fixDiriRobin(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
     Real fa = f.eval_a();
     Real fb = f.eval_b();
     Real sb = f.slope_b();
 
     f[0] -= (sb + (1.0 + alpha) * fa + alpha * fb - (gb + (1.0 + alpha) * ga)) / (1.0 + 2.0 * alpha);
     f[1] -= (sb + alpha * fb - alpha * fa - gb + alpha * ga) / (1.0 + 2.0 * alpha);
+}
+
+// JL mixed condition with Neumann  at ya and Robin at yb
+void fixNeumRobin(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
+    Real fb = f.eval_b();
+    Real sa = f.slope_a();
+    Real sb = f.slope_b();
+
+    f[0] -= (sb - (1.0 + alpha) * sa + alpha * fb - gb + (1.0 + alpha) * ga) / alpha;
+    f[1] -= -ga + sa;
 }
 
 void fixDiriMean(ChebyCoeff& f) {
@@ -793,6 +809,11 @@ void fixDiriNeum(ChebyCoeff& f) {
 void fixBC(ComplexChebyCoeff& f, BoundaryCond bc) {
     fixBC(f.re, bc);
     fixBC(f.im, bc);
+}
+
+void fixBC(ComplexChebyCoeff& f, Complex ga, Real gb, BoundaryCond bc) {
+    fixBC(f.re, ga.real(), gb, bc);
+    fixBC(f.im, ga.imag(), gb, bc);
 }
 
 void fixDiri(ComplexChebyCoeff& f) {

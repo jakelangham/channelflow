@@ -1,8 +1,10 @@
 /**
  * An assortment of convenience functions for channelflow/programs
  *
- * This file is a part of channelflow version 2.0, https://channelflow.ch .
- * License is GNU GPL version 2 or later: ./LICENSE
+ * This file is a part of channelflow version 2.0.
+ * License is GNU GPL version 2 or later: https://channelflow.org/license
+ *
+ * Original author: John F. Gibson
  */
 
 #ifndef CHANNELFLOW_UTILFUNCS_H
@@ -76,6 +78,7 @@ void basischeck(const std::vector<RealProfile>& e, bool orthocheck = false);
 void fixBC(ChebyCoeff& f, BoundaryCond bc);
 void fixBC(ComplexChebyCoeff& f, BoundaryCond bc);
 void fixBC(ChebyCoeff& f, Real ga, Real gb, BoundaryCond bc);
+void fixBC(ComplexChebyCoeff& f, Complex ga, Real gb, BoundaryCond bc);
 void fixDiri(ChebyCoeff& f);
 void fixDiri(ChebyCoeff& f, Real ga, Real gb);
 void fixDiriMean(ChebyCoeff& f);
@@ -83,7 +86,8 @@ void fixDiriNeum(ChebyCoeff& f);
 void fixDiri(ComplexChebyCoeff& f);
 void fixDiriMean(ComplexChebyCoeff& f);
 void fixDiriNeum(ComplexChebyCoeff& f);
-void fixMixed(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
+void fixDiriRobin(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
+void fixNeumRobin(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
 
 class FieldSeries {
    public:

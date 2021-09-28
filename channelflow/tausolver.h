@@ -93,7 +93,6 @@ class TauSolver {
     Real Pr_;             // Prandtl number
     Real Ri_;             // Richardson number
     Real conc_diffusivity_;
-    Real vs_o_k_;         // settling vel / conc diffusivity
     bool tauCorrection_;  // Try to eliminate tau errors in (P,v) solutions
 
     HelmholtzSolver pressureHelmholtz_;
