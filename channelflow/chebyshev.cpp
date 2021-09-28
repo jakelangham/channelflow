@@ -432,10 +432,10 @@ Real ChebyCoeff::eval_a() const {
 Real ChebyCoeff::slope_a() const {
     Real sum = 0.0;
 
-    auto N_ = data_.size();
+    int N_ = data_.size();
     // N=4: 0,1  2,3
     // N=5: 0,1  2,3  4
-    for (auto n = 0u; n < N_ - 1; n += 2)
+    for (int n = 0; n < N_ - 1; n += 2)
         sum += -n * n * data_[n] + (n + 1) * (n + 1) * data_[n + 1];
 
     if (N_ % 2 == 1)
