@@ -75,7 +75,9 @@ int main(int argc, char* argv[]) {
         FlowField u(uname, cfmpi);
         // JL check if there's a density field. If not, add a zero density field
         Real vs_o_kappa = flags.vs / flags.kappa;
-        BoundaryCond bc(DiriRobin, u.Mx(), u.Mz(), 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
+        //BoundaryCond bc(DiriRobin, u.Mx(), u.Mz(), 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
+        //BoundaryCond bc(NeumRobin, u.Mx(), u.Mz(), 1.0, 1.0 + vs_o_kappa, vs_o_kappa);
+        BoundaryCond bc(NoFlux, u.Mx(), u.Mz(), 1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
         //BoundaryCond bc(Diri, 0.0, 0.0);
         FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), bc, cfmpi);
         if (u.padded())
@@ -121,9 +123,11 @@ int main(int argc, char* argv[]) {
 
         ios::openmode openflag = (flags.t0 > 0) ? ios::app : ios::out;
 
-        ofstream eout, x0out;
+        ofstream eout, x0out, concout;
         openfile(eout, outdir + "energy.asc", openflag);
         eout << fieldstatsheader_t() << endl;
+        openfile(concout, outdir + "cstats.asc", openflag);
+        concout << concstatsheader_t() << endl;
 
         FlowField u0, du, tmp;
 
@@ -132,6 +136,7 @@ int main(int argc, char* argv[]) {
             string s;
             s = printdiagnostics(fields[0], dns, t, dt, flags.nu, umin, dt.variable(), pl2norm, pchnorm, pdissip,
                                  pshear, pdiverge, pUbulk, pubulk, pdPdx, pcfl);
+
             if (ecfmin > 0 && Ecf(fields[0]) < ecfmin) {
                 cferror("Ecf < ecfmin == " + r2s(ecfmin) + ", exiting");
             }
@@ -141,6 +146,9 @@ int main(int argc, char* argv[]) {
             s = fieldstats_t(fields[0], t);
             // fields[0] -= dns.Ubase(); //////////////////// ONLY
             eout << s << endl;
+
+            s = concstats_t(fields[0], t);
+            concout << s << endl;
 
             if (saveint != 0 && i % saveint == 0) {
                 fields[0].save(outdir + label + t2s(t, inttime));

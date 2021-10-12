@@ -16,7 +16,7 @@ using namespace Eigen;
 
 namespace chflow {
 
-enum BC { Free, Diri, Zero, Neum, DiriRobin, NeumRobin };
+enum BC { Free, Diri, Zero, Neum, DiriRobin, NeumRobin, NoFlux };
 
 class BoundaryCond {
    public:

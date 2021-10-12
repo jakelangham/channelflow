@@ -719,6 +719,8 @@ void fixBC(ChebyCoeff& f, BoundaryCond bc) {
         fixDiriRobin(f, 0.0, 0.0, bc.alpha_); // JL important to retain alpha here!
     else if (bc.type_ == NeumRobin)
         fixNeumRobin(f, 0.0, 0.0, bc.alpha_); 
+    else if (bc.type_ == NoFlux)
+        fixNoFlux(f, 0.0, 0.0, bc.alpha_); 
 }
 
 void fixBC(ChebyCoeff& f, Real ga, Real gb, BoundaryCond bc) {
@@ -726,8 +728,8 @@ void fixBC(ChebyCoeff& f, Real ga, Real gb, BoundaryCond bc) {
         fixDiri(f, ga, gb);
     else if (bc.type_ == DiriRobin)
         fixDiriRobin(f, ga, gb, bc.alpha_);
-    else if (bc.type_ == NeumRobin)
-        fixNeumRobin(f, ga, gb, bc.alpha_);
+    else if (bc.type_ == NoFlux)
+        fixNoFlux(f, ga, gb, bc.alpha_);
 }
 
 void fixDiri(ChebyCoeff& f) {
@@ -768,6 +770,17 @@ void fixNeumRobin(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
 
     f[0] -= (sb - (1.0 + alpha) * sa + alpha * fb - gb + (1.0 + alpha) * ga) / alpha;
     f[1] -= -ga + sa;
+}
+
+// JL no flux condition with Robin bcs top and bottom
+void fixNoFlux(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
+    Real fa = f.eval_a();
+    Real fb = f.eval_b();
+    Real sa = f.slope_a();
+    Real sb = f.slope_b();
+
+    f[0] -= (alpha - 1) * (alpha * fb + sb - gb) / 2.0 / alpha + (alpha + 1) * (alpha * fa + sa - ga) / 2.0 / alpha;
+    f[1] -= (sb + alpha * fb - sa - alpha * fa + ga - gb) / (2.0 * alpha);
 }
 
 void fixDiriMean(ChebyCoeff& f) {

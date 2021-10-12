@@ -141,6 +141,14 @@ HelmholtzSolver::HelmholtzSolver(int numberModes, BoundaryCond bc, Real a, Real 
 
             A_.elem(1, i) = i * i + bc.alpha_;
         }
+    } else if (bc.type_ == NoFlux) {
+        for (i = 0; i < nModes_; ++i) {
+            if (i % 2 == 0)
+                A_.elem(0, i) = bc.alpha_ - i * i;
+            else
+                A_.elem(0, i) = i * i - bc.alpha_;
+            A_.elem(1, i) = i * i + bc.alpha_;
+        }
     }
 
     //Ae_.ULdecomp();
