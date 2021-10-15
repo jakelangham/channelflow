@@ -292,11 +292,16 @@ Real getdPdx(const FlowField& u, Real nu);
 Real getdPdz(const FlowField& u, Real nu);
 Real getUbulk(const FlowField& u);
 Real getWbulk(const FlowField& u);
+Real getCbulk(const FlowField& u);
 
 std::string fieldstats_t(const FlowField& u, Real t);           // return some information about u
 std::string fieldstatsheader_t(const std::string tname = "t");  // header for fieldstats
 std::string fieldstats(const FlowField& u);                     // return some information about u
 std::string fieldstatsheader();                                 // header for fieldstats
+std::string concstats_t(const FlowField& u, Real t);           // return some information about c
+std::string concstatsheader_t(const std::string tname = "t");  // header for concstats
+std::string concstats(const FlowField& u);                     // return some information about c
+std::string concstatsheader();                                 // header for concstats
 
 }  // namespace chflow
 #endif

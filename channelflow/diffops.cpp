@@ -770,7 +770,7 @@ Real dissipation(const FlowField& u, bool normalize) {
     Real D = 0.0;
     FlowField ui;
     FlowField grad_ui;
-    for (int i = 0; i < u.Nd(); ++i) {
+    for (int i = 0; i < 3; ++i) {
         ui = u[i];
         grad(ui, grad_ui);
         D += L2Norm2(grad_ui, normalize);
@@ -3946,6 +3946,54 @@ Real getWbulk(const FlowField& u) {
     return wbulk;
 }
 
+Real getCbulk(const FlowField& u) {
+    Real cbulk;
+
+#ifdef HAVE_MPI
+    if (u.taskid() == u.task_coeff(0, 0))
+        cbulk = Re(u.profile(0, 0, 3)).mean();
+    MPI_Bcast(&cbulk, 1, MPI_DOUBLE, u.task_coeff(0, 0), *u.comm_world());
+#else
+    cbulk = Re(u.profile(0, 0, 3)).mean();
+#endif
+
+    if (abs(cbulk) < 1e-15)
+        cbulk = 0.0;
+    return cbulk;
+}
+
+Real getScalarCorrelation (const FlowField& u, int i) {
+    Real ucbulk;
+
+    assert(i >= 0 && i <= 2);
+    FlowField vel = u[i];
+    FlowField uc = u[3];
+    ChebyCoeff Ubase = ChebyCoeff(u.My(), u.a(), u.b(), Spectral);
+    ChebyCoeff Cbase = ChebyCoeff(u.My(), u.a(), u.b(), Spectral);
+    Ubase[1] = 1;
+    Cbase[1] = -1;
+
+    if (i == 0)
+        vel += Ubase;
+    uc += Cbase;
+
+    vel.makePhysical();
+    uc.makePhysical();
+    uc *= vel;
+    uc.makeSpectral();
+#ifdef HAVE_MPI
+    if (u.taskid() == u.task_coeff(0, 0))
+        ucbulk = Re(uc.profile(0, 0, 0)).mean();
+    MPI_Bcast(&ucbulk, 1, MPI_DOUBLE, u.task_coeff(0, 0), *u.comm_world());
+#else
+    ucbulk = Re(uc.profile(0, 0, 0)).mean();
+#endif
+
+    if (abs(ucbulk) < 1e-15)
+        ucbulk = 0.0;
+    return ucbulk;
+}
+
 Real L2Norm_uvw(const FlowField& u, const bool ux, const bool uy, const bool uz) {
     assert(u.ystate() == Spectral);
     assert(u.xzstate() == Spectral);
@@ -4002,9 +4050,22 @@ string fieldstatsheader() {
     return header.str();
 }
 
+string concstatsheader() {
+    stringstream header;
+    header << setw(14) << "mass_loading" << setw(14) << "ucbulk" 
+           << setw(14) << "vcbulk" << setw(14) << "wcbulk";
+    return header.str();
+}
+
 string fieldstatsheader_t(const string tname) {
     stringstream header;
     header << setw(8) << "#(" << tname << ")" << fieldstatsheader();
+    return header.str();
+}
+
+string concstatsheader_t(const string tname) {
+    stringstream header;
+    header << setw(8) << "#(" << tname << ")" << concstatsheader();
     return header.str();
 }
 
@@ -4021,6 +4082,14 @@ string fieldstats(const FlowField& u) {
     return s.str();
 }
 
+string concstats(const FlowField& u) {
+    stringstream s;
+
+    s << setw(14) << getCbulk(u) << setw(14) << getScalarCorrelation(u, 0)
+      << setw(14) << getScalarCorrelation(u, 1) << setw(14) << getScalarCorrelation(u, 2);;
+    return s.str();
+}
+
 // Return some statistics about energy and velocity
 string fieldstats_t(const FlowField& u, Real t) {
     stringstream s;
@@ -4029,6 +4098,16 @@ string fieldstats_t(const FlowField& u, Real t) {
     s << fieldstats(u);
     return s.str();
 }
+
+// Return some statistics about the concentration field
+string concstats_t(const FlowField& u, Real t) {
+    stringstream s;
+    s << setw(8);
+    s << t;
+    s << concstats(u);
+    return s.str();
+}
+
 
 Real min_x_L2Dist(const FlowField& u0, const FlowField& u1, Real tol) {
     Real ax = optPhaseShiftx(u0, u1, -0.5, 0.5, tol);
