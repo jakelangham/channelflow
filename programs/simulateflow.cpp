@@ -130,6 +130,8 @@ int main(int argc, char* argv[]) {
         concout << concstatsheader_t() << endl;
 
         FlowField u0, du, tmp;
+        FlowField vel(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), bc, cfmpi);
+        FlowField uc(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), bc, cfmpi);
 
         int i = 0;
         for (Real t = flags.t0; t <= flags.T; t += dt.dT()) {
@@ -147,7 +149,7 @@ int main(int argc, char* argv[]) {
             // fields[0] -= dns.Ubase(); //////////////////// ONLY
             eout << s << endl;
 
-            s = concstats_t(fields[0], t);
+            s = concstats_t(fields[0], vel, uc, t);
             concout << s << endl;
 
             if (saveint != 0 && i % saveint == 0) {
