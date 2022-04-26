@@ -3962,16 +3962,20 @@ Real getCbulk(const FlowField& u) {
     return cbulk;
 }
 
-Real getScalarCorrelation (const FlowField& u, int i) {
+Real getScalarCorrelation (const FlowField& u, FlowField& vel, FlowField& uc, int i) {
     Real ucbulk;
 
     assert(i >= 0 && i <= 2);
-    FlowField vel = u[i];
-    FlowField uc = u[3];
+    //FlowField vel(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
+    //FlowField uc(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
+    //FlowField vel, uc;
     ChebyCoeff Ubase = ChebyCoeff(u.My(), u.a(), u.b(), Spectral);
     ChebyCoeff Cbase = ChebyCoeff(u.My(), u.a(), u.b(), Spectral);
     Ubase[1] = 1;
     Cbase[1] = -1;
+
+    vel = u[i];
+    uc = u[3];
 
     if (i == 0)
         vel += Ubase;
@@ -4082,11 +4086,11 @@ string fieldstats(const FlowField& u) {
     return s.str();
 }
 
-string concstats(const FlowField& u) {
+string concstats(const FlowField& u, FlowField& vel, FlowField& uc) {
     stringstream s;
 
-    s << setw(14) << getCbulk(u) << setw(14) << getScalarCorrelation(u, 0)
-      << setw(14) << getScalarCorrelation(u, 1) << setw(14) << getScalarCorrelation(u, 2);;
+    s << setw(14) << getCbulk(u) << setw(14) << getScalarCorrelation(u, vel, uc, 0)
+      << setw(14) << getScalarCorrelation(u, vel, uc, 1) << setw(14) << getScalarCorrelation(u, vel, uc,  2);
     return s.str();
 }
 
@@ -4100,11 +4104,11 @@ string fieldstats_t(const FlowField& u, Real t) {
 }
 
 // Return some statistics about the concentration field
-string concstats_t(const FlowField& u, Real t) {
+string concstats_t(const FlowField& u, FlowField& vel, FlowField& uc, Real t) {
     stringstream s;
     s << setw(8);
     s << t;
-    s << concstats(u);
+    s << concstats(u, vel, uc);
     return s.str();
 }
 
