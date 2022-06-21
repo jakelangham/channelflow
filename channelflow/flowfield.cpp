@@ -3769,7 +3769,7 @@ void FlowField::readNetCDF(const string& filebase) {
             else if (strcmp(dimname, "Z") == 0)
                 Nz_io = dimlen;
             else
-                cout << "Unknow name of dimension" << endl;
+                cout << "Unknown name of dimension" << endl;
         }
     }
 
@@ -4688,6 +4688,10 @@ void vector2field(const VectorXd& a, FlowField& u) {
 
     int n = 0;
 
+    // JL we divide all conc modes through by mass_loading to normalise this
+    // field
+    Real mass_loading;
+
     // =========================================================
     // (0,0) Fourier mode
     if (u.taskid() == u.task_coeff(0, 0)) {
@@ -4708,10 +4712,19 @@ void vector2field(const VectorXd& a, FlowField& u) {
             f3.re[ny] = a(n++);
         //fixDiri(f3.re);
         fixBC(f3.re, u.ga(), u.gb(), u.BC());
+
+        // get mass loading for normalisation
+        mass_loading = f3.re[0];
+        for (int ny = 2; ny < Ny; ny += 2)
+            mass_loading -= f3.re[ny] / (ny * ny - 1);
+
         for (int ny = 0; ny < Ny; ++ny)
-            u.cmplx(0, ny, 0, 3) = f3[ny];
+            u.cmplx(0, ny, 0, 3) = f3[ny] / mass_loading;
     }
 
+#ifdef HAVE_MPI
+        MPI_Bcast(&mass_loading, 1, MPI_DOUBLE, u.task_coeff(0, 0), *u.comm_world());
+#endif
     // =========================================================
     // (kx,0) Fourier modes, 0<kx
     for (int kx = 1; kx <= Kx; ++kx) {
@@ -4751,7 +4764,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(mx, ny, 0, 2) = f2[ny];
             for (int ny = 0; ny < Ny; ++ny)
-                u.cmplx(mx, ny, 0, 3) = f3[ny];
+                u.cmplx(mx, ny, 0, 3) = f3[ny] / mass_loading;
         }
 
         // ------------------------------------------------------
@@ -4765,7 +4778,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
                 u.cmplx(mxm, ny, 0, 0) = conj(f0[ny]);
                 u.cmplx(mxm, ny, 0, 1) = conj(f1[ny]);
                 u.cmplx(mxm, ny, 0, 2) = conj(f2[ny]);
-                u.cmplx(mxm, ny, 0, 3) = conj(f3[ny]);
+                u.cmplx(mxm, ny, 0, 3) = conj(f3[ny]) / mass_loading;
             }
 #ifdef HAVE_MPI     // send_id != rec_id requires multiple processes
             else {  // Transfer the conjugates via MPI
@@ -4789,7 +4802,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
                     u.cmplx(mxm, ny, 0, 0) = tmp0;
                     u.cmplx(mxm, ny, 0, 1) = tmp1;
                     u.cmplx(mxm, ny, 0, 2) = tmp2;
-                    u.cmplx(mxm, ny, 0, 3) = tmp3;
+                    u.cmplx(mxm, ny, 0, 3) = tmp3 / mass_loading;
                 }
             }
 #endif
@@ -4834,7 +4847,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(0, ny, mz, 2) = f2[ny];
             for (int ny = 0; ny < Ny; ++ny)
-                u.cmplx(0, ny, mz, 3) = f3[ny];
+                u.cmplx(0, ny, mz, 3) = f3[ny] / mass_loading;
         }
     }
 
@@ -4898,7 +4911,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
                 fixBC(f3, u.BC());
 
                 for (int ny = 0; ny < Ny; ++ny)
-                    u.cmplx(mx, ny, mz, 3) = f3[ny];
+                    u.cmplx(mx, ny, mz, 3) = f3[ny] / mass_loading;
             }
         }
     }
