@@ -89,6 +89,7 @@ void fixDiriNeum(ComplexChebyCoeff& f);
 void fixDiriRobin(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
 void fixNeumRobin(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
 void fixNoFlux(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
+void fixNoFluxNormaliseMass(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
 
 class FieldSeries {
    public:

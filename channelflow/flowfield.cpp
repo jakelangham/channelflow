@@ -4541,7 +4541,8 @@ int field2vector_size(const FlowField& u) {
     // determine cfarray sizes and once with the actual data copying. // Tobias
     int N = 0;
     if (u.taskid() == u.task_coeff(0, 0))
-        N += 3 * (Ny - 2); // JL now 3 lots of Ny-2 due to rho field
+        N += 2 * (Ny - 2) + Ny - 3; // JL now extra Ny - 3 terms for (unit mass) rho field
+        //N += 3 * (Ny - 2); // JL now 3 lots of Ny-2 due to rho field
     for (int kx = 1; kx <= Kx; ++kx)
         if (u.taskid() == u.task_coeff(u.mx(kx), 0))
             N += 4 * (Ny - 2) + 2 * (Ny - 4); // JL likewise 4(Ny-2) here (rather than 2)
@@ -4592,7 +4593,7 @@ void field2vector(const FlowField& u, VectorXd& a) {
         // Ny-2 modes (line 2)
         if (u.taskid() == u.task_coeff(0, 0))
             a(n++) = Re(u.cmplx(0, ny, 0, 2));
-    for (int ny = 2; ny < Ny; ++ny)
+    for (int ny = 3; ny < Ny; ++ny)
         // Ny-2 modes (density)
         if (u.taskid() == u.task_coeff(0, 0))
             a(n++) = Re(u.cmplx(0, ny, 0, 3));
@@ -4690,7 +4691,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
 
     // JL we divide all conc modes through by mass_loading to normalise this
     // field
-    Real mass_loading;
+    Real mass_loading = 1.0;
 
     // =========================================================
     // (0,0) Fourier mode
@@ -4711,20 +4712,21 @@ void vector2field(const VectorXd& a, FlowField& u) {
         for (int ny = 2; ny < Ny; ++ny)
             f3.re[ny] = a(n++);
         //fixDiri(f3.re);
-        fixBC(f3.re, u.ga(), u.gb(), u.BC());
+        //fixBC(f3.re, u.ga(), u.gb(), u.BC());
+        fixNoFluxNormaliseMass(f3.re, u.ga(), u.gb(), u.BC().alpha_);
 
         // get mass loading for normalisation
-        mass_loading = f3.re[0];
-        for (int ny = 2; ny < Ny; ny += 2)
-            mass_loading -= f3.re[ny] / (ny * ny - 1);
+        //mass_loading = f3.re[0];
+        //for (int ny = 2; ny < Ny; ny += 2)
+        //    mass_loading -= f3.re[ny] / (ny * ny - 1);
 
         for (int ny = 0; ny < Ny; ++ny)
             u.cmplx(0, ny, 0, 3) = f3[ny] / mass_loading;
     }
 
-#ifdef HAVE_MPI
-        MPI_Bcast(&mass_loading, 1, MPI_DOUBLE, u.task_coeff(0, 0), *u.comm_world());
-#endif
+//#ifdef HAVE_MPI
+//        MPI_Bcast(&mass_loading, 1, MPI_DOUBLE, u.task_coeff(0, 0), *u.comm_world());
+//#endif
     // =========================================================
     // (kx,0) Fourier modes, 0<kx
     for (int kx = 1; kx <= Kx; ++kx) {
