@@ -176,9 +176,11 @@ int main(int argc, char* argv[]) {
             cout << endl << "loaded the following data..." << endl;
         } else {  // not a restart
             // Compute initial data points for extrapolation from perturbations of given solution
+            Real vs_o_kappa = dnsflags.vs / dnsflags.kappa;
+            BoundaryCond bc(NoFlux, u[1].Mx(), u[1].Mz(), 1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
             u[1] = FlowField(uname, cfmpi);
             u_with_density[1] = FlowField(u[1].Nx(), u[1].Ny(), u[1].Nz(), 4, u[1].Lx(), u[1].Lz(),
-                u[1].a(), u[1].b(), cfmpi);
+                u[1].a(), u[1].b(), bc, cfmpi);
             if (u[1].Nd() == 3) {
                 u_with_density[1].copySubfields(u[1], vel_indices, vel_indices);
             } else {
