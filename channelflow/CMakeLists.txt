@@ -18,6 +18,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/dns.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/flowfield.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/helmholtz.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/densehelmholtz.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/periodicfunc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/poissonsolver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/realdensematrix.cpp

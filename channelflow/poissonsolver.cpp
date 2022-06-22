@@ -32,7 +32,7 @@ PoissonSolver::PoissonSolver(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, R
             //             int kz = mz; // same as FlowField::kz(mz)
             int kz = tmp.kz(mz + mzlocmin_);
             Real lambda = 4.0 * pi * pi * (square(kx / Lx_) + square(kz / Lz_));
-            helmholtz_[mx][mz] = HelmholtzSolver(My_, BoundaryCond(), a_, b_, lambda);
+            helmholtz_[mx][mz] = HelmholtzSolver(My_, a_, b_, lambda);
         }
     }
 }
@@ -87,7 +87,7 @@ PoissonSolver::PoissonSolver(const FlowField& u)
         for (int mz = 0; mz < Mzloc_; ++mz) {
             int kz = u.kz(mz + mzlocmin_);
             Real lambda = 4.0 * pi * pi * (square(kx / Lx_) + square(kz / Lz_));
-            helmholtz_[mx][mz] = HelmholtzSolver(My_, BoundaryCond(), a_, b_, lambda);
+            helmholtz_[mx][mz] = HelmholtzSolver(My_, a_, b_, lambda);
         }
     }
 }

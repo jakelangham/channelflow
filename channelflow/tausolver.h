@@ -14,6 +14,7 @@
 #include "cfbasics/mathdefs.h"
 #include "channelflow/chebyshev.h"
 #include "channelflow/helmholtz.h"
+#include "channelflow/densehelmholtz.h"
 
 namespace chflow {
 
@@ -97,7 +98,7 @@ class TauSolver {
 
     HelmholtzSolver pressureHelmholtz_;
     HelmholtzSolver velocityHelmholtz_;
-    HelmholtzSolver densityHelmholtz_;
+    DenseHelmholtzSolver densityHelmholtz_;
 
     // These quantities are constant in time in the tau algorithm.
     // So they're initialized in the constructor and kept fixed.
