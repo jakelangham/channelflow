@@ -104,7 +104,7 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
       tauCorrection_(tauCorrection),
       pressureHelmholtz_(N_, a_, b_, kappa2_),
       velocityHelmholtz_(N_, a_, b_, lambda_, nu_),
-      densityHelmholtz_(N_, bc, a_, b_, lambda_rho_, conc_diffusivity_),
+      densityHelmholtz_(N_, bc, a_, b_, lambda_rho_, conc_diffusivity_, kx * kz == 0),
       P_0_(N_, a_, b_, Spectral),
       v_0_(N_, a_, b_, Spectral),
       P_plus_(N_, a_, b_, Spectral),
