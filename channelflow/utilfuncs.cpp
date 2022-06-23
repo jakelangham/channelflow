@@ -785,7 +785,6 @@ void fixNoFlux(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
 
 void fixNoFluxNormaliseMass(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
     // probably this can be simplified
-    cout << "f mean " << f.mean() << endl; 
     Real ap1_o_2asqr = (alpha + 1) / (2 * alpha * alpha);
     Real am1_o_2asqr = (alpha - 1) / (2 * alpha * alpha);
     Real tmp = 1.0 - ga * ap1_o_2asqr - gb * am1_o_2asqr;
@@ -805,8 +804,6 @@ void fixNoFluxNormaliseMass(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
 
     f[0] -= (alpha - 1) * (alpha * fb + sb - gb) / 2.0 / alpha + (alpha + 1) * (alpha * fa + sa - ga) / 2.0 / alpha;
     f[1] -= (sb + alpha * fb - sa - alpha * fa + ga - gb) / (2.0 * alpha);
-
-    cout << "f mean " << f.mean() << endl; exit(1);
 }
 
 void fixDiriMean(ChebyCoeff& f) {
