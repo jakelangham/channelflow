@@ -519,7 +519,7 @@ Complex innerProduct(const BasisFunc& f, const BasisFunc& g, NormType n, bool nr
 
 Real divNorm2(const BasisFunc& f, bool normalize) {
     assert(f.state() == Spectral);
-    assert(f.Nd() == 3);
+    assert(f.Nd() >= 3);
     ComplexChebyCoeff div = f.u();
     div *= Complex(0.0, 2 * pi * f.kx() / f.Lx());
     ComplexChebyCoeff tmp = f.w();
@@ -535,7 +535,7 @@ Real divNorm(const BasisFunc& f, bool normalize) { return sqrt(divNorm2(f, norma
 Real divDist2(const BasisFunc& f, const BasisFunc& g, bool normalize) {
     assert(f.state() == Spectral && g.state() == Spectral);
     assert(f.congruent(g));
-    assert(f.Nd() == 3);
+    assert(f.Nd() >= 3);
     ComplexChebyCoeff div = f.u();
     div -= g.u();
     div *= Complex(0.0, 2 * pi * f.kx() / f.Lx());
