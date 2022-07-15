@@ -92,7 +92,7 @@ Real divNorm(const FlowField& f, bool normalize) { return sqrt(divNorm2(f, norma
 
 Real divNorm2(const FlowField& f, bool normalize) {
     assert(f.xzstate() == Spectral && f.ystate() == Spectral);
-    assert(f.Nd() == 3);
+    assert(f.Nd() >= 3);
 
     Real div2 = 0.0;
     //     int Mx = f.Mx();
@@ -121,7 +121,7 @@ Real divNorm2(const FlowField& f, bool normalize) {
 Real divDist2(const FlowField& f, const FlowField& g, bool normalize) {
     assert(f.xzstate() == Spectral && f.ystate() == Spectral);
     assert(f.congruent(g));
-    assert(f.Nd() == 3);
+    assert(f.Nd() >= 3);
 
     Real div2 = 0.0;
     //     int Mx = f.Mx();
