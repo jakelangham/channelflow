@@ -83,14 +83,9 @@ int main(int argc, char* argv[]) {
         cout << "Wbase mean == " << Wbase.mean() << endl;
 
         vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC())};
-        DNS dns;
         FlowField uvel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
         vector<int> vel_indices = {0, 1, 2};
         uvel.copySubfields(u, vel_indices, vel_indices);
-
-        if (u.Nd() > 1) {
-            dns = DNS(fields, flags);
-        }
 
         if (saveuprof) {
             if (u.Nd() == 1) {
@@ -448,6 +443,10 @@ int main(int argc, char* argv[]) {
             if (u.Nd() == 1) {
                 cferror("Not available for scalar fields");
             }
+
+            DNS dns;
+            dns = DNS(fields, flags);
+
             cout << "------------Dynamics--------------------" << endl;
 
             const int N = iround(T / flags.dt + 1);
