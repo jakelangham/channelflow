@@ -268,9 +268,9 @@ int main(int argc, char* argv[]) {
         if (all || spec) {
             cout << "\n" << endl;
             cout << "------------Spectrum--------------------" << endl;
-            int kxmax = 0;//, kxmaxvel = 0;
-            int kzmax = 0;//, kzmaxvel = 0;
-            int kymax = 0;//, kymaxvel = 0;
+            int kxmax = 0, kxmaxvel = 0;
+            int kzmax = 0, kzmaxvel = 0;
+            int kymax = 0, kymaxvel = 0;
             cout << "u.kxmin() == " << u.kxmin() << endl;
             cout << "u.kxmax() == " << u.kxmax() << endl;
             cout << "u.kzmin() == " << u.kzmin() << endl;
@@ -279,6 +279,43 @@ int main(int argc, char* argv[]) {
             cout << "u.kxmaxDealiased() == " << u.kxmaxDealiased() << endl;
             cout << "u.kzminDealiased() == " << u.kzminDealiased() << endl;
             cout << "u.kzmaxDealiased() == " << u.kzmaxDealiased() << endl;
+
+            for (int mx = 0; mx < u.Mx(); ++mx) {
+                const int kx = u.kx(mx);
+                for (int mz = 0; mz < u.Mz(); ++mz) {
+                    const int kz = u.kz(mz);
+                    BasisFunc prof = u.profile(mx, mz);
+                    BasisFunc profvel = uvel.profile(mx, mz);
+                    if (L2Norm(prof) > eps) {
+                        kxmax = Greater(kxmax, abs(kx));
+                        kzmax = Greater(kzmax, abs(kz));
+                    }
+                    if (L2Norm(profvel) > eps) {
+                        kxmaxvel = Greater(kxmaxvel, abs(kx));
+                        kzmaxvel = Greater(kzmaxvel, abs(kz));
+                    }
+                    for (int ky = 0; ky < u.Ny(); ++ky) {
+                        Real sum = 0.0, sumvel = 0.0;
+                        for (int i = 0; i < u.Nd(); ++i)
+                            sum += abs(prof[i][ky]);
+                        if (sum > eps)
+                            kymax = Greater(kymax, ky);
+                        for (int i = 0; i < uvel.Nd(); ++i)
+                            sumvel += abs(profvel[i][ky]);
+                        if (sumvel > eps)
+                            kymaxvel = Greater(kymaxvel, ky);
+                    }
+                }
+            }
+            cout << "u.padded() == " << (u.padded() ? "true" : "false") << endl;
+            cout << "Energy over " << eps << " is confined to : \n";
+            cout << " |kx| <= " << kxmax << endl;
+            cout << " |ky| <= " << kymax << endl;
+            cout << " |kz| <= " << kzmax << endl;
+            cout << "Energy (vel only) over " << eps << " is confined to : \n";
+            cout << " |kx| <= " << kxmaxvel << endl;
+            cout << " |ky| <= " << kymaxvel << endl;
+            cout << " |kz| <= " << kzmaxvel << endl;
 
             cout << "Minimum   aliased grid : " << 2 * (kxmax + 1) << " x " << kymax + 1 << " x " << 2 * (kzmax + 1)
                  << endl;
@@ -383,46 +420,6 @@ int main(int argc, char* argv[]) {
             if (u.Nd() == 1) {
                 cferror("Energy properties are not available for scalar fields");
             }
-            int kxmax = 0, kxmaxvel = 0;
-            int kzmax = 0, kzmaxvel = 0;
-            int kymax = 0, kymaxvel = 0;
-
-            for (int mx = 0; mx < u.Mx(); ++mx) {
-                const int kx = u.kx(mx);
-                for (int mz = 0; mz < u.Mz(); ++mz) {
-                    const int kz = u.kz(mz);
-                    BasisFunc prof = u.profile(mx, mz);
-                    BasisFunc profvel = uvel.profile(mx, mz);
-                    if (L2Norm(prof) > eps) {
-                        kxmax = Greater(kxmax, abs(kx));
-                        kzmax = Greater(kzmax, abs(kz));
-                    }
-                    if (L2Norm(profvel) > eps) {
-                        kxmaxvel = Greater(kxmaxvel, abs(kx));
-                        kzmaxvel = Greater(kzmaxvel, abs(kz));
-                    }
-                    for (int ky = 0; ky < u.Ny(); ++ky) {
-                        Real sum = 0.0, sumvel = 0.0;
-                        for (int i = 0; i < u.Nd(); ++i)
-                            sum += abs(prof[i][ky]);
-                        if (sum > eps)
-                            kymax = Greater(kymax, ky);
-                        for (int i = 0; i < uvel.Nd(); ++i)
-                            sumvel += abs(profvel[i][ky]);
-                        if (sumvel > eps)
-                            kymaxvel = Greater(kymaxvel, ky);
-                    }
-                }
-            }
-            cout << "u.padded() == " << (u.padded() ? "true" : "false") << endl;
-            cout << "Energy over " << eps << " is confined to : \n";
-            cout << " |kx| <= " << kxmax << endl;
-            cout << " |ky| <= " << kymax << endl;
-            cout << " |kz| <= " << kzmax << endl;
-            cout << "Energy (vel only) over " << eps << " is confined to : \n";
-            cout << " |kx| <= " << kxmaxvel << endl;
-            cout << " |ky| <= " << kymaxvel << endl;
-            cout << " |kz| <= " << kzmaxvel << endl;
 
             cout << "dissip (u)     == " << dissipation(u) << endl;
             cout << "wallshear(u)   == " << wallshear(u) << endl;
@@ -446,6 +443,7 @@ int main(int argc, char* argv[]) {
             if (u.Nd() == 1) {
                 cferror("Not available for scalar fields");
             }
+
             DNS dns;
             dns = DNS(fields, flags);
 
