@@ -116,6 +116,7 @@ class FlowField {
     void makeState(fieldstate xzstate, fieldstate ystate);
 
     void setToZero();
+    void setBC(BoundaryCond bc);
     void perturb(Real magnitude, Real spectralDecay, bool meanflow = true);
     void addPerturbation(int kx, int kz, Real mag, Real spectralDecay);
     void addPerturbation1D(int kx, int kz, Real mag, Real spectralDecay);

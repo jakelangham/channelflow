@@ -779,7 +779,16 @@ void fixNoFlux(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
     Real sa = f.slope_a();
     Real sb = f.slope_b();
 
-    f[0] -= (alpha - 1) * (alpha * fb + sb - gb) / 2.0 / alpha + (alpha + 1) * (alpha * fa + sa - ga) / 2.0 / alpha;
+    Real tmp = (alpha + 1) * ga + (alpha - 1) * gb;
+    for (int n = 2u; n < f.N(); n++)
+        tmp -= (alpha - 1) * (alpha + n * n) * f[n];
+    for (int n = 2u; n < f.N(); n += 2)
+        tmp -= (alpha + 1) * (alpha - n * n) * f[n];
+    for (int n = 3u; n < f.N(); n += 2)
+        tmp += (alpha + 1) * (alpha - n * n) * f[n];
+    tmp /= 2.0 * alpha * alpha;
+    //f[0] -= (alpha - 1) * (alpha * fb + sb - gb) / 2.0 / alpha + (alpha + 1) * (alpha * fa + sa - ga) / 2.0 / alpha;
+    f[0] = tmp;
     f[1] -= (sb + alpha * fb - sa - alpha * fa + ga - gb) / (2.0 * alpha);
 }
 
@@ -796,13 +805,16 @@ void fixNoFluxNormaliseMass(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
         tmp += am1_o_2asqr * (alpha + n * n) * f[n];
     f[2] = tmp / (-ap1_o_2asqr * (alpha - 4) - am1_o_2asqr * (alpha + 4) - 1.0 / 3.0);
 
+    tmp = 1.0;
+    for (int n = 2u; n < f.N(); n += 2)
+        tmp -= f[n] / (1 - n * n);
+    f[0] = tmp;
+    //f[0] -= (alpha - 1) * (alpha * fb + sb - gb) / 2.0 / alpha + (alpha + 1) * (alpha * fa + sa - ga) / 2.0 / alpha;
     // note computing these *after* fixing f[2]
     Real fa = f.eval_a();
     Real fb = f.eval_b();
     Real sa = f.slope_a();
     Real sb = f.slope_b();
-
-    f[0] -= (alpha - 1) * (alpha * fb + sb - gb) / 2.0 / alpha + (alpha + 1) * (alpha * fa + sa - ga) / 2.0 / alpha;
     f[1] -= (sb + alpha * fb - sa - alpha * fa + ga - gb) / (2.0 * alpha);
 }
 

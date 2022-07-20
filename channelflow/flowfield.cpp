@@ -2316,6 +2316,10 @@ void FlowField::setToZero() {
         rdata_[i] = 0.0;
 }
 
+void FlowField::setBC(BoundaryCond bc) {
+    BC_ = bc;
+}
+
 void FlowField::zeroPaddedModes() {
     fieldstate xzs = xzstate_;
     fieldstate ys = ystate_;
@@ -2343,7 +2347,7 @@ void FlowField::print() const {
     cout << "[0, " << Lx_ << "] x [-1, 1] x [0, " << Lz_ << "]" << endl;
     cout << xzstate_ << " x " << ystate_ << " x " << xzstate_ << endl;
     cout << xzstate_ << " x " << ystate_ << " x " << xzstate_ << endl;
-    if (xzstate_ == Spectral) {
+    if (xzstate_ == Physical) {
         cout << "FlowField::print() real view " << endl;
         for (int i = 0; i < Nd_; ++i) {
             for (int ny = 0; ny < Ny_; ++ny) {
@@ -4594,7 +4598,7 @@ void field2vector(const FlowField& u, VectorXd& a) {
         if (u.taskid() == u.task_coeff(0, 0))
             a(n++) = Re(u.cmplx(0, ny, 0, 2));
     for (int ny = 3; ny < Ny; ++ny)
-        // Ny-2 modes (density)
+        // Ny-3 modes (density)
         if (u.taskid() == u.task_coeff(0, 0))
             a(n++) = Re(u.cmplx(0, ny, 0, 3));
 
@@ -4689,10 +4693,6 @@ void vector2field(const VectorXd& a, FlowField& u) {
 
     int n = 0;
 
-    // JL we divide all conc modes through by mass_loading to normalise this
-    // field
-    Real mass_loading = 1.0;
-
     // =========================================================
     // (0,0) Fourier mode
     if (u.taskid() == u.task_coeff(0, 0)) {
@@ -4709,24 +4709,16 @@ void vector2field(const VectorXd& a, FlowField& u) {
             u.cmplx(0, ny, 0, 2) = f2[ny];
 
         // JL density modes
-        for (int ny = 2; ny < Ny; ++ny)
+        for (int ny = 3; ny < Ny; ++ny)
             f3.re[ny] = a(n++);
         //fixDiri(f3.re);
         //fixBC(f3.re, u.ga(), u.gb(), u.BC());
         fixNoFluxNormaliseMass(f3.re, u.ga(), u.gb(), u.BC().alpha_);
 
-        // get mass loading for normalisation
-        //mass_loading = f3.re[0];
-        //for (int ny = 2; ny < Ny; ny += 2)
-        //    mass_loading -= f3.re[ny] / (ny * ny - 1);
-
         for (int ny = 0; ny < Ny; ++ny)
-            u.cmplx(0, ny, 0, 3) = f3[ny] / mass_loading;
+            u.cmplx(0, ny, 0, 3) = f3[ny];
     }
 
-//#ifdef HAVE_MPI
-//        MPI_Bcast(&mass_loading, 1, MPI_DOUBLE, u.task_coeff(0, 0), *u.comm_world());
-//#endif
     // =========================================================
     // (kx,0) Fourier modes, 0<kx
     for (int kx = 1; kx <= Kx; ++kx) {
@@ -4766,7 +4758,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(mx, ny, 0, 2) = f2[ny];
             for (int ny = 0; ny < Ny; ++ny)
-                u.cmplx(mx, ny, 0, 3) = f3[ny] / mass_loading;
+                u.cmplx(mx, ny, 0, 3) = f3[ny];
         }
 
         // ------------------------------------------------------
@@ -4780,7 +4772,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
                 u.cmplx(mxm, ny, 0, 0) = conj(f0[ny]);
                 u.cmplx(mxm, ny, 0, 1) = conj(f1[ny]);
                 u.cmplx(mxm, ny, 0, 2) = conj(f2[ny]);
-                u.cmplx(mxm, ny, 0, 3) = conj(f3[ny]) / mass_loading;
+                u.cmplx(mxm, ny, 0, 3) = conj(f3[ny]);
             }
 #ifdef HAVE_MPI     // send_id != rec_id requires multiple processes
             else {  // Transfer the conjugates via MPI
@@ -4804,7 +4796,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
                     u.cmplx(mxm, ny, 0, 0) = tmp0;
                     u.cmplx(mxm, ny, 0, 1) = tmp1;
                     u.cmplx(mxm, ny, 0, 2) = tmp2;
-                    u.cmplx(mxm, ny, 0, 3) = tmp3 / mass_loading;
+                    u.cmplx(mxm, ny, 0, 3) = tmp3;
                 }
             }
 #endif
@@ -4849,7 +4841,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
             for (int ny = 0; ny < Ny; ++ny)
                 u.cmplx(0, ny, mz, 2) = f2[ny];
             for (int ny = 0; ny < Ny; ++ny)
-                u.cmplx(0, ny, mz, 3) = f3[ny] / mass_loading;
+                u.cmplx(0, ny, mz, 3) = f3[ny];
         }
     }
 
@@ -4913,7 +4905,7 @@ void vector2field(const VectorXd& a, FlowField& u) {
                 fixBC(f3, u.BC());
 
                 for (int ny = 0; ny < Ny; ++ny)
-                    u.cmplx(mx, ny, mz, 3) = f3[ny] / mass_loading;
+                    u.cmplx(mx, ny, mz, 3) = f3[ny];
             }
         }
     }
