@@ -150,6 +150,8 @@ DenseHelmholtzSolver::DenseHelmholtzSolver(int numberModes, BoundaryCond bc, Rea
                     A_.elem(2, i) = 1.0 / (1.0 - i * i);
             } else {
                 A_.elem(0, i) = i * i - bc.alpha_;
+                if (normalise_mass_)
+                    A_.elem(2, i) = 0.0;
             }
             A_.elem(1, i) = i * i + bc.alpha_;
         }
@@ -158,7 +160,7 @@ DenseHelmholtzSolver::DenseHelmholtzSolver(int numberModes, BoundaryCond bc, Rea
     A_.ULdecomp();
 }
 
-void DenseHelmholtzSolver::solve(ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1) const {
+void DenseHelmholtzSolver::solve(ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1, Real mass_loading) const {
     assert(f.state() == Spectral);
     Be_.multiplyStrided(f, u, 0, 2);
     Bo_.multiplyStrided(f, u, 1, 2);
@@ -167,7 +169,7 @@ void DenseHelmholtzSolver::solve(ChebyCoeff& u, const ChebyCoeff& f, Real g0, Re
     u[0] = g0;
     u[1] = g1;
     if (normalise_mass_)
-        u[2] = 1.0;
+        u[2] = mass_loading;
 
     // Solve for A u = g
     A_.ULsolve(u);
@@ -178,7 +180,8 @@ void DenseHelmholtzSolver::solve(ChebyCoeff& u, const ChebyCoeff& f, Real g0, Re
     u.setState(Spectral);
 }
 
-Real DenseHelmholtzSolver::residual(const ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1) const {
+Real DenseHelmholtzSolver::residual(const ChebyCoeff& u, const ChebyCoeff& f, 
+                                    Real g0, Real g1, Real mass_loading) const {
     ChebyTransform trans(nModes_);
     assert(nModes_ == u.length());
 
@@ -198,7 +201,7 @@ Real DenseHelmholtzSolver::residual(const ChebyCoeff& u, const ChebyCoeff& f, Re
     g[0] = g0;
     g[1] = g1;
     if (normalise_mass_)
-        g[2] = 1.0;
+        g[2] = mass_loading;
 
     // h = A*u
     ChebyCoeff h(nModes_, a_, b_, Spectral);

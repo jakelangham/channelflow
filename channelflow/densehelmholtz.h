@@ -32,9 +32,9 @@ class DenseHelmholtzSolver {
     DenseHelmholtzSolver(int numberModes, BoundaryCond bc, Real a, Real b, Real lambda, Real nu = 1.0, bool normalise_mass = false);
 
     // g0 and g1 are rhs BC terms
-    void solve(ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1) const;
+    void solve(ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1, Real mass_loading) const;
 //    void verify(const ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1, bool verbose = false) const;
-    Real residual(const ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1) const;
+    Real residual(const ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1, Real mass_loading) const;
 
     // Solve nu u''(y) - lambda u(y) - mu = f(y), mean(u) = umean, u(-+1)=a,b
     // for u and mu, given nu, lambda, f, ua, ub, and umean.
