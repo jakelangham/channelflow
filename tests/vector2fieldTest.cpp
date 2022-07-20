@@ -17,10 +17,15 @@ int main(int argc, char* argv[]) {
     cfMPI_Init(&argc, &argv);
     {
         CfMPI* cfmpi = &CfMPI::getInstance();
-        FlowField u("data/uinit", cfmpi);
+        FlowField u("data/usett2", cfmpi);
         VectorXd v, v2, v3;
+        Real vs_o_kappa = 0.1;
+        BoundaryCond bc(NoFlux, u.Mx(), u.Mz(), 1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
+        u.setBC(bc);
         FlowField u2(u);
         FlowField u3(u);
+
+        u.save("u1.nc");
 
         // Check if a conversion of the original field to a vector and back doesn't diverge too much.
         field2vector(u, v);
@@ -29,7 +34,9 @@ int main(int argc, char* argv[]) {
         Real err = 0;
         cout << "L2Dist(u, u2)    = " << L2Dist(u, u2) << endl;
 
-        //     err += L2Dist(u, u2);
+        err += L2Dist(u, u2);
+
+        u2.save("u2.nc");
 
         // Check if a conversion to another vector gives the same
         field2vector(u2, v2);
