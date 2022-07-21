@@ -40,9 +40,9 @@ set(
 # Define the target with appropriate dependencies
 install_channelflow_library(nsolver)
 # FIXME: These errors should be taken care of
-if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER "6.0.0")
-    target_compile_options(nsolver PUBLIC "-Wno-error=misleading-indentation")
-endif()
+#if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER "6.0.0")
+#    target_compile_options(nsolver PUBLIC "-Wno-error=misleading-indentation")
+#endif()
 
 # Install header files
 install(FILES ${nsolver_HEADERS} DESTINATION include/nsolver)
