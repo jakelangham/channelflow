@@ -71,17 +71,6 @@ int main(int argc, char* argv[]) {
         const Real unorm = L2Norm(u);
         cout << setprecision(digits);
 
-        vector<ChebyCoeff> Baseflow = baseFlow(u.Ny(), u.a(), u.b(), flags, Uname, Wname);
-        for (int i = 0; i < 2; i++) {
-            Baseflow[i].makePhysical();
-            Baseflow[i] *= ubasefac;
-            Baseflow[i].makeSpectral();
-        }
-        ChebyCoeff Ubase = Baseflow[0];
-        ChebyCoeff Wbase = Baseflow[1];
-        cout << "Ubase mean == " << Ubase.mean() << endl;
-        cout << "Wbase mean == " << Wbase.mean() << endl;
-
         vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC())};
         FlowField uvel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
         vector<int> vel_indices = {0, 1, 2};
@@ -93,6 +82,18 @@ int main(int argc, char* argv[]) {
             }
 
             if (flags.baseflow != ZeroBase) {
+                vector<ChebyCoeff> Baseflow = baseFlow(u.Ny(), u.a(), u.b(), flags, Uname, Wname);
+                for (int i = 0; i < 2; i++) {
+                    Baseflow[i].makePhysical();
+                    Baseflow[i] *= ubasefac;
+                    Baseflow[i].makeSpectral();
+                }
+
+                ChebyCoeff Ubase = Baseflow[0];
+                ChebyCoeff Wbase = Baseflow[1];
+                cout << "Ubase mean == " << Ubase.mean() << endl;
+                cout << "Wbase mean == " << Wbase.mean() << endl;
+
                 ofstream uProfileOut;
                 ofstream wProfileOut;
                 openfile(uProfileOut, "uprofile.asc");
@@ -124,6 +125,13 @@ int main(int argc, char* argv[]) {
             if (u.Nd() == 1) {
                 cferror("Not available for scalar fields");
             }
+            vector<ChebyCoeff> Baseflow = baseFlow(u.Ny(), u.a(), u.b(), flags, Uname, Wname);
+            for (int i = 0; i < 2; i++) {
+                Baseflow[i].makePhysical();
+                Baseflow[i] *= ubasefac;
+                Baseflow[i].makeSpectral();
+            }
+
 
             if (flags.baseflow != ZeroBase) {
                 cout << "computing statistics of Utot = u + Ubase \n" << endl, u += Baseflow;
@@ -169,6 +177,13 @@ int main(int argc, char* argv[]) {
                 cout << "mean u[" << i << "] == " << Re(u.profile(0, 0, i)).mean() << endl;
             }
             if (flags.baseflow != ZeroBase) {
+                vector<ChebyCoeff> Baseflow = baseFlow(u.Ny(), u.a(), u.b(), flags, Uname, Wname);
+                for (int i = 0; i < 2; i++) {
+                    Baseflow[i].makePhysical();
+                    Baseflow[i] *= ubasefac;
+                    Baseflow[i].makeSpectral();
+                }
+
                 u += Baseflow;
                 u.cmplx(0, 0, 0, 1) -= Complex(ubasefac * flags.Vsuck, 0.);
 
@@ -192,6 +207,13 @@ int main(int argc, char* argv[]) {
             cout << "Ubulk(u) == " << getUbulk(u) << endl;
 
             if (flags.baseflow != ZeroBase) {
+                vector<ChebyCoeff> Baseflow = baseFlow(u.Ny(), u.a(), u.b(), flags, Uname, Wname);
+                for (int i = 0; i < 2; i++) {
+                    Baseflow[i].makePhysical();
+                    Baseflow[i] *= ubasefac;
+                    Baseflow[i].makeSpectral();
+                }
+
                 u += Baseflow;
                 u.cmplx(0, 0, 0, 1) -= Complex(ubasefac * flags.Vsuck, 0.);
                 cout << "dPdx(u+U)  == " << getdPdx(u, flags.nu) << endl;
@@ -268,9 +290,9 @@ int main(int argc, char* argv[]) {
         if (all || spec) {
             cout << "\n" << endl;
             cout << "------------Spectrum--------------------" << endl;
-            int kxmax = 0, kxmaxvel = 0;
-            int kzmax = 0, kzmaxvel = 0;
-            int kymax = 0, kymaxvel = 0;
+            int kxmax = 0;
+            int kzmax = 0;
+            int kymax = 0;
             cout << "u.kxmin() == " << u.kxmin() << endl;
             cout << "u.kxmax() == " << u.kxmax() << endl;
             cout << "u.kzmin() == " << u.kzmin() << endl;
@@ -280,52 +302,15 @@ int main(int argc, char* argv[]) {
             cout << "u.kzminDealiased() == " << u.kzminDealiased() << endl;
             cout << "u.kzmaxDealiased() == " << u.kzmaxDealiased() << endl;
 
-            for (int mx = 0; mx < u.Mx(); ++mx) {
-                const int kx = u.kx(mx);
-                for (int mz = 0; mz < u.Mz(); ++mz) {
-                    const int kz = u.kz(mz);
-                    BasisFunc prof = u.profile(mx, mz);
-                    BasisFunc profvel = uvel.profile(mx, mz);
-                    if (L2Norm(prof) > eps) {
-                        kxmax = Greater(kxmax, abs(kx));
-                        kzmax = Greater(kzmax, abs(kz));
-                    }
-                    if (L2Norm(profvel) > eps) {
-                        kxmaxvel = Greater(kxmaxvel, abs(kx));
-                        kzmaxvel = Greater(kzmaxvel, abs(kz));
-                    }
-                    for (int ky = 0; ky < u.Ny(); ++ky) {
-                        Real sum = 0.0, sumvel = 0.0;
-                        for (int i = 0; i < u.Nd(); ++i)
-                            sum += abs(prof[i][ky]);
-                        if (sum > eps)
-                            kymax = Greater(kymax, ky);
-                        for (int i = 0; i < uvel.Nd(); ++i)
-                            sumvel += abs(profvel[i][ky]);
-                        if (sumvel > eps)
-                            kymaxvel = Greater(kymaxvel, ky);
-                    }
-                }
-            }
-            cout << "u.padded() == " << (u.padded() ? "true" : "false") << endl;
-            cout << "Energy over " << eps << " is confined to : \n";
-            cout << " |kx| <= " << kxmax << endl;
-            cout << " |ky| <= " << kymax << endl;
-            cout << " |kz| <= " << kzmax << endl;
-            cout << "Energy (vel only) over " << eps << " is confined to : \n";
-            cout << " |kx| <= " << kxmaxvel << endl;
-            cout << " |ky| <= " << kymaxvel << endl;
-            cout << " |kz| <= " << kzmaxvel << endl;
+            int kxmin = u.padded() ? u.kxminDealiased() : u.kxmin();
+            kxmax = u.padded() ? u.kxmaxDealiased() : u.kxmax();
+            kzmax = u.padded() ? u.kzmaxDealiased() : u.kzmax();
 
             cout << "Minimum   aliased grid : " << 2 * (kxmax + 1) << " x " << kymax + 1 << " x " << 2 * (kzmax + 1)
                  << endl;
 
             cout << "Minimum dealiased grid : " << 3 * (kxmax + 1) << " x " << kymax + 1 << " x " << 3 * (kzmax + 1)
                  << endl;
-
-            int kxmin = u.padded() ? u.kxminDealiased() : u.kxmin();
-            kxmax = u.padded() ? u.kxmaxDealiased() : u.kxmax();
-            kzmax = u.padded() ? u.kzmaxDealiased() : u.kzmax();
 
             int mzmax = u.mz(kzmax);
             int mymax = u.My() - 1;
@@ -421,12 +406,61 @@ int main(int argc, char* argv[]) {
                 cferror("Energy properties are not available for scalar fields");
             }
 
+            int kxmax = 0, kxmaxvel = 0;
+            int kzmax = 0, kzmaxvel = 0;
+            int kymax = 0, kymaxvel = 0;
+            for (int mx = 0; mx < u.Mx(); ++mx) {
+                const int kx = u.kx(mx);
+                for (int mz = 0; mz < u.Mz(); ++mz) {
+                    const int kz = u.kz(mz);
+                    BasisFunc prof = u.profile(mx, mz);
+                    BasisFunc profvel = uvel.profile(mx, mz);
+                    if (L2Norm(prof) > eps) {
+                        kxmax = Greater(kxmax, abs(kx));
+                        kzmax = Greater(kzmax, abs(kz));
+                    }
+                    if (L2Norm(profvel) > eps) {
+                        kxmaxvel = Greater(kxmaxvel, abs(kx));
+                        kzmaxvel = Greater(kzmaxvel, abs(kz));
+                    }
+                    for (int ky = 0; ky < u.Ny(); ++ky) {
+                        Real sum = 0.0, sumvel = 0.0;
+                        for (int i = 0; i < u.Nd(); ++i)
+                            sum += abs(prof[i][ky]);
+                        if (sum > eps)
+                            kymax = Greater(kymax, ky);
+                        for (int i = 0; i < uvel.Nd(); ++i)
+                            sumvel += abs(profvel[i][ky]);
+                        if (sumvel > eps)
+                            kymaxvel = Greater(kymaxvel, ky);
+                    }
+                }
+            }
+            cout << "u.padded() == " << (u.padded() ? "true" : "false") << endl;
+            cout << "Energy over " << eps << " is confined to : \n";
+            cout << " |kx| <= " << kxmax << endl;
+            cout << " |ky| <= " << kymax << endl;
+            cout << " |kz| <= " << kzmax << endl;
+            cout << "Energy (vel only) over " << eps << " is confined to : \n";
+            cout << " |kx| <= " << kxmaxvel << endl;
+            cout << " |ky| <= " << kymaxvel << endl;
+            cout << " |kz| <= " << kzmaxvel << endl;
+
+
+
             cout << "dissip (u)     == " << dissipation(u) << endl;
             cout << "wallshear(u)   == " << wallshear(u) << endl;
             // cout << "wallshear(u)   == " <<  0.5*(abs(wallshearUpper(u))+abs(wallshearLower(u))) << endl;
             cout << "energy(u)      == " << 0.5 * L2Norm2(u) << endl;
 
             if (flags.baseflow != ZeroBase) {
+                vector<ChebyCoeff> Baseflow = baseFlow(u.Ny(), u.a(), u.b(), flags, Uname, Wname);
+                for (int i = 0; i < 2; i++) {
+                    Baseflow[i].makePhysical();
+                    Baseflow[i] *= ubasefac;
+                    Baseflow[i].makeSpectral();
+                }
+
                 u += Baseflow;
                 u.cmplx(0, 0, 0, 1) -= Complex(ubasefac * flags.Vsuck, 0.);
                 cout << "dissip (u+U)   == " << dissipation(u) << endl;
@@ -511,6 +545,13 @@ int main(int argc, char* argv[]) {
                     "to display wall properties provide the base flow, either a file or DNS flags to construct it.");
 
             else {
+                vector<ChebyCoeff> Baseflow = baseFlow(u.Ny(), u.a(), u.b(), flags, Uname, Wname);
+                for (int i = 0; i < 2; i++) {
+                    Baseflow[i].makePhysical();
+                    Baseflow[i] *= ubasefac;
+                    Baseflow[i].makeSpectral();
+                }
+                ChebyCoeff Ubase = Baseflow[0];
                 TurbStats stats(Ubase, flags.nu);
                 FlowField tmp(u.Nx(), u.Ny(), u.Nz(), 9, u.Lx(), u.Lz(), u.a(), u.b(), u.BC());
                 stats.addData(u, tmp);
