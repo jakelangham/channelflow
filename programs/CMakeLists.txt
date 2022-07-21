@@ -11,7 +11,7 @@ set(program_APPS
 
 if (WITH_NSOLVER)
     set(program_APPS ${program_APPS}
-#         continuesoln
+         continuesoln
          findsoln
          findeigenvals)
 endif ()

@@ -97,8 +97,7 @@ int main(int argc, char* argv[]) {
 
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
 
-        FlowField u[3], u_with_density[3];
-        vector<int> vel_indices = {0, 1, 2};
+        FlowField u_with_density[3];
         FieldSymmetry sigma[3];
         cfarray<Real> mu(3);
         Real T[3];
@@ -109,13 +108,13 @@ int main(int argc, char* argv[]) {
             cout << "Restarting from previous solutions. Please be aware that the DNSFlags "
                  << "from the corresponding directories will overwrite any specified command line parameters!" << endl;
             for (int i = 0; i < 3; ++i) {
-                u[i] = FlowField(restartdir[i] + "ubest", cfmpi);
+                u_with_density[i] = FlowField(restartdir[i] + "ubest", cfmpi);
                 if (i == 0) {
                     printout("Optimizing FFTW...", false);
-                    u[i].optimizeFFTW(FFTW_PATIENT);
+                    u_with_density[i].optimizeFFTW(FFTW_PATIENT);
                     fftw_savewisdom();
                     printout("done");
-                    u[i] = FlowField(restartdir[i] + "ubest", cfmpi);
+                    u_with_density[i] = FlowField(restartdir[i] + "ubest", cfmpi);
                 }
                 if (relative)
                     sigma[i] = FieldSymmetry(restartdir[i] + "sigmabest.asc");
@@ -124,6 +123,11 @@ int main(int argc, char* argv[]) {
                     load(T[i], restartdir[i] + "Tbest.asc");
                 else
                     T[i] = dnsflags.T;
+
+                Real vs_o_kappa = dnsflags.vs / dnsflags.kappa;
+                BoundaryCond bc(NoFlux, u_with_density[i].Mx(), u_with_density[i].Mz(), 
+                                1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
+                u_with_density[i].setBC(bc);
             }
             cout << "Loading dnsflags from " + restartdir[0] + "dnsflags.txt, neglecting command line switches."
                  << endl;
@@ -138,12 +142,12 @@ int main(int argc, char* argv[]) {
                 // constant if diagonals are different. Normally reloaded aspect-continued data will
                 // have constant diagonals, but do check and fix in order to restart data with some
                 // small fuzz in diagonal.
-                diagonal = pythag(u[1].Lx(), u[1].Lz());
+                diagonal = pythag(u_with_density[1].Lx(), u_with_density[1].Lz());
                 for (int n = 2; n >= 0; n -= 2) {
-                    if (abs(diagonal - pythag(u[n].Lx(), u[n].Lz())) >= EPSILON) {
+                    if (abs(diagonal - pythag(u_with_density[n].Lx(), u_with_density[n].Lz())) >= EPSILON) {
                         cout << "Diagonal of u[" << n << "] != diagonal of u[1]. Rescaling Lx,Lz...." << endl;
                         Real alpha_n = atan(1 / mu[n]);
-                        u[n].rescale(diagonal * cos(alpha_n), diagonal * sin(alpha_n));
+                        u_with_density[n].rescale(diagonal * cos(alpha_n), diagonal * sin(alpha_n));
                     }
                 }
             } else if (muname == "Diag") {
@@ -151,25 +155,25 @@ int main(int argc, char* argv[]) {
                 // constant if aspect ratios differ. Normally reloaded diagonl-continued data will
                 // have constant aspect ratio, but do check and fix in order to restart data with some
                 // small fuzz in aspect ratio.
-                Real aspect = u[1].Lx() / u[1].Lz();
-                Real alpha = atan(1.0 / (u[1].Lx() / u[1].Lz()));
+                Real aspect = u_with_density[1].Lx() / u_with_density[1].Lz();
+                Real alpha = atan(1.0 / (u_with_density[1].Lx() / u_with_density[1].Lz()));
                 for (int n = 2; n >= 0; n -= 2) {
-                    if (abs(aspect - u[n].Lx() / u[n].Lz()) >= EPSILON) {
+                    if (abs(aspect - u_with_density[n].Lx() / u_with_density[n].Lz()) >= EPSILON) {
                         cout << "Aspect ratio of u[" << n << "] != aspect ratio of u[1]. Rescaling Lx,Lz...." << endl;
-                        Real diagonal_n = pythag(u[n].Lx(), u[n].Lz());
-                        u[n].rescale(diagonal_n * cos(alpha), diagonal_n * sin(alpha));
+                        Real diagonal_n = pythag(u_with_density[n].Lx(), u_with_density[n].Lz());
+                        u_with_density[n].rescale(diagonal_n * cos(alpha), diagonal_n * sin(alpha));
                     }
                 }
             } else if (muname == "Lt") {
                 // Check that all solutions are colinear with (u[1].Lx, u[1].Lz) and (Lxtarg,Lztarg).
                 // If not, rescale u[2] and u[0] Lx,Lz so that they are
-                Real phi = atan((Lztarg - u[1].Lz()) / (Lxtarg - u[1].Lx()));
+                Real phi = atan((Lztarg - u_with_density[1].Lz()) / (Lxtarg - u_with_density[1].Lx()));
                 for (int i = 2; i >= 0; i -= 2) {
-                    if (abs(atan((Lztarg - u[i].Lz()) / (Lxtarg - u[i].Lx())) - phi) >= EPSILON) {
+                    if (abs(atan((Lztarg - u_with_density[i].Lz()) / (Lxtarg - u_with_density[i].Lx())) - phi) >= EPSILON) {
                         cout << "u[" << i
                              << "] is not colinear with (u[1].Lx, u[1].Lz) and (Lxtarg,Lztarg). Rescaling to fix."
                              << endl;
-                        u[i].rescale(Lxtarg - mu[i] * cos(phi), Lztarg - mu[i] * sin(phi));
+                        u_with_density[i].rescale(Lxtarg - mu[i] * cos(phi), Lztarg - mu[i] * sin(phi));
                     }
                 }
             }
@@ -177,15 +181,11 @@ int main(int argc, char* argv[]) {
         } else {  // not a restart
             // Compute initial data points for extrapolation from perturbations of given solution
             Real vs_o_kappa = dnsflags.vs / dnsflags.kappa;
-            BoundaryCond bc(NoFlux, u[1].Mx(), u[1].Mz(), 1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
-            u[1] = FlowField(uname, cfmpi);
-            u_with_density[1] = FlowField(u[1].Nx(), u[1].Ny(), u[1].Nz(), 4, u[1].Lx(), u[1].Lz(),
-                u[1].a(), u[1].b(), bc, cfmpi);
-            if (u[1].Nd() == 3) {
-                u_with_density[1].copySubfields(u[1], vel_indices, vel_indices);
-            } else {
-                u_with_density[1] = u[1];
-            }
+            u_with_density[1] = FlowField(uname, cfmpi);
+            BoundaryCond bc(NoFlux, u_with_density[1].Mx(), u_with_density[1].Mz(), 
+                            1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
+            u_with_density[1].setBC(bc);
+
             project(dnsflags.symmetries, u_with_density[1], "initial value u", cout);
             fixdivnoslip(u_with_density[1]);
 
@@ -225,13 +225,13 @@ int main(int argc, char* argv[]) {
 
             cout << "Lxtarg - Ltarg cos(phi) == " << (Lxtarg - Ltarget * cos(phi)) << endl;
             cout << "Lztarg - Ltarg sin(phi) == " << (Lztarg - Ltarget * sin(phi)) << endl;
-            cout << "dt_Lx == " << dt.dt() / u[1].Lx() << endl;
+            cout << "dt_Lx == " << dt.dt() / u_with_density[1].Lx() << endl;
 
             cout << "set up the following initial data..." << endl;
         }
         cout << setw(4) << "i" << setw(W) << "T" << setw(W) << setw(W) << "L2Norm(u)" << setw(W) << "sigma" << endl;
         for (int i = 2; i >= 0; --i) {
-            Real l2normui = L2Norm(u[i]);
+            Real l2normui = L2Norm(u_with_density[i]);
             cout << setw(4) << i << setw(W) << T[i] << setw(W) << l2normui << setw(W) << sigma[i] << setw(W) << endl;
         }
         // end superfluous output
