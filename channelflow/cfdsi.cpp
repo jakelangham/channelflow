@@ -455,6 +455,10 @@ string cfDSI::cPar2s(continuationParameter cPar) {
         return "Lt";
     else if (cPar == continuationParameter::Vs)
         return "Vs";
+    else if (cPar == continuationParameter::Ri)
+        return "Ri";
+    else if (cPar == continuationParameter::kappa)
+        return "kappa";
     else if (cPar == continuationParameter::ReVs)
         return "ReVs";
     else if (cPar == continuationParameter::H)
