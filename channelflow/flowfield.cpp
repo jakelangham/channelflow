@@ -455,6 +455,7 @@ FlowField& FlowField::operator=(const FlowField& f) {
     cfmpi_ = f.cfmpi_;
     resize(f.Nx_, f.Ny_, f.Nz_, f.Nd_, f.Lx_, f.Lz_, f.a_, f.b_, cfmpi_);
     setState(f.xzstate_, f.ystate_);
+    setBC(f.BC_);
     padded_ = f.padded_;
     for (int i = 0; i < Nloc_; ++i)
         rdata_[i] = f.rdata_[i];
