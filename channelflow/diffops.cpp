@@ -2889,7 +2889,7 @@ void convectionNL(const FlowField& u_, FlowField& f, FlowField& tmp, const field
 
 // set f[3] = u dot grad(rho)
 // where rho = u[3], u = u{0,1,2}
-void densityAdvection(const FlowField& u_, FlowField& f, Real v_s, FlowField& tmp, const fieldstate finalstate) {
+void densityAdvection(const FlowField& u_, FlowField& f, Real u_s, Real v_s, FlowField& tmp, const fieldstate finalstate) {
     FlowField& u = (FlowField&)u_;
     FlowField& grad_rho = tmp;
 
@@ -2927,6 +2927,7 @@ void densityAdvection(const FlowField& u_, FlowField& f, Real v_s, FlowField& tm
                     f(nx, ny, nz, 3) += u(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
 
                 f(nx, ny, nz, 3) -= u(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
+                f(nx, ny, nz, 3) += u_s * grad_rho(nx, ny, nz, 0);
                 f(nx, ny, nz, 3) -= v_s * grad_rho(nx, ny, nz, 1);
             }
 #else
@@ -2939,6 +2940,7 @@ void densityAdvection(const FlowField& u_, FlowField& f, Real v_s, FlowField& tm
                 }
 
                 f(nx, ny, nz, 3) -= u(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
+                f(nx, ny, nz, 3) += u_s * grad_rho(nx, ny, nz, 0);
                 f(nx, ny, nz, 3) -= v_s * grad_rho(nx, ny, nz, 1);
             }
 #endif

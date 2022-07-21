@@ -231,7 +231,7 @@ void divergenceNL(const FlowField& u, FlowField& f, FlowField& tmp, const fields
 void skewsymmetricNL(const FlowField& u, FlowField& f, FlowField& tmp, const fieldstate finalstate = Spectral);
 void linearizedNL(const FlowField& u, const ChebyCoeff& U, const ChebyCoeff& Wbase, FlowField& f,
                   const fieldstate finalstate = Spectral);
-void densityAdvection(const FlowField& u, FlowField& f, Real v_s, FlowField& tmp, const fieldstate finalstate = Spectral);
+void densityAdvection(const FlowField& u, FlowField& f, Real u_s, Real v_s, FlowField& tmp, const fieldstate finalstate = Spectral);
 
 // Adjoint terms
 // u+ is the adjoint velocity

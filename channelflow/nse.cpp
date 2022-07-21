@@ -71,7 +71,7 @@ void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, Flo
         }
 //        f.copySubfields(f3d, vel_indices, vel_indices);
 
-        densityAdvection(u, f, flags.vs, tmp, finalstate);
+        densityAdvection(u, f, flags.us, flags.vs, tmp, finalstate);
 //        vector<int> zero_index = {0};
 //        vector<int> density_index = {3};
 //        f.copySubfields(f1d, zero_index, density_index);
@@ -731,7 +731,7 @@ void NSE::reset_lambda(vector<Real> lambda_t) {
                 if ((kx != kxmax_ || kz != kzmax_) && (!flags_.dealias_xz() || !isAliasedMode(kx, kz)))
 
                     tausolver_[j][mx][mz] =
-                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.Pr, flags_.Ri, flags_.vs, flags_.kappa, BC_, Nyd_, flags_.taucorrection);
+                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.Pr, flags_.Ri, flags_.phi, flags_.vs, flags_.kappa, BC_, Nyd_, flags_.taucorrection);
             }
         }
     }

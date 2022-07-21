@@ -109,7 +109,8 @@ void BodyForce::eval(Real t, FlowField& f) {
 // virtual
 bool BodyForce::isOn(Real t) { return true; }
 
-DNSFlags::DNSFlags(Real nu_, Real Pr_, Real Ri_, Real vs_, Real kappa_, Real dPdx_, Real dPdz_, Real Ubulk_, Real Wbulk_, Real Uwall_, Real ulowerwall_,
+DNSFlags::DNSFlags(Real nu_, Real Pr_, Real Ri_, Real phi_, Real vsmag_, Real kappa_, Real dPdx_, Real dPdz_, 
+                   Real Ubulk_, Real Wbulk_, Real Uwall_, Real ulowerwall_,
                    Real uupperwall_, Real wlowerwall_, Real wupperwall_, Real theta_, Real Vsuck_, Real rotation_,
                    Real t0_, Real T_, Real dT_, Real dt_, bool variabledt_, Real dtmin_, Real dtmax_, Real CFLmin_,
                    Real CFLmax_, Real symmetryprojectioninterval_, BaseFlow baseflow_, MeanConstraint constraint_,
@@ -127,7 +128,9 @@ DNSFlags::DNSFlags(Real nu_, Real Pr_, Real Ri_, Real vs_, Real kappa_, Real dPd
       nu(nu_),
       Pr(Pr_),
       Ri(Ri_),
-      vs(vs_),
+      phi(phi_),
+      us(vsmag_ * sin(phi)),
+      vs(vsmag_ * cos(phi)),
       kappa(kappa_),
       Vsuck(Vsuck_),
       rotation(rotation_),
@@ -168,6 +171,7 @@ DNSFlags::DNSFlags(ArgList& args, const bool laurette)
 
       DNSFlags()  // Default constructor called to initialize some boolean/pointers (e.g. bodyforce ... )
 {
+    Real vsmag;
     // dimensionless parameters of the system
     args.section("System parameters");
     const Real Reynolds = args.getreal("-R", "--Reynolds", 400, "pseudo-Reynolds number == 1/nu");
@@ -176,7 +180,10 @@ DNSFlags::DNSFlags(ArgList& args, const bool laurette)
     nu = (nuarg != 0) ? nuarg : 1.0 / Reynolds;
     Pr = args.getreal("-pr", "--pr", 1, "Prandtl number");
     Ri = args.getreal("-ri", "--ri", 0, "Richardson number");
-    vs = args.getreal("-vs", "--settling", 0, "settling velocity");
+    phi = args.getreal("-phi", "--slopeangle", 0, "slope angle");
+    vsmag = args.getreal("-vsmag", "--settling", 0, "settling velocity");
+    us = vsmag * sin(phi);
+    vs = vsmag * cos(phi);
     kappa = args.getreal("-kap", "--kappa", 1, "concentration diffusivity");
     // more general dnsflags
     args2BC(args);
@@ -616,6 +623,8 @@ void DNSFlags::save(const string& outdir) const {
         os << setw(REAL_IOWIDTH) << nu << "  %nu\n"
            << setw(REAL_IOWIDTH) << Pr << "  %Pr\n"
            << setw(REAL_IOWIDTH) << Ri << "  %Ri\n"
+           << setw(REAL_IOWIDTH) << phi << " %phi\n"
+           << setw(REAL_IOWIDTH) << us << "  %us\n"
            << setw(REAL_IOWIDTH) << vs << "  %vs\n"
            << setw(REAL_IOWIDTH) << kappa << "  %kappa\n"
            << setw(REAL_IOWIDTH) << Vsuck << "  %Vsuck\n"
@@ -670,6 +679,8 @@ void DNSFlags::load(int taskid, const string indir) {
     nu = getRealfromLine(taskid, is);
     Pr = getRealfromLine(taskid, is);
     Ri = getRealfromLine(taskid, is);
+    phi = getRealfromLine(taskid, is);
+    us = getRealfromLine(taskid, is);
     vs = getRealfromLine(taskid, is);
     kappa = getRealfromLine(taskid, is);
     Vsuck = getRealfromLine(taskid, is);
@@ -710,6 +721,8 @@ const vector<string> DNSFlags::getFlagList() {
     const vector<string> flagList = {"%nu",
                                      "%Pr",
                                      "%Ri",
+                                     "%phi",
+                                     "%us",
                                      "%vs",
                                      "%kappa",
                                      "%Vsuck",
@@ -1000,7 +1013,8 @@ ostream& operator<<(ostream& os, const DNSFlags& flags) {
     string tau = (flags.taucorrection) ? "TauCorrection" : "NoTauCorrection";
     const int p = os.precision();
     os.precision(16);
-    os << "nu==" << flags.nu << s << "Pr==" << flags.Pr << s << "Ri==" << flags.Ri << s << "v_s==" << flags.vs << s << "kappa==" << flags.kappa << s
+    os << "nu==" << flags.nu << s << "Pr==" << flags.Pr << s << "Ri==" << flags.Ri << s << "phi==" << flags.phi << s 
+       << "u_s==" << flags.us << s << "v_s==" << flags.vs << s << "kappa==" << flags.kappa << s
        << "Vsuck==" << flags.Vsuck << s << "rotation==" << flags.rotation << s
        << "theta==" << flags.theta << s << "dPdx==" << flags.dPdx << s << "dPdz==" << flags.dPdz << s
        << "Ubulk==" << flags.Ubulk << s << "Wbulk==" << flags.Wbulk << s << "uwall==" << flags.Uwall << s

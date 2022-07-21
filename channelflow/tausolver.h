@@ -33,7 +33,7 @@ Real divcheck(std::string& label, int kx, int kz, Real Lx, Real Lz, const Comple
 class TauSolver {
    public:
     TauSolver();
-    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real Pr, Real Ri, Real vs, Real conc_diffusivity, BoundaryCond bc, int Ny, bool tauCorrection = true);
+    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real Pr, Real Ri, Real phi, Real vs, Real conc_diffusivity, BoundaryCond bc, int Ny, bool tauCorrection = true);
     // TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda,
     // Real nu, int nChebyModes, bool dx_on=true, bool dz_on=true,
     // bool tauCorrection=true);
@@ -93,6 +93,8 @@ class TauSolver {
     Real nu_;             // viscosity
     Real Pr_;             // Prandtl number
     Real Ri_;             // Richardson number
+    Real cosphi_;         // slope angle resolve slope normal
+    Real sinphi_;         // slope angle resolve slope parallel
     Real conc_diffusivity_;
     bool tauCorrection_;  // Try to eliminate tau errors in (P,v) solutions
 

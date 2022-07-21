@@ -83,7 +83,7 @@ class BodyForce {
 class DNSFlags {
    public:
     //        type name       default
-    DNSFlags(Real nu = 0.0025, Real Pr = 1.0, Real Ri = 0.0, Real vs = 0.0, Real kappa = 1.0, Real dPdx = 0.0, Real dPdz = 0.0, Real Ubulk = 0.0, Real Wbulk = 0.0, Real Uwall = 1.0,
+    DNSFlags(Real nu = 0.0025, Real Pr = 1.0, Real Ri = 0.0, Real phi = 0.0, Real vsmag = 0.0, Real kappa = 1.0, Real dPdx = 0.0, Real dPdz = 0.0, Real Ubulk = 0.0, Real Wbulk = 0.0, Real Uwall = 1.0,
              Real ulowerwall = 0.0, Real uupperwall = 0.0, Real wlowerwall = 0.0, Real wupperwall = 0.0,
              Real theta = 0.0, Real Vsuck = 0.0, Real rotation = 0.0, Real t0 = 0.0, Real T = 20.0, Real dT = 1.0,
              Real dt = 0.03125, bool variabledt = true, Real dtmin = 0.001, Real dtmax = 0.2, Real CFLmin = 0.4,
@@ -117,7 +117,9 @@ class DNSFlags {
     Real nu;                            // Kinematic viscosity nu
     Real Pr;                            // Prandtl number
     Real Ri;                            // Richardson number
-    Real vs;                            // settling velocity
+    Real phi;                           // slope angle
+    Real us;                            // settling velocity resolved in streamwise direction
+    Real vs;                            // settling velocity resolved in wall-normal direction
     Real kappa;                         // concentration diffusivity
     Real Vsuck;                         // suction velocity
     Real rotation;                      // dimensionless rotation around the z-axis

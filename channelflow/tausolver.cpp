@@ -68,6 +68,8 @@ TauSolver::TauSolver()
       nu_(0),
       Pr_(1),
       Ri_(0),
+      cosphi_(1.0),
+      sinphi_(0.0),
       conc_diffusivity_(1.0),
       tauCorrection_(true),
       pressureHelmholtz_(),
@@ -84,7 +86,7 @@ TauSolver::TauSolver()
       i10_(0),
       i11_(0) {}
 
-TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real Pr, Real Ri, Real vs, Real conc_diffusivity, BoundaryCond bc, int nChebyModes, bool tauCorrection)
+TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real Pr, Real Ri, Real phi, Real vs, Real conc_diffusivity, BoundaryCond bc, int nChebyModes, bool tauCorrection)
     : N_(nChebyModes),
       Nb_(nChebyModes - 1),
       kx_(kx),
@@ -100,6 +102,8 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
       nu_(nu),
       Pr_(Pr),
       Ri_(Ri),
+      cosphi_(cos(phi)),
+      sinphi_(sin(phi)),
       conc_diffusivity_(conc_diffusivity),
       tauCorrection_(tauCorrection),
       pressureHelmholtz_(N_, a_, b_, kappa2_),
@@ -203,9 +207,9 @@ void TauSolver::influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const {
 
 void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, const ChebyCoeff& rho, Real& sigmaNb1,
                               Real& sigmaNb) const {
-    // JL need to add on -Ri * rho'
+    // JL need to add on -Ri * div(rho * gravity vector)
     ChebyCoeff tmp(r);
-    tmp -= Ri_ * diff(rho);
+    tmp -= Ri_ * cosphi_ * diff(rho);
 
     // P is Canuto & Hussaini's Ppart particular solution after this solve
     pressureHelmholtz_.solve(P, tmp, 0.0, 0.0);  // eqn 7.3.25 discrete HH1
@@ -222,7 +226,7 @@ void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r,
     // The rest of this method is for the case kx != 0 or kz != 0.
     tmp = diff(P);
     tmp -= Ry;
-    tmp += Ri_ * rho; // JL buoyancy term
+    tmp += Ri_ * cosphi_ * rho; // JL buoyancy term
 
     // v is Canuto & Hussaini's vpart particular solution after this solve
     velocityHelmholtz_.solve(v, tmp, 0.0, 0.0);  // eqn 7.3.25 discrete HH2
@@ -383,18 +387,18 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     // Re and Im parts of v and P eqns decouple. Solve them seperately.
     diff(Ry.re, rr);
     for (n = 0; n < N_; ++n)
-        rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
+        rr[n] -= two_pi_kxLx_ * (Rx.im[n] + Ri_ * sinphi_* rho.im[n]) + two_pi_kzLz_ * Rz.im[n];
     solve_P_and_v(P.re, v.re, rr, Ry.re, rho.re, sigmaNb1, sigmaNb);
 
     diff(Ry.im, rr);
     for (n = 0; n < N_; ++n)
-        rr[n] += two_pi_kxLx_ * Rx.re[n] + two_pi_kzLz_ * Rz.re[n];
+        rr[n] += two_pi_kxLx_ * (Rx.re[n] + Ri_ * sinphi_ * rho.re[n]) + two_pi_kzLz_ * Rz.re[n];
     solve_P_and_v(P.im, v.im, rr, Ry.im, rho.im, sigmaNb1, sigmaNb);
 
     // Re and Im parts of u and w eqns seperate.
     // Use r as temporary space to store RHS of eqns.
     for (n = 0; n < N_; ++n)
-        r.set(n, two_pi_kxLx_ * I * P[n] - Rx[n]);
+        r.set(n, two_pi_kxLx_ * I * P[n] - Rx[n] - Ri_ * sinphi_ * rho[n]);
     // Complex c = pi2i*kxLx_*P[n] - Rx[n];
     // r.set(n,c);
 
