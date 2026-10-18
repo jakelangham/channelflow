@@ -9,7 +9,7 @@
 #                 (default: 1e-8)
 #   case          run only these cases, whatever their tier: unit, or the name of any
 #                 findsoln_<case>.sh / simulate_<case>.sh / continue_<case>.sh /
-#                 schemes_<case>.sh / error_<case>.sh script here
+#                 schemes_<case>.sh / error_<case>.sh / eigen_<case>.sh script here
 #
 # Tiers: each case script sets tier=quick (run after every change, ~1 min in total) or
 # tier=full (minutes to an hour; before merges, restructure milestones and production runs).
@@ -37,6 +37,8 @@
 #   lists, requiring the final field to equal its reference to tol_strict. Combinations listed in
 #   its xfail are known not to work yet: they report XFAIL (not a failure) while broken, and XPASS
 #   (also not a failure, but a prompt to update xfail) once they start working.
+# An eigen_* case writes onset.txt ("Ri_lo sigma_lo Ri_hi sigma_hi onset"); the leading growth rate
+#   must change sign across the bracket and the onset must match onset_ref to tol_rel.
 # An error_* case runs an unsupported configuration and requires a non-zero exit with the
 #   message given by its expect=.
 # Every case also checks that its output field keeps the reference's file layout: NetCDF
@@ -71,7 +73,7 @@ if [ $# -gt 0 ]; then
 else
     cases=unit
     [ $all_tiers = 1 ] && cases="$cases mpi"
-    for f in findsoln_*.sh simulate_*.sh continue_*.sh schemes_*.sh error_*.sh; do
+    for f in findsoln_*.sh simulate_*.sh continue_*.sh schemes_*.sh error_*.sh eigen_*.sh; do
         c=${f#*_}; c=${c%.sh}
         t=$(sed -n 's/^tier=//p' "$f")
         { [ "$t" = quick ] || [ $all_tiers = 1 ]; } && cases="$cases $c"
@@ -83,6 +85,7 @@ build=$(cd "$build" && pwd) || exit 2
 export FINDSOLN=$build/programs/findsoln
 export SIMULATEFLOW=$build/programs/simulateflow
 export CONTINUESOLN=$build/programs/continuesoln
+export FINDEIGENVALS=$build/programs/findeigenvals
 export SETTLINGPROFILE=$build/tools/settlingprofile
 # Older builds may predate settlingprofile; it only writes the exact field, so use this tree's
 [ -x "$SETTLINGPROFILE" ] || SETTLINGPROFILE=$(cd ../../build && pwd)/tools/settlingprofile
@@ -129,6 +132,27 @@ check_format() {
     else
         report "$1" format FAIL "NetCDF layout differs from the reference: diff <(ncdump -h $2) <(ncdump -h $3)"
     fi
+}
+
+# run_eigen CASE: stability onset from the leading growth rates at two Ri, against a reference
+run_eigen() {
+    local c=$1 script=eigen_$1.sh out=run/$1/ ref tol wall rss a sa b sb onset rel
+    ref=$(sed -n 's/^onset_ref=//p' "$script")
+    tol=$(sed -n 's/^tol_rel=//p' "$script")
+    rm -rf "$out" && mkdir -p "$out"
+    echo "== $c (stability onset)"
+    OUTDIR=$out /usr/bin/time -f "%e %M" -o "$out/time" ./"$script" > "$out/run.log" 2>&1
+    read -r wall rss < "$out/time"
+    if ! read -r a sa b sb onset < "$out/onset.txt" 2> /dev/null || [ -z "$onset" ]; then
+        report "$c" onset FAIL "no onset.txt; see $out"
+        return
+    fi
+    if le "$sa" 0 && le 0 "$sb"; then report "$c" bracket PASS "sigma($a) = $sa < 0 < sigma($b) = $sb"
+    else report "$c" bracket FAIL "no sign change: sigma($a) = $sa, sigma($b) = $sb"; fi
+    rel=$(awk -v x="$onset" -v r="$ref" 'BEGIN { d = (x - r) / r; print (d < 0 ? -d : d) }')
+    if le "$rel" "$tol"; then report "$c" onset PASS "Ri_b = $onset vs reference $ref (relative $rel)"
+    else report "$c" onset FAIL "Ri_b = $onset vs reference $ref (relative $rel > $tol)"; fi
+    echo "  ($wall s, peak RSS $((rss / 1024)) MB)"
 }
 
 # run_error CASE: an unsupported configuration must stop with the expected message
@@ -331,6 +355,7 @@ for c in $cases; do
     if [ -f continue_$c.sh ]; then run_cont "$c"; continue; fi
     if [ -f schemes_$c.sh ]; then run_schemes "$c"; continue; fi
     if [ -f error_$c.sh ]; then run_error "$c"; continue; fi
+    if [ -f eigen_$c.sh ]; then run_eigen "$c"; continue; fi
     if [ -f findsoln_$c.sh ]; then run_findsoln "$c"; continue; fi
     echo "unknown case: $c"; nfail=$((nfail + 1))
 done

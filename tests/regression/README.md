@@ -28,6 +28,7 @@ runs the CTest unit/integration tests that currently pass.
 | vsett1 | full | continuation in vs keeps the no-flux BC consistent | 8 min |
 | decay2 | full | exact decaying scalar mode (m = 2, n = 2, vs/kappa = 4) | 14 s |
 | steady | full | exact steady profile under every scheme and both constraints (7 XFAIL) | 45 s |
+| onset1 | full | stability onset of the laminar state vs Langham & Hogg (2026) App. B | 10 min |
 | upo1 | full | periodic orbit (T ~ 87.8), Newton + period | 1 min |
 | mpi | full | eq1, eq3, traj1 on 2 MPI processes match the serial references (needs `-m`) | 20 s |
 
@@ -131,6 +132,19 @@ out of git.
 - `error_rotation.sh` (-rot) and `error_nonlinearity.sh` (-nl conv) must stop with a message rather
   than run: rotation with the scalar was silently wrong, and only the rotational form of the
   nonlinear term handles the scalar.
+
+## onset1 — linear-stability onset against the paper
+
+- Langham & Hogg (2026), Appendix B: at Re = 400, Sc = 1, vs/kappa = 1, in this box, the
+  streamwise-invariant (0, 1) mode of the laminar state becomes unstable at Ri_b = -9.08e-4
+  (computed there with Chebfun, independently of channelflow). `eigen_onset1.sh` runs
+  findeigenvals (T = 10, 40 Arnoldi iterations, 16x35x32) on the laminar state at Ri_b = -8.5e-4
+  and -9.5e-4 and interpolates where the leading growth rate crosses zero.
+- Observed: sigma = -6.5e-4 and +5.1e-4, onset -9.061e-4 (0.21% from the paper; tolerance 0.5%).
+  A wider bracket (-8e-4, -1e-3) gives -9.068e-4, so the small offset is not interpolation; it is
+  probably the time discretisation of the f^T map or the finite-difference Jacobian (not checked).
+- Checks the coupled velocity-scalar linear operator, buoyancy, the scalar BCs and the
+  linearisation/Arnoldi path, against an external result.
 
 ## upo1 — periodic orbit, Ri = 0, vs/kappa = 0.56
 
