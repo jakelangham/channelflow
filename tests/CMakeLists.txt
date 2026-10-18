@@ -40,7 +40,7 @@ if (WITH_NSOLVER)
 endif()
 
 # Copy data file needed for tests from source folder to binary folder
-set(data_files eq.nc sigmabest.asc uinit.nc ufinal.nc)
+set(data_files eq.nc sigmabest.asc uinit.nc ufinal.nc settle_eq3.nc)
 foreach (filename ${data_files})
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/${filename}
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data)
