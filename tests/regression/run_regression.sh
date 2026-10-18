@@ -1,9 +1,10 @@
 #!/bin/bash
 # Run the regression cases against their reference solutions and report PASS/FAIL.
 #
-# Usage: ./run_regression.sh [-a] [-b BUILD_DIR] [-t TOL] [case ...]
+# Usage: ./run_regression.sh [-a] [-b BUILD_DIR] [-m MPI_BUILD_DIR] [-t TOL] [case ...]
 #   -a            run every tier (quick and full); default is the quick tier only
 #   -b BUILD_DIR  channelflow build to test (default: ../../build)
+#   -m MPI_BUILD  an MPI build of channelflow, for the "mpi" case (default: $MPI_BUILD if set)
 #   -t TOL        tolerance on relative L2 distances to the reference and on |ax - ax_ref|
 #                 (default: 1e-8)
 #   case          run only these cases, whatever their tier: unit, or the name of any
@@ -12,15 +13,19 @@
 # Tiers: each case script sets tier=quick (run after every change, ~1 min in total) or
 # tier=full (minutes to an hour; before merges, restructure milestones and production runs).
 # The pseudo-case "unit" (quick tier) runs the CTest unit/integration tests that currently pass.
+# The pseudo-case "mpi" (full tier) re-runs eq1, eq3 and traj1 on 2 MPI processes (needs -m);
+# results must match the serial references to the same tolerances.
 #
 # For each findsoln case the reference is re-run through Newton and checked for:
 #   G0     initial residual L2Norm(G) of the reference under the code being tested.
-#          ~1e-13 or below means the discretised equations are unchanged; a larger value is
+#          Within 10x the case's g0_ref (the stored reference's own residual) means the
+#          discretised equations are unchanged; a larger value is
 #          reported (INFO) but is not a failure by itself, e.g. after a change of time
 #          discretisation, which moves f^T but not the steady solution.
 #   G      final residual, must be below the case's Newton tolerance.
 #   dist   relative L2 distance of the converged velocity and scalar to the reference.
 #   ax     converged shift, for travelling waves.
+#   T      converged period, for periodic orbits (relative change).
 # For each simulateflow (traj) case the final field is compared with the reference:
 #   PASS (unchanged) if every relative distance is <= the case's tol_strict;
 #   PASS (within time-stepping error) if <= its tol_loose_* (10x the dt error); FAIL otherwise.
@@ -38,12 +43,15 @@ cd "$(dirname "$0")"
 build=../../build
 tol=1e-8
 all_tiers=0
-while getopts "ab:t:" opt; do
+mpibuild=${MPI_BUILD:-}
+mpirun=${MPIRUN:-mpirun}
+while getopts "ab:m:t:" opt; do
     case $opt in
         a) all_tiers=1 ;;
+        m) mpibuild=$OPTARG ;;
         b) build=$OPTARG ;;
         t) tol=$OPTARG ;;
-        *) sed -n '2,17p' "$0"; exit 2 ;;
+        *) sed -n '2,20p' "$0"; exit 2 ;;
     esac
 done
 shift $((OPTIND - 1))
@@ -55,6 +63,7 @@ if [ $# -gt 0 ]; then
     cases="$*"
 else
     cases=unit
+    [ $all_tiers = 1 ] && cases="$cases mpi"
     for f in findsoln_*.sh simulate_*.sh continue_*.sh; do
         c=${f#*_}; c=${c%.sh}
         t=$(sed -n 's/^tier=//p' "$f")
@@ -63,6 +72,7 @@ else
 fi
 
 build=$(cd "$build" && pwd) || exit 2
+[ -n "$mpibuild" ] && { mpibuild=$(cd "$mpibuild" && pwd) || exit 2; }
 export FINDSOLN=$build/programs/findsoln
 export SIMULATEFLOW=$build/programs/simulateflow
 export CONTINUESOLN=$build/programs/continuesoln
@@ -143,7 +153,7 @@ run_cont() {
 
 # run_traj CASE: integrate a simulateflow case and compare its final field with the reference
 run_traj() {
-    local c=$1 script=simulate_$1.sh out=run/$1/
+    local c=${2:-$1} script=simulate_$1.sh out=run/${2:-$1}/
     local ref T tol_strict wall rss label d rel n nref loose
     ref=$(sed -n 's/^reference=//p' "$script")
     T=$(sed -n 's/^T=//p' "$script")
@@ -183,50 +193,83 @@ run_unit() {
 echo "build: $build"
 echo "tolerance: $tol"
 echo "cases: $cases"
-for c in $cases; do
-    if [ "$c" = unit ]; then run_unit; continue; fi
-    if [ -f simulate_$c.sh ]; then run_traj "$c"; continue; fi
-    if [ -f continue_$c.sh ]; then run_cont "$c"; continue; fi
-    script=findsoln_$c.sh
-    [ -f "$script" ] || { echo "unknown case: $c"; nfail=$((nfail + 1)); continue; }
+# run_findsoln CASE [LABEL]: re-run a findsoln case from its reference; output in run/LABEL/
+run_findsoln() {
+    local c=$1 label=${2:-$1} script=findsoln_$1.sh out=run/${2:-$1}/
+    local ref newt_tol sigma wall rss conv g0 g nsteps lab d rel n nref ax_ref ax dax
     ref=$(sed -n 's/^infile=//p' "$script")
     newt_tol=$(sed -n 's/^newt_tol=//p' "$script")
     sigma=$(sed -n 's/^sigma=//p' "$script")
-    out=run/$c/
     rm -rf "$out" && mkdir -p "$out"
 
-    echo "== $c (reference $ref)"
+    echo "== $label (reference $ref)"
     OUTDIR=$out /usr/bin/time -f "%e %M" -o "$out/time" ./"$script" > "$out/findsoln.log" 2>&1
     read -r wall rss < "$out/time"
     conv=$out/convergence.asc
     if [ ! -s "$conv" ] || [ ! -f "$out/ubest.nc" ]; then
-        report "$c" findsoln FAIL "no convergence.asc/ubest.nc; see $out/findsoln.log"
-        continue
+        report "$label" findsoln FAIL "no convergence.asc/ubest.nc; see $out/findsoln.log"
+        return
     fi
 
     g0=$(column L2Norm\(Gx\) "$conv" 1)
     g=$(column L2Norm\(Gx\) "$conv" last)
     nsteps=$(($(wc -l < "$conv") - 2))
-    if le "$g0" 1e-12; then report "$c" G0 ok "$g0 (equations unchanged)"
-    else report "$c" G0 INFO "$g0 (f^T differs from the reference code)"; fi
-    if le "$g" "$newt_tol"; then report "$c" G PASS "$g after $nsteps Newton steps"
-    else report "$c" G FAIL "$g > $newt_tol after $nsteps Newton steps"; fi
+    local g0_ref g0_lim
+    g0_ref=$(sed -n 's/^g0_ref=\([^ ]*\).*/\1/p' "$script")
+    g0_lim=$(awk -v r="${g0_ref:-1e-13}" 'BEGIN { print 10 * r }')
+    if le "$g0" "$g0_lim"; then report "$label" G0 ok "$g0 (equations unchanged; reference ${g0_ref:-?})"
+    else report "$label" G0 INFO "$g0 > 10x reference ${g0_ref:-?}: f^T differs from the reference code"; fi
+    if le "$g" "$newt_tol"; then report "$label" G PASS "$g after $nsteps Newton steps"
+    else report "$label" G FAIL "$g > $newt_tol after $nsteps Newton steps"; fi
 
-    while read -r label d rel n nref; do
-        [ "$label" = all ] && continue
-        if le "$rel" "$tol"; then report "$c" "$label" PASS "rel dist $rel"
-        else report "$c" "$label" FAIL "rel dist $rel > $tol (abs $d)"; fi
+    while read -r lab d rel n nref; do
+        [ "$lab" = all ] && continue
+        if le "$rel" "$tol"; then report "$label" "$lab" PASS "rel dist $rel"
+        else report "$label" "$lab" FAIL "rel dist $rel > $tol (abs $d)"; fi
     done < <("$fieldcompare" "$out/ubest.nc" "$ref")
-    check_format "$c" "$out/ubest.nc" "$ref"
+    check_format "$label" "$out/ubest.nc" "$ref"
+
+    if grep -q -- '-orb' "$script" && [ -f "$out/Tbest.asc" ]; then
+        local T_ref T_new dT
+        T_ref=$(sed -n 's/^T=//p' "$script")
+        T_new=$(cat "$out/Tbest.asc")
+        dT=$(awk -v a="$T_new" -v b="$T_ref" 'BEGIN { d = (a - b) / b; print (d < 0 ? -d : d) }')
+        if le "$dT" "$tol"; then report "$label" T PASS "$T_new (relative change $dT)"
+        else report "$label" T FAIL "$T_new vs $T_ref (relative change $dT)"; fi
+    fi
 
     if [ -n "$sigma" ]; then
         ax_ref=$(awk '{print $5}' "$sigma")
         ax=$(awk '{print $5}' "$out/sigmabest.asc")  # full precision, unlike convergence.asc
         dax=$(awk -v a="$ax" -v b="$ax_ref" 'BEGIN { d = a - b; print (d < 0 ? -d : d) }')
-        if le "$dax" "$tol"; then report "$c" ax PASS "$ax (|dax| = $dax)"
-        else report "$c" ax FAIL "$ax vs $ax_ref (|dax| = $dax)"; fi
+        if le "$dax" "$tol"; then report "$label" ax PASS "$ax (|dax| = $dax)"
+        else report "$label" ax FAIL "$ax vs $ax_ref (|dax| = $dax)"; fi
     fi
     echo "  ($wall s, peak RSS $((rss / 1024)) MB)"
+}
+
+# run_mpi: re-run eq1, eq3 and traj1 on 2 MPI processes against the same references
+run_mpi() {
+    if [ -z "$mpibuild" ]; then
+        report mpi build INFO "no MPI build given (-m DIR), skipped"
+        return
+    fi
+    local fs=$FINDSOLN sf=$SIMULATEFLOW
+    export FINDSOLN="$mpirun -np 2 $mpibuild/programs/findsoln"
+    export SIMULATEFLOW="$mpirun -np 2 $mpibuild/programs/simulateflow"
+    run_findsoln eq1 mpi_eq1
+    run_findsoln eq3 mpi_eq3
+    run_traj traj1 mpi_traj1
+    export FINDSOLN=$fs SIMULATEFLOW=$sf
+}
+
+for c in $cases; do
+    if [ "$c" = unit ]; then run_unit; continue; fi
+    if [ "$c" = mpi ]; then run_mpi; continue; fi
+    if [ -f simulate_$c.sh ]; then run_traj "$c"; continue; fi
+    if [ -f continue_$c.sh ]; then run_cont "$c"; continue; fi
+    if [ -f findsoln_$c.sh ]; then run_findsoln "$c"; continue; fi
+    echo "unknown case: $c"; nfail=$((nfail + 1))
 done
 
 if [ $nfail -eq 0 ]; then echo "ALL PASSED"; else echo "$nfail FAILED"; fi

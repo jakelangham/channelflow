@@ -6,6 +6,7 @@ Run serially (1 thread).
 
     ./run_regression.sh                 # quick tier against ../../build: ~40 s, ~42 MB
     ./run_regression.sh -a              # all tiers (quick + full)
+    ./run_regression.sh -a -m MPI_BUILD # ... including the MPI case
     ./run_regression.sh -b OTHER_BUILD  # against another build (from 2026-10-18 on: the case
                                         # scripts use -vsett, which older builds do not accept)
     ./run_regression.sh eq3 settle1     # selected cases, any tier
@@ -22,6 +23,8 @@ runs the CTest unit/integration tests that currently pass.
 | settle1 | quick | exact settling profile stays steady (analytic) | 15 s |
 | traj1 | quick | time stepping at Ri > 0 | 14 s |
 | vsett1 | full | continuation in vs keeps the no-flux BC consistent | 8 min |
+| upo1 | full | periodic orbit (T ~ 87.9), Newton + period | 1.5 min |
+| mpi | full | eq1, eq3, traj1 on 2 MPI processes match the serial references (needs `-m`) | 20 s |
 
 Every case also checks that its output field keeps the NetCDF layout of the reference
 (dimensions, `Component_0`..`Component_3`, geometry attributes), since external scripts read it.
@@ -86,6 +89,23 @@ out of git.
 - Sensitivity: the same evaluation at the previous step's vs gives ~1e-3, i.e. a frozen BC would
   be detected. (Before commit 2179c53, cfDSI kept the starting vs/kappa in the BC throughout.)
 - At Ri = 0 the velocity does not depend on vs, so only the scalar changes along this branch.
+
+## upo1 — periodic orbit, Ri = 0, vs/kappa = 0.56
+
+- `upo1_32x35x48.nc`, period T = 87.919012419852208, symmetry `sztxz.asc`, box Lx = 1.75 pi,
+  Lz = 1.2 pi (different from the other cases). vs = 1.4e-3, kappa = 2.5e-3. Run with
+  `findsoln_upo1.sh` (`-orb`).
+- Provenance: the user's `upo_vk0.56_findsoln/ubest.nc` (60x61x60, T = 87.8902, L2Norm(G) = 9.9e-12,
+  written 2026-06-23 at ef3d6d6). 16x35x32 was too coarse (initial L2Norm(G) = 1.8e-2, did not
+  converge); at 32x35x48 it converged 2.5e-4 -> 1.0e-5 -> 2.3e-7 -> 9.5e-9 -> 4.3e-10 -> 2.0e-11
+  in 5 Newton steps (about 1 min per f^T, 1 h 50 min, 150 MB) and was accepted at 2.0e-11.
+- Truncation of the original at 60x61x60: x 1e-7, y 2e-11, z 3e-6.
+
+## mpi — parallel decomposition
+
+- Re-runs eq1, eq3 and traj1 with `mpirun -np 2` using an MPI build (`-m DIR` or `MPI_BUILD`), with
+  the same references and tolerances as the serial cases. Observed: residuals agree with serial to
+  the last digits (e.g. 1.67888e-13 vs 1.67907e-13), distances <= 2e-13.
 
 ## Effect of the buoyancy tau-correction fix (commit 9ab93c7)
 

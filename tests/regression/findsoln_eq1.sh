@@ -10,6 +10,7 @@ vs=2.5e-3
 kappa=2.5e-3
 Ri=0.0
 newt_tol=1e-12
+g0_ref=1.7e-13  # residual of the stored reference under the code that made it
 infile=eq1_16x35x32.nc
 velfile=eq1_16x35x32.nc
 symms=s1.asc
