@@ -12,8 +12,6 @@
 #include "cfbasics/cfvector.h"
 #include "cfbasics/mathdefs.h"
 
-using namespace Eigen;
-
 namespace chflow {
 
 enum BC { Free, Diri, Zero, Neum, DiriRobin, NeumRobin, NoFlux };

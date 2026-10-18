@@ -62,6 +62,15 @@ class FlowField {
     FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, BoundaryCond BC, CfMPI* cfmpi = NULL,
               fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE);
 
+    // As above, with the default (homogeneous Dirichlet) scalar boundary condition
+    FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi = NULL,
+              fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE)
+        : FlowField(Nx, Ny, Nz, Nd, Lx, Lz, a, b, BoundaryCond(), cfmpi, xzstate, ystate, fftw_flags) {}
+
+    FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi = NULL,
+              fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE)
+        : FlowField(Nx, Ny, Nz, Nd, tensorOrder, Lx, Lz, a, b, BoundaryCond(), cfmpi, xzstate, ystate, fftw_flags) {}
+
     FlowField(const FlowField& u);
     FlowField(const std::string& filebase, CfMPI* cfmpi = NULL);  // opens filebase.h5 or filebase.ff
     FlowField(const std::string& filebase, int major, int minor, int update);

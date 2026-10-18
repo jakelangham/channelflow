@@ -6,7 +6,7 @@ using namespace Eigen;
 namespace chflow {
 
 BoundaryCond::BoundaryCond()
-    : type_(Diri), ga_(0), gb_(0) { 
+    : type_(Diri), Mx_(0), Mz_(0), ga_(0), gb_(0), alpha_(0) {
 }
 
 BoundaryCond::BoundaryCond(int type, int Mx, int Mz, Real ga, Real gb)
