@@ -22,8 +22,10 @@ runs the CTest unit/integration tests that currently pass.
 | eq3 | quick | Ri > 0 travelling wave, Newton + shift | 4 s |
 | settle1 | quick | exact settling profile stays steady (analytic), vs/kappa = 1 | 15 s |
 | settle2 | quick | the same at vs/kappa = 14 (bottom boundary layer), Ny = 49 | 15 s |
+| decay1 | quick | exact decaying scalar mode (m = 1, n = 1, vs/kappa = 1) | 14 s |
 | traj1 | quick | time stepping at Ri > 0 | 14 s |
 | vsett1 | full | continuation in vs keeps the no-flux BC consistent | 8 min |
+| decay2 | full | exact decaying scalar mode (m = 2, n = 2, vs/kappa = 4) | 14 s |
 | upo1 | full | periodic orbit (T ~ 87.8), Newton + period | 1 min |
 | mpi | full | eq1, eq3, traj1 on 2 MPI processes match the serial references (needs `-m`) | 20 s |
 
@@ -76,6 +78,19 @@ out of git.
   which resolves the exponential profile to ~4e-25 (its Chebyshev coefficients scale like I_n(14)).
   Exercises the no-flux BC rows at large alpha = 14 and explicit settling near its time-step limit
   (vs dt / dy_min ~ 0.33 at dt = 0.02). Observed: moves by 3e-14 (velocity) and 2.6e-13 (scalar).
+
+## decay1, decay2 — exact decaying scalar modes, Ri = 0
+
+- With zero velocity perturbation and Ri = 0, a spanwise scalar perturbation
+  eps phi_m(y) cos(2 pi n z / Lz) exp(sigma t) on the base profile is an exact solution (the Couette
+  base flow does not advect z-dependence). Substituting phi = exp(-r y/2) psi, r = vs/kappa, the
+  no-flux problem becomes psi'' = -mu^2 psi, psi' + (r/2) psi = 0 at y = +-1, whose eigenvalues
+  satisfy sin(mu) cos(mu) = 0: mu = m pi/2 and sigma = -kappa (k^2 + r^2/4 + mu^2) (m >= 1), or
+  phi = exp(-r y), sigma = -kappa k^2 (m = 0). `tools/settlingprofile -eps -m -n -t` writes it.
+- The only tests of the non-mean scalar modes and the Robin BC against an exact solution (settle1/2
+  test the mean mode). Errors are second order in dt: decay1 2.9e-8 at dt = 0.02, 7.2e-9 at 0.01;
+  decay2 (faster decay, x0.38 over T = 10) 2.2e-7. Tolerances are 10x these. The m = 0 mode was also
+  checked (6.7e-9) but is not a case.
 
 ## traj1 — time stepping, Ri = 0.0025
 

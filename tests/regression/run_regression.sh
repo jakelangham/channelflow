@@ -157,7 +157,7 @@ run_traj() {
     local ref T tol_strict wall rss label d rel n nref loose
     ref=$(sed -n 's/^reference=//p' "$script")
     T=$(sed -n 's/^T=//p' "$script")
-    [ "$ref" = initial ] && ref=$out/initial.nc  # the case writes its own exact initial field
+    case $ref in initial | exact) ref=$out/$ref.nc ;; esac  # fields the case writes itself
     tol_strict=$(sed -n 's/^tol_strict=//p' "$script")
     rm -rf "$out" && mkdir -p "$out"
     echo "== $c (reference $ref)"
