@@ -11,3 +11,4 @@ tests/regression/*_findsoln/
 tests/regression/dnsflags.txt
 tests/regression/findsoln.args
 tests/regression/processinfo
+tests/regression/run/

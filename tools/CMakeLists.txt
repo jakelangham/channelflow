@@ -11,6 +11,7 @@ set(tool_APPS
   correlation
 #  diffop
 #  extrapolatefields
+  fieldcompare
   fieldconvert
   fieldprops
   findsymmetries

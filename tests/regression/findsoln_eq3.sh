@@ -3,7 +3,7 @@
 # sztxz-symmetric. Reconverges eq3_16x35x32.nc from its converged shift (eq3_sigma.asc); a code
 # change that leaves the physics unchanged should start at L2Norm(G) ~ 4e-15 and stay there.
 # Run from this directory.
-findsoln=../../build/programs/findsoln
+findsoln=${FINDSOLN:-../../build/programs/findsoln}
 Re=400
 T=20
 vs=2.5e-3
@@ -14,7 +14,7 @@ infile=eq3_16x35x32.nc
 velfile=eq3_16x35x32.nc
 symms=sztxz.asc
 sigma=eq3_sigma.asc
-outdir=eq3_findsoln/
+outdir=${OUTDIR:-eq3_findsoln/}
 
 mkdir -p $outdir
 $findsoln -eqb -xrel -R $Re -vs $vs -kap $kappa -T $T \
