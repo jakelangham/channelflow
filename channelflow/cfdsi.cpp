@@ -190,6 +190,15 @@ pair<string, string> cfDSI::stats_minmax(const VectorXd& x) {
 
 string cfDSI::statsHeader() { return fieldstatsheader_t(cPar2s(cPar_)); }
 
+// The no-flux condition kappa c' + vs c = 0 depends on vs/kappa, so it must follow continuation
+// in either; otherwise every point after the first would keep the starting vs/kappa in the BC.
+void cfDSI::resetNoFluxBC() {
+    if (BC_.type_ != NoFlux)
+        return;
+    const Real r = dnsflags_.vs / dnsflags_.kappa;
+    BC_ = BoundaryCond(NoFlux, BC_.Mx_, BC_.Mz_, 1.0 - r, 1.0 + r, r);
+}
+
 void cfDSI::updateMu(Real mu) {
     DSI::updateMu(mu);
 
@@ -197,6 +206,12 @@ void cfDSI::updateMu(Real mu) {
         dnsflags_.nu = 1. / mu;
     } else if (cPar_ == continuationParameter::Ri) {
         dnsflags_.Ri = mu;
+    } else if (cPar_ == continuationParameter::vs) {
+        dnsflags_.vs = mu;
+        resetNoFluxBC();
+    } else if (cPar_ == continuationParameter::kappa) {
+        dnsflags_.kappa = mu;
+        resetNoFluxBC();
     } else if (cPar_ == continuationParameter::Pr) {
         dnsflags_.Pr = mu;
     } else if (cPar_ == continuationParameter::T) {
@@ -306,6 +321,12 @@ void cfDSI::chooseMu(continuationParameter mu) {
         case continuationParameter::Ri:
             updateMu(dnsflags_.Ri);
             break;
+        case continuationParameter::vs:
+            updateMu(dnsflags_.vs);
+            break;
+        case continuationParameter::kappa:
+            updateMu(dnsflags_.kappa);
+            break;
         case continuationParameter::Pr:
             updateMu(dnsflags_.Pr);
             break;
@@ -378,6 +399,10 @@ continuationParameter cfDSI::s2cPar(string muname) {
         return continuationParameter::Re;
     else if (muname == "ri")
         return continuationParameter::Ri;
+    else if (muname == "vsett")
+        return continuationParameter::vs;
+    else if (muname == "kappa")
+        return continuationParameter::kappa;
     else if (muname == "pr")
         return continuationParameter::Pr;
     else if (muname == "T")
@@ -457,6 +482,8 @@ string cfDSI::cPar2s(continuationParameter cPar) {
         return "Vs";
     else if (cPar == continuationParameter::Ri)
         return "Ri";
+    else if (cPar == continuationParameter::vs)
+        return "vsett";
     else if (cPar == continuationParameter::kappa)
         return "kappa";
     else if (cPar == continuationParameter::ReVs)

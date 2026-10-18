@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
         args.section("Program options");
         const string muname = args.getstr(
             "-cont", "--continuation", "",
-            "continuation parameter, one of [Re Pr Ri P Ub Uw ReP Theta ThLx ThLz Lx Lz Aspect Diag Lt Vs ReVs H HVs Rot]");
+            "continuation parameter, one of [Re Ri vsett kappa Pr P Ub Uw ReP Theta ThLx ThLz Lx Lz Aspect Diag Lt Vs ReVs H HVs Rot]");
         const string sigmastr =
             args.getstr("-sigma", "--sigma", "", "file containing sigma of sigma f^T(u) - u = 0 (default == identity)");
         const Real Unormalize = args.getreal("-un", "--unormalize", 0.0, "lower bound in energy for search");

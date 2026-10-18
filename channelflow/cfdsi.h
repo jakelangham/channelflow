@@ -140,6 +140,7 @@ class cfDSI : public DSI {
     Real ya_;
     Real yb_;
     BoundaryCond BC_;
+    void resetNoFluxBC();  // rebuild the no-flux BC of the scalar from dnsflags_.vs and dnsflags_.kappa
     Real CFL_;
     int uunk_;
     bool xphasehack_;

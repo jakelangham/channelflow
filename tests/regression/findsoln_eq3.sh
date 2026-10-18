@@ -18,7 +18,7 @@ sigma=eq3_sigma.asc
 outdir=${OUTDIR:-eq3_findsoln/}
 
 mkdir -p $outdir
-$findsoln -eqb -xrel -R $Re -vs $vs -kap $kappa -T $T \
+$findsoln -eqb -xrel -R $Re -vsett $vs -kap $kappa -T $T \
     -ri $Ri -es $newt_tol -opt 'hookstep' \
     -symms $symms -sigma $sigma -od $outdir \
     -is 'sbdf1' -Ng 2000 $velfile $infile

@@ -6,7 +6,8 @@ Run serially (1 thread).
 
     ./run_regression.sh                 # quick tier against ../../build: ~40 s, ~42 MB
     ./run_regression.sh -a              # all tiers (quick + full)
-    ./run_regression.sh -b OTHER_BUILD  # against another build
+    ./run_regression.sh -b OTHER_BUILD  # against another build (from 2026-10-18 on: the case
+                                        # scripts use -vsett, which older builds do not accept)
     ./run_regression.sh eq3 settle1     # selected cases, any tier
 
 Tiers: each case script sets `tier=quick` (run after every change) or `tier=full` (slower;

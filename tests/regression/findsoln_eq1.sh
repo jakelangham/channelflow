@@ -16,7 +16,7 @@ symms=s1.asc
 outdir=${OUTDIR:-eq1_findsoln/}
 
 mkdir -p $outdir
-$findsoln -eqb -R $Re -vs $vs -kap $kappa -T $T \
+$findsoln -eqb -R $Re -vsett $vs -kap $kappa -T $T \
     -ri $Ri -es $newt_tol -opt 'hookstep' \
     -symms $symms -od $outdir \
     -is 'sbdf1' -Ng 2000 $velfile $infile

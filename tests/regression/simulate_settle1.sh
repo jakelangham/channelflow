@@ -21,7 +21,7 @@ outdir=${OUTDIR:-settle1_simulateflow/}
 
 mkdir -p $outdir
 $settlingprofile -Nx 16 -Ny 35 -Nz 32 -Lx $Lx -Lz $Lz -vsok $vsok $outdir/initial.nc
-$simulateflow -R $Re -vs $vs -kap $kappa -ri $Ri \
+$simulateflow -R $Re -vsett $vs -kap $kappa -ri $Ri \
     -T $T -dT $T -dt $dt -vdt false -ts sbdf3 -is sbdf1 \
     -o $outdir $outdir/initial.nc
 

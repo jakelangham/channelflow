@@ -15,7 +15,7 @@ infile=eq1_16x35x32.nc
 outdir=${OUTDIR:-traj1_simulateflow/}
 
 mkdir -p $outdir
-$simulateflow -R $Re -vs $vs -kap $kappa -ri $Ri \
+$simulateflow -R $Re -vsett $vs -kap $kappa -ri $Ri \
     -T $T -dT $T -dt $dt -vdt false -ts sbdf3 -is sbdf1 \
     -o $outdir $infile
 

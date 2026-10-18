@@ -176,7 +176,7 @@ DNSFlags::DNSFlags(ArgList& args, const bool laurette)
     nu = (nuarg != 0) ? nuarg : 1.0 / Reynolds;
     Pr = args.getreal("-pr", "--pr", 1, "Prandtl number");
     Ri = args.getreal("-ri", "--ri", 0, "Richardson number");
-    vs = args.getreal("-vs", "--settling", 0, "settling velocity");
+    vs = args.getreal("-vsett", "--settling", 0, "settling velocity");
     kappa = args.getreal("-kap", "--kappa", 1, "concentration diffusivity");
     // more general dnsflags
     args2BC(args);
