@@ -14,7 +14,8 @@
 # Tiers: each case script sets tier=quick (run after every change, ~1 min in total) or
 # tier=full (minutes to an hour; before merges, restructure milestones and production runs).
 # The pseudo-case "unit" (quick tier) runs the CTest unit/integration tests that currently pass.
-# The pseudo-case "mpi" (full tier) re-runs eq1, eq3 and traj1 on 2 MPI processes (needs -m);
+# The pseudo-case "mpi" (full tier) re-runs eq1, eq3 and traj1 on 2 MPI processes, with process
+# grids 2x1 and 1x2 (needs -m);
 # results must match the serial references to the same tolerances.
 #
 # For each findsoln case the reference is re-run through Newton and checked for:
@@ -212,27 +213,32 @@ run_schemes() {
 # run_cont CASE: continuation, then a fresh residual check of its last solution
 run_cont() {
     local c=$1 script=continue_$1.sh out=run/$1/
-    local tol vs0 vs_last g wall rss
+    local tol param mu0 mu_last g wall rss
     tol=$(sed -n 's/^tol_fresh=//p' "$script")
-    vs0=$(sed -n 's/^vs=//p' "$script")
+    param=$(sed -n 's/^param=\([^ ]*\).*/\1/p' "$script")
+    case $param in
+        vsett) mu0=$(sed -n 's/^vs=//p' "$script") ;;
+        kappa) mu0=$(sed -n 's/^kappa=//p' "$script") ;;
+        ri) mu0=$(sed -n 's/^Ri=//p' "$script") ;;
+    esac
     rm -rf "$out" && mkdir -p "$out"
-    echo "== $c (continuation)"
+    echo "== $c (continuation in $param)"
     OUTDIR=$PWD/$out /usr/bin/time -f "%e %M" -o "$out/time" ./"$script" > "$out/run.log" 2>&1
     read -r wall rss < "$out/time"
     if [ ! -s "$out/check/convergence.asc" ]; then
         report "$c" continue FAIL "no fresh residual; see $out/continuesoln.log and $out/check/"
         return
     fi
-    vs_last=$(cat "$out/check/vs_last")
-    if le "$vs_last" "$vs0"; then
-        report "$c" continue FAIL "continuation did not advance (last vs = $vs_last); see $out/continuesoln.log"
+    mu_last=$(cat "$out/check/mu_last")
+    if le "$mu_last" "$mu0"; then
+        report "$c" continue FAIL "continuation did not advance (last $param = $mu_last); see $out/continuesoln.log"
     else
-        report "$c" continue ok "reached vs = $vs_last from $vs0"
+        report "$c" continue ok "reached $param = $mu_last from $mu0"
     fi
     g=$(column L2Norm\(Gx\) "$out/check/convergence.asc" 1)
-    if le "$g" "$tol"; then report "$c" fresh PASS "residual $g at vs = $vs_last with a freshly built BC"
-    else report "$c" fresh FAIL "residual $g > $tol at vs = $vs_last: BC did not follow the continuation?"; fi
-    check_format "$c" "$out/check/../$(awk '!/^ *%/ { d = $6 } END { print d }' "$out/MuD.asc")/ubest.nc" eq1_16x35x32.nc
+    if le "$g" "$tol"; then report "$c" fresh PASS "residual $g at $param = $mu_last, rebuilt from scratch"
+    else report "$c" fresh FAIL "residual $g > $tol at $param = $mu_last: parameter not followed in continuation?"; fi
+    check_format "$c" "$out/$(awk '!/^ *%/ { d = $NF } END { print d }' "$out/MuD.asc")/ubest.nc" eq1_16x35x32.nc
     echo "  ($wall s, peak RSS $((rss / 1024)) MB)"
 }
 
@@ -339,12 +345,17 @@ run_mpi() {
         report mpi build INFO "no MPI build given (-m DIR), skipped"
         return
     fi
-    local fs=$FINDSOLN sf=$SIMULATEFLOW
-    export FINDSOLN="$mpirun -np 2 $mpibuild/programs/findsoln"
-    export SIMULATEFLOW="$mpirun -np 2 $mpibuild/programs/simulateflow"
-    run_findsoln eq1 mpi_eq1
-    run_findsoln eq3 mpi_eq3
-    run_traj traj1 mpi_traj1
+    local fs=$FINDSOLN sf=$SIMULATEFLOW layout np0 np1 tag
+    # two process grids: 2x1 (the default) and 1x2 (a different transpose decomposition)
+    for layout in 2:1 1:2; do
+        IFS=: read -r np0 np1 <<< "$layout"
+        tag=mpi${np0}x${np1}
+        export FINDSOLN="$mpirun -np 2 $mpibuild/programs/findsoln -np0 $np0 -np1 $np1"
+        export SIMULATEFLOW="$mpirun -np 2 $mpibuild/programs/simulateflow -np0 $np0 -np1 $np1"
+        run_findsoln eq1 ${tag}_eq1
+        run_findsoln eq3 ${tag}_eq3
+        run_traj traj1 ${tag}_traj1
+    done
     export FINDSOLN=$fs SIMULATEFLOW=$sf
 }
 

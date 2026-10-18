@@ -24,12 +24,22 @@ for Ri in $Ri_lo $Ri_hi; do
     $findeigenvals -R $Re -vsett $vs -kap $kappa -ri $Ri -T $T -dt 0.02 -vdt false -is sbdf1 -N 40 \
         -o $outdir/ri$Ri/ $outdir/laminar.nc > $outdir/ri$Ri/findeigenvals.log 2>&1
 done
-# leading growth rate (largest Re(1/T log Lambda)) at each Ri, then the interpolated onset
-s_lo=$(awk 'NR == 2 { print $1 }' $outdir/ri$Ri_lo/lambda.asc)
-s_hi=$(awk 'NR == 2 { print $1 }' $outdir/ri$Ri_hi/lambda.asc)
+# Leading growth rate at each Ri: the largest Re(1/T log Lambda) among well-converged eigenvalues
+# (Arnoldi residual < 1e-5), from the last eigenvalue table in the log. The leading mode is a
+# degenerate pair (cos and sin in z, related by spanwise translation); Arnoldi converges one copy
+# well and the other only to ~1e-3, and the poorly converged copy varies between runs.
+leading() {
+    awk '/Re\(1\/T log\(Lambda\)\)/ { n = 0; delete re; delete res; on = 1; next }
+         on && NF == 3 { re[++n] = $1; res[n] = $3; next }
+         on && NF != 3 { on = 0 }
+         END { best = ""; for (i = 1; i <= n; ++i) if (res[i] < 1e-5 && (best == "" || re[i] > best)) best = re[i];
+               print best }' "$1"
+}
+s_lo=$(leading $outdir/ri$Ri_lo/findeigenvals.log)
+s_hi=$(leading $outdir/ri$Ri_hi/findeigenvals.log)
 awk -v a=$Ri_lo -v b=$Ri_hi -v sa=$s_lo -v sb=$s_hi \
     'BEGIN { printf "%s %s %s %s %.6e\n", a, sa, b, sb, a - sa * (b - a) / (sb - sa) }' > $outdir/onset.txt
 
 # Read by run_regression.sh
 onset_ref=-9.08e-4
-tol_rel=5e-3
+tol_rel=2e-3

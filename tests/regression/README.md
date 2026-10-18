@@ -26,11 +26,13 @@ runs the CTest unit/integration tests that currently pass.
 | traj1 | quick | time stepping at Ri > 0 | 14 s |
 | rotation, nonlinearity | quick | unsupported options with the scalar stop with an error | 1 s |
 | vsett1 | full | continuation in vs keeps the no-flux BC consistent | 8 min |
+| kappa1 | full | continuation in kappa (no-flux BC and diffusion follow) | 8 min |
+| ri1 | full | continuation in Ri from 0 (eq1 becomes a travelling wave, -xrel) | 15 min |
 | decay2 | full | exact decaying scalar mode (m = 2, n = 2, vs/kappa = 4) | 14 s |
 | steady | full | exact steady profile under every scheme and both constraints (7 XFAIL) | 45 s |
 | onset1 | full | stability onset of the laminar state vs Langham & Hogg (2026) App. B | 10 min |
 | upo1 | full | periodic orbit (T ~ 87.8), Newton + period | 1 min |
-| mpi | full | eq1, eq3, traj1 on 2 MPI processes match the serial references (needs `-m`) | 20 s |
+| mpi | full | eq1, eq3, traj1 on 2 MPI processes, grids 2x1 and 1x2, match serial (needs `-m`) | 30 s |
 
 Every case also checks that its output field keeps the NetCDF layout of the reference
 (dimensions, `Component_0`..`Component_3`, geometry attributes), since external scripts read it.
@@ -140,11 +142,12 @@ out of git.
   (computed there with Chebfun, independently of channelflow). `eigen_onset1.sh` runs
   findeigenvals (T = 10, 40 Arnoldi iterations, 16x35x32) on the laminar state at Ri_b = -8.5e-4
   and -9.5e-4 and interpolates where the leading growth rate crosses zero.
-- Observed: sigma = -6.5e-4 and +5.1e-4, onset -9.061e-4 (0.21% from the paper; tolerance 0.5%).
-  A wider bracket (-8e-4, -1e-3) gives -9.068e-4, so the small offset is not interpolation; it is
-  probably the time discretisation of the f^T map or the finite-difference Jacobian (not checked).
-- Checks the coupled velocity-scalar linear operator, buoyancy, the scalar BCs and the
-  linearisation/Arnoldi path, against an external result.
+- The leading mode is a degenerate pair (cos and sin in z). Arnoldi converges one copy to a residual
+  of ~1e-7 and the other only to ~1e-3, and the poorly converged copy varies between runs, so the case
+  takes the largest growth rate among eigenvalues with residual < 1e-5.
+- Observed: sigma = -7.090e-4 and +5.014e-4, onset -9.0858e-4, 0.063% from the paper (tolerance
+  0.2%). Checks the coupled velocity-scalar linear operator, buoyancy, the scalar BCs and the
+  linearisation/Arnoldi path against an external result.
 
 ## upo1 — periodic orbit, Ri = 0, vs/kappa = 0.56
 
@@ -160,9 +163,19 @@ out of git.
 
 ## mpi — parallel decomposition
 
-- Re-runs eq1, eq3 and traj1 with `mpirun -np 2` using an MPI build (`-m DIR` or `MPI_BUILD`), with
+- Re-runs eq1, eq3 and traj1 with `mpirun -np 2`, on process grids 2x1 and 1x2, using an MPI build (`-m DIR` or `MPI_BUILD`), with
   the same references and tolerances as the serial cases. Observed: residuals agree with serial to
   the last digits (e.g. 1.67888e-13 vs 1.67907e-13), distances <= 2e-13.
+
+## kappa1, ri1 — continuation in kappa and Ri
+
+- Built like vsett1 (`continue_kappa1.sh`, `continue_ri1.sh`): two continuation steps from eq1, then
+  a fresh `findsoln -Nn 0` at the last parameter value, read at full precision from the search
+  directory's mu.asc (MuD.asc rounds to 8 digits, which alone gave a residual of 4e-11).
+- kappa1: kappa = 2.5e-3 to 2.97e-3, fresh residual 1.1e-15.
+- ri1: Ri = 0 to 6.28e-4 with -xrel: eq1 becomes a travelling wave as Ri moves away from 0 (the
+  shift-rotate symmetry is broken; Langham & Hogg 2026, section 4); fresh residual 6.6e-15. Ri
+  continuation is how most of the paper's results were obtained.
 
 ## Effect of the buoyancy tau-correction fix (commit 9ab93c7)
 
