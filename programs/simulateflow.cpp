@@ -25,6 +25,7 @@ using namespace chflow;
 string printdiagnostics(FlowField& u, const DNS& dns, Real t, const TimeStep& dt, Real nu, Real umin, bool vardt,
                         bool pl2norm, bool pchnorm, bool pdissip, bool pshear, bool pdiverge, bool pUbulk, bool pubulk,
                         bool pdPdx, bool pcfl);
+void saveprofiles(const FlowField& u, const FlowField& p, const ChebyCoeff& Ubase, const string outdir, Real t, const bool inttime);
 
 int main(int argc, char* argv[]) {
     cfMPI_Init(&argc, &argv);
@@ -57,6 +58,7 @@ int main(int argc, char* argv[]) {
 
         const Real ecfmin = args.getreal("-e", "--ecfmin", 0.0, "stop if Ecf(u) < ecfmin");
         const int saveint = args.getint("-s", "--saveinterval", 1, "save fields every s dT");
+        const int saveprofint = args.getint("-sprof", "--saveprofinterval", 1, "save profile data every s dT");
 
         const int nproc0 =
             args.getint("-np0", "--nproc0", 0, "number of MPI-processes for transpose/number of parallel ffts");
@@ -99,6 +101,7 @@ int main(int argc, char* argv[]) {
         const Real b = u.b();
 
         FlowField q(Nx, Ny, Nz, 1, Lx, Lz, a, b, BoundaryCond(), cfmpi);
+        FlowField p(Nx, Ny, Nz, 1, Lx, Lz, a, b, BoundaryCond(), cfmpi);
         const bool inttime =
             (abs(saveint * dt.dT() - int(saveint * dt.dT())) < 1e-12) && (abs(flags.t0 - int(flags.t0)) < 1e-12)
                 ? true
@@ -110,6 +113,8 @@ int main(int argc, char* argv[]) {
         cout << "constructing DNS..." << endl;
         DNS dns({u_with_density, q}, flags);
         //     u.setnu (flags.nu);
+        //
+        cout << "uwd " << u_with_density.taskid() << endl;
 
         dns.Ubase().save(outdir + "Ubase");
         dns.Wbase().save(outdir + "Wbase");
@@ -152,10 +157,16 @@ int main(int argc, char* argv[]) {
             s = concstats_t(fields[0], vel, uc, t);
             concout << s << endl;
 
+            if (saveprofint != 0 && i % saveprofint == 0) {
+                // save <u>
+                dns.uq2p(fields[0], fields[1], p);
+                saveprofiles(fields[0], p, dns.Ubase(), outdir, t, inttime);
+            }
             if (saveint != 0 && i % saveint == 0) {
                 fields[0].save(outdir + label + t2s(t, inttime));
-                if (savep)
+                if (savep) {
                     fields[1].save(outdir + "p" + t2s(t, inttime));
+                }
             }
             i++;
 
@@ -233,4 +244,135 @@ string printdiagnostics(FlowField& u, const DNS& dns, Real t, const TimeStep& dt
     }
     sout << "         CFL == " << cfl << endl;
     return sout.str();
+}
+void saveprofiles(const FlowField& u, const FlowField& p, const ChebyCoeff& Ubase, const string outdir, Real t, const bool inttime) {
+    ChebyCoeff uprof = Re(u.profile(0, 0, 0));
+    uprof += Ubase;
+    ChebyCoeff wprof = Re(u.profile(0, 0, 2));
+    ChebyCoeff cprof = Re(u.profile(0, 0, 3));
+    ChebyCoeff dcxzdy = diff(cprof);
+    ChebyCoeff d2uxzdy2 = diff(uprof, 2);
+
+    //uprof.makePhysical(); wprof.makePhysical(); cprof.makePhysical();
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        uprof.save(outdir + "uxz" + t2s(t, inttime), Physical);
+        wprof.save(outdir + "wxz" + t2s(t, inttime), Physical);
+        cprof.save(outdir + "cxz" + t2s(t, inttime), Physical);
+        dcxzdy.save(outdir + "dcxzdy" + t2s(t, inttime), Physical);
+        d2uxzdy2.save(outdir + "d2uxzdy2" + t2s(t, inttime), Physical);
+    }
+
+    FlowField e = TKE(u);
+    ChebyCoeff TKEprof = Re(e.profile(0, 0, 0));
+    ChebyCoeff visc_diffusion_prof = diff2(TKEprof);
+    if (u.taskid() == u.task_coeff(0, 0)) {
+//        TKEprof.save(outdir + "tkexz" + t2s(t, inttime), Physical);
+        visc_diffusion_prof.save(outdir + "viscdiffxz" + t2s(t, inttime), Physical);
+    }
+    FlowField upup = Reynolds_stress_uu(u);
+    FlowField upvp = Reynolds_stress_uv(u);
+    FlowField upwp = Reynolds_stress_uw(u);
+    FlowField vpvp = Reynolds_stress_vv(u);
+    FlowField vpwp = Reynolds_stress_vw(u);
+    FlowField wpwp = Reynolds_stress_ww(u);
+    FlowField upcp = turbulent_sediment_flux_uc(u);
+    FlowField vpcp = turbulent_sediment_flux_vc(u);
+    FlowField cpcp = turbulent_sediment_flux_cc(u);
+//    FlowField uskew = u_skewness(u);
+//    FlowField ukurt = u_kurtosis(u);
+//    FlowField cskew = c_skewness(u);
+//    FlowField ckurt = c_kurtosis(u);
+    ChebyCoeff upup_prof = Re(upup.profile(0, 0, 0));
+    ChebyCoeff upvp_prof = Re(upvp.profile(0, 0, 0));
+    ChebyCoeff upwp_prof = Re(upwp.profile(0, 0, 0));
+    ChebyCoeff vpvp_prof = Re(vpvp.profile(0, 0, 0));
+    ChebyCoeff vpwp_prof = Re(vpwp.profile(0, 0, 0));
+    ChebyCoeff wpwp_prof = Re(wpwp.profile(0, 0, 0));
+    ChebyCoeff upcp_prof = Re(upcp.profile(0, 0, 0));
+    ChebyCoeff vpcp_prof = Re(vpcp.profile(0, 0, 0));
+    ChebyCoeff cpcp_prof = Re(cpcp.profile(0, 0, 0));
+//    ChebyCoeff uskew_prof = Re(uskew.profile(0, 0, 0));
+//    ChebyCoeff ukurt_prof = Re(ukurt.profile(0, 0, 0));
+//    ChebyCoeff cskew_prof = Re(cskew.profile(0, 0, 0));
+//    ChebyCoeff ckurt_prof = Re(ckurt.profile(0, 0, 0));
+    ChebyCoeff dupvpxzdy_prof = diff(upvp_prof);
+    ChebyCoeff diff_cpcp_prof = diff(cpcp_prof);
+    ChebyCoeff diff2_cpcp_prof = diff(cpcp_prof, 2);
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        upup_prof.save(outdir + "upupxz" + t2s(t, inttime), Physical);
+        upvp_prof.save(outdir + "upvpxz" + t2s(t, inttime), Physical);
+        dupvpxzdy_prof.save(outdir + "dupvpxzdy" + t2s(t, inttime), Physical);
+        upwp_prof.save(outdir + "upwpxz" + t2s(t, inttime), Physical);
+        vpvp_prof.save(outdir + "vpvpxz" + t2s(t, inttime), Physical);
+        vpwp_prof.save(outdir + "vpwpxz" + t2s(t, inttime), Physical);
+        wpwp_prof.save(outdir + "wpwpxz" + t2s(t, inttime), Physical);
+        upcp_prof.save(outdir + "upcpxz" + t2s(t, inttime), Physical);
+        vpcp_prof.save(outdir + "vpcpxz" + t2s(t, inttime), Physical);
+//        cpcp_prof.save(outdir + "cpcpxz" + t2s(t, inttime), Physical);
+//        uskew_prof.save(outdir + "uskewxz" + t2s(t, inttime), Physical);
+//        ukurt_prof.save(outdir + "ukurtxz" + t2s(t, inttime), Physical);
+//        cskew_prof.save(outdir + "cskewxz" + t2s(t, inttime), Physical);
+//        ckurt_prof.save(outdir + "ckurtxz" + t2s(t, inttime), Physical);
+        diff_cpcp_prof.save(outdir + "dcpcpxzdy" + t2s(t, inttime), Physical);
+        diff2_cpcp_prof.save(outdir + "d2cpcpxzdy" + t2s(t, inttime), Physical);
+    }
+    ChebyCoeff duxzdy = diff(uprof);
+    upvp_prof.makePhysical(); duxzdy.makePhysical();
+    ChebyCoeff prod = upvp_prof;
+    prod *= duxzdy;
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        prod.save(outdir + "prod" + t2s(t, inttime), Physical);
+    }
+
+    FlowField dissipxz = dissipation_field(u);
+    FlowField sed_dissipxz = sed_dissipation_field(u);
+    ChebyCoeff dissipxz_prof = Re(dissipxz.profile(0, 0, 0));
+    ChebyCoeff sed_dissipxz_prof = Re(sed_dissipxz.profile(0, 0, 0));
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        dissipxz_prof.save(outdir + "dissipxz" + t2s(t, inttime), Physical);
+        sed_dissipxz_prof.save(outdir + "seddissipxz" + t2s(t, inttime), Physical);
+    }
+    FlowField turb_conv = turbulent_convection(u);
+    FlowField sed_conv = sediment_fluctuation_convection(u);
+    ChebyCoeff turb_conv_prof = Re(turb_conv.profile(0, 0, 0));
+    ChebyCoeff turb_conv_prof_diff = diff(turb_conv_prof);
+    ChebyCoeff sed_conv_prof = Re(sed_conv.profile(0, 0, 0));
+    ChebyCoeff sed_conv_prof_diff = diff(sed_conv_prof);
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        turb_conv_prof_diff.save(outdir + "tconvxz" + t2s(t, inttime), Physical);
+        sed_conv_prof_diff.save(outdir + "sedconvxz" + t2s(t, inttime), Physical);
+    }
+    FlowField p_transp = pressure_transport(u, p);
+    ChebyCoeff p_transp_prof = Re(p_transp.profile(0, 0, 0));
+    ChebyCoeff diffvp = diff(p_transp_prof);
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        diffvp.save(outdir + "ptranspxz" + t2s(t, inttime), Physical);
+    }
+    FlowField intermittency = intermittency_factor(u, 1e-4);
+    ChebyCoeff intermittency_prof = Re(intermittency.profile(0, 0, 0));
+    if (u.taskid() == u.task_coeff(0, 0)) {
+        intermittency_prof.save(outdir + "intermittencyxz" + t2s(t, inttime), Physical);
+    }
+
+    // xz slices
+//    string preface = outdir + "slice_t" + t2s(t, inttime);
+//    int ny_mid = (u.Ny() - 1) / 2;
+//    // For Ny = 141, these give y ~= -0.3, -0.6, -0.9
+//    //int ny_L1 = 84, ny_L2 = 99, ny_L3 = 120;
+//    //int ny_L2 = 99, ny_L3 = 120;
+//    int ny_L2 = 35, ny_L3 = 42;
+//    u.saveSlice(1, 0, ny_mid, preface + "_u_mid_xz", 1, 1, 1);
+//    //u.saveSlice(1, 0, ny_L1, preface + "_u_L1_xz", 1, 1, 1);
+//    u.saveSlice(1, 0, ny_L2, preface + "_u_L2_xz", 1, 1, 1);
+//    u.saveSlice(1, 0, ny_L3, preface + "_u_L3_xz", 1, 1, 1);
+//
+//    vpcp.saveSlice(1, 0, ny_mid, preface + "_vpcp_mid_xz", 1, 1, 1);
+//    //vpcp.saveSlice(1, 0, ny_L1, preface + "_vpcp_L1_xz", 1, 1, 1);
+//    vpcp.saveSlice(1, 0, ny_L2, preface + "_vpcp_L2_xz", 1, 1, 1);
+//    vpcp.saveSlice(1, 0, ny_L3, preface + "_vpcp_L3_xz", 1, 1, 1);
+
+    //upvp.saveSlice(1, 0, ny_mid, preface + "_upvp_mid_xz", 1, 1, 1);
+    //upvp.saveSlice(1, 0, ny_L1, preface + "_upvp_L1_xz", 1, 1, 1);
+    //upvp.saveSlice(1, 0, ny_L2, preface + "_upvp_L2_xz", 1, 1, 1);
+    //upvp.saveSlice(1, 0, ny_L3, preface + "_upvp_L3_xz", 1, 1, 1);
 }
