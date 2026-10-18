@@ -4,3 +4,4 @@ kdev4
 .idea
 cmake-build*
 coverage*
+build/
