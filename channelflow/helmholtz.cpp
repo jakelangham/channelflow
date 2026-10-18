@@ -76,15 +76,13 @@ HelmholtzSolver::HelmholtzSolver(int numberModes, Real a, Real b, Real lambda, R
     Ao_.ULdecomp();
 }
 
-//void HelmholtzSolver::solve(ChebyCoeff& u, const ChebyCoeff& f, Real ua, Real ub) const {
-void HelmholtzSolver::solve(ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1) const {
+void HelmholtzSolver::solve(ChebyCoeff& u, const ChebyCoeff& f, Real ua, Real ub) const {
     assert(f.state() == Spectral);
     Be_.multiplyStrided(f, u, 0, 2);
     Bo_.multiplyStrided(f, u, 1, 2);
 
-    // rhs for BCs now supplied externally
-    u[0] = g0;
-    u[1] = g1;
+    u[0] = (ub + ua) / 2;
+    u[1] = (ub - ua) / 2;
 
     // Solve for A u = g
     Ae_.ULsolveStrided(u, 0, 2);
