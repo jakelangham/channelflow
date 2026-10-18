@@ -172,7 +172,7 @@ MultistepDNS::MultistepDNS(const vector<FlowField>& fields, const shared_ptr<NSE
         fields_[j] = tmpar;
         nonlf_[j] = tmpar;
     }
-    rhs_ = {fields[0]};
+    rhs_ = nse_->createRHS(fields);  // allocated once; subclasses may add equations (e.g. a scalar)
     // if (order_ > 0)  // should always be true
     // u_[0] = u;
     //   cfl_ = fields[0].CFLfactor (nse_->Ubase(),nse_->Wbase());
