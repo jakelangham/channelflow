@@ -405,7 +405,7 @@ continuationParameter cfDSI::s2cPar(string muname) {
         return continuationParameter::kappa;
     else if (muname == "pr")
         return continuationParameter::Pr;
-    else if (muname == "T")
+    else if (muname == "t")
         return continuationParameter::T;
     else if (muname == "p")
         return continuationParameter::P;
