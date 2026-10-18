@@ -12,3 +12,5 @@ tests/regression/dnsflags.txt
 tests/regression/findsoln.args
 tests/regression/processinfo
 tests/regression/run/
+tests/regression/simulateflow.args
+tests/regression/upo_vk0.56_findsoln/

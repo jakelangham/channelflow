@@ -5,7 +5,7 @@
 #   -b BUILD_DIR  channelflow build to test (default: ../../build)
 #   -t TOL        tolerance on relative L2 distances to the reference and on |ax - ax_ref|
 #                 (default: 1e-8)
-#   case          any of: eq1 eq3 (default: all)
+#   case          any of: eq1 eq3 traj1 (default: all)
 #
 # For each findsoln case the reference is re-run through Newton and checked for:
 #   G0     initial residual L2Norm(G) of the reference under the code being tested.
@@ -15,6 +15,10 @@
 #   G      final residual, must be below the case's Newton tolerance.
 #   dist   relative L2 distance of the converged velocity and scalar to the reference.
 #   ax     converged shift, for travelling waves.
+# For each simulateflow (traj) case the final field is compared with the reference:
+#   PASS (unchanged) if every relative distance is <= the case's tol_strict;
+#   PASS (within time-stepping error) if <= its tol_loose_* (10x the dt error); FAIL otherwise.
+#   The -t option does not apply to traj cases.
 # Output goes to run/<case>/ (git-ignored). Run serially; each case uses 1 thread.
 
 set -u
@@ -30,12 +34,15 @@ while getopts "b:t:" opt; do
     esac
 done
 shift $((OPTIND - 1))
-cases=${*:-"eq1 eq3"}
+cases=${*:-"eq1 eq3 traj1"}
 
 build=$(cd "$build" && pwd) || exit 2
 export FINDSOLN=$build/programs/findsoln
+export SIMULATEFLOW=$build/programs/simulateflow
 fieldcompare=$build/tools/fieldcompare
-for exe in "$FINDSOLN" "$fieldcompare"; do
+# Older builds may predate fieldcompare; it only measures, so use this tree's copy instead
+[ -x "$fieldcompare" ] || fieldcompare=$(cd ../../build && pwd)/tools/fieldcompare
+for exe in "$FINDSOLN" "$SIMULATEFLOW" "$fieldcompare"; do
     [ -x "$exe" ] || { echo "missing executable: $exe"; exit 2; }
 done
 export OMP_NUM_THREADS=1
@@ -57,9 +64,35 @@ report() {  # case check status detail
     [ "$3" = FAIL ] && nfail=$((nfail + 1))
 }
 
+# run_traj CASE: integrate a simulateflow case and compare its final field with the reference
+run_traj() {
+    local c=$1 script=simulate_$1.sh out=run/$1/
+    local ref T tol_strict wall rss label d rel n nref loose
+    ref=$(sed -n 's/^reference=//p' "$script")
+    T=$(sed -n 's/^T=//p' "$script")
+    tol_strict=$(sed -n 's/^tol_strict=//p' "$script")
+    rm -rf "$out" && mkdir -p "$out"
+    echo "== $c (reference $ref)"
+    OUTDIR=$out /usr/bin/time -f "%e %M" -o "$out/time" ./"$script" > "$out/simulateflow.log" 2>&1
+    read -r wall rss < "$out/time"
+    if [ ! -f "$out/u$T.nc" ]; then
+        report "$c" simulate FAIL "no u$T.nc; see $out/simulateflow.log"
+        return
+    fi
+    while read -r label d rel n nref; do
+        [ "$label" = all ] && continue
+        loose=$(sed -n "s/^tol_loose_$label=//p" "$script")
+        if le "$rel" "$tol_strict"; then report "$c" "$label" PASS "rel dist $rel (unchanged)"
+        elif le "$rel" "$loose"; then report "$c" "$label" PASS "rel dist $rel (within time-stepping error, <= $loose)"
+        else report "$c" "$label" FAIL "rel dist $rel > $loose (abs $d)"; fi
+    done < <("$fieldcompare" "$out/u$T.nc" "$ref")
+    echo "  ($wall s, peak RSS $((rss / 1024)) MB)"
+}
+
 echo "build: $build"
 echo "tolerance: $tol"
 for c in $cases; do
+    if [ -f simulate_$c.sh ]; then run_traj "$c"; continue; fi
     script=findsoln_$c.sh
     [ -f "$script" ] || { echo "unknown case: $c"; nfail=$((nfail + 1)); continue; }
     ref=$(sed -n 's/^infile=//p' "$script")
