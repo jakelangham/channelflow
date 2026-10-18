@@ -2386,12 +2386,10 @@ void FlowField::saveSlice(int k, int i, int nk, const string& filebase, int xstr
     assert(k >= 0 && k < 3);
     assert(i >= 0 && i < Nd_);
 
-    if (mpirank() > 0)
-        cferror("Function saveSlice is not mpi safe");
-
-    string filename(filebase);
-    filename += string(".asc");
-    ofstream os(filename.c_str());
+    // Only xz slices are gathered across MPI processes; yz and xy slices need all data on one process
+    const int np = nproc0() * nproc1();
+    if (k != 1 && np > 1)
+        cferror("FlowField::saveSlice : only xz slices (k == 1) are MPI safe");
 
     FlowField u(*this);
     fieldstate xzstate = xzstate_;
@@ -2399,38 +2397,87 @@ void FlowField::saveSlice(int k, int i, int nk, const string& filebase, int xstr
 
     u.makePhysical();
 
-    switch (k) {
-        case 0:
-            os << "% yz slice\n";
-            os << "% (i,j)th elem is field at (x_n, y_i, z_j) with x_n is fixed\n";
-            for (int ny = 0; ny < Ny_; ny += ystride) {
-                for (int nz = 0; nz < Nz_; nz += zstride)
-                    os << u(nk, ny, nz, i) << ' ';
-                os << u(nk, ny, 0, i) << '\n';  // repeat nz=0 to complete [0, Lz]
+    // Gather the xz slice y = y_nk onto process 0: each process sends its x range (empty if it
+    // does not own row nk), then its data
+    vector<double> slice;
+    if (k == 1) {
+        assert(xstride == 1 && zstride == 1);
+        slice.assign(Nx_ * Nz_, 0.0);
+        const bool ownrow = nk >= nylocmin_ && nk < nylocmin_ + Nyloc_;
+        if (taskid() == 0 && ownrow)
+            for (int nz = 0; nz < Nz_; nz++)
+                for (lint nx = nxlocmin_; nx < nxlocmin_ + Nxloc_; nx++)
+                    slice[nx + nz * Nx_] = u(nx, nk, nz, i);
+#ifdef HAVE_MPI
+        if (taskid() == 0) {
+            MPI_Status mpistatus;
+            int xstart, xsize;
+            for (int rk = 1; rk < np; rk++) {
+                MPI_Recv(&xstart, 1, MPI_INT, rk, rk, *comm_world(), &mpistatus);
+                MPI_Recv(&xsize, 1, MPI_INT, rk, rk + np, *comm_world(), &mpistatus);
+                const int recvsize = xsize * Nz_;
+                if (recvsize > 0) {
+                    vector<double> recv(recvsize, 0.0);
+                    MPI_Recv(recv.data(), recvsize, MPI_DOUBLE, rk, rk + 2 * np, *comm_world(), &mpistatus);
+                    for (int nz = 0; nz < Nz_; nz++)
+                        for (int nx = 0; nx < xsize; nx++)
+                            slice[(nx + xstart) + nz * Nx_] = recv[nx + nz * xsize];
+                }
             }
-            break;
-        case 1:  // xz slice
-            os << "% xz slice\n";
-            os << "% (i,j)th elem is field at (x_j, y_n, z_i) with y_n fixed\n";
-            for (int nz = 0; nz < Nz_; nz += zstride) {
-                for (int nx = 0; nx < Nx_; nx += xstride)
-                    os << u(nx, nk, nz, i) << ' ';
-                os << u(0, nk, nz, i) << '\n';  // repeat nx=0 to complete [0, Lx]
+        } else {
+            int xstart = static_cast<int>(nxlocmin_);
+            int xsize = ownrow ? static_cast<int>(Nxloc_) : 0;
+            MPI_Ssend(&xstart, 1, MPI_INT, 0, taskid(), *comm_world());
+            MPI_Ssend(&xsize, 1, MPI_INT, 0, taskid() + np, *comm_world());
+            const int sendsize = xsize * Nz_;
+            if (sendsize > 0) {
+                vector<double> send(sendsize, 0.0);
+                for (int nz = 0; nz < Nz_; nz++)
+                    for (int nx = 0; nx < xsize; nx++)
+                        send[nx + nz * xsize] = u(nxlocmin_ + nx, nk, nz, i);
+                MPI_Ssend(send.data(), sendsize, MPI_DOUBLE, 0, taskid() + 2 * np, *comm_world());
             }
-            for (int nx = 0; nx < Nx_; ++nx)  // repeat nz=0 to complete [0, Lz]
-                os << u(nx, nk, 0, i) << ' ';
-            os << u(0, nk, 0, i) << '\n';  // repeat nx=0 to complete [0, Lx]
+        }
+#endif
+    }
 
-            break;
-        case 2:
-            os << "% xy slice\n";
-            os << "% (i,j)th elem is field at (x_j, y_i, z_n)\n";
-            for (int ny = 0; ny < Ny_; ny += ystride) {
-                for (int nx = 0; nx < Nx_; nx += xstride)
-                    os << u(nx, ny, nk, i) << ' ';
-                os << u(0, ny, nk, i) << '\n';
-            }
-            break;
+    if (taskid() == 0) {
+        string filename(filebase);
+        filename += string(".asc");
+        ofstream os(filename.c_str());
+
+        switch (k) {
+            case 0:
+                os << "% yz slice\n";
+                os << "% (i,j)th elem is field at (x_n, y_i, z_j) with x_n is fixed\n";
+                for (int ny = 0; ny < Ny_; ny += ystride) {
+                    for (int nz = 0; nz < Nz_; nz += zstride)
+                        os << u(nk, ny, nz, i) << ' ';
+                    os << u(nk, ny, 0, i) << '\n';  // repeat nz=0 to complete [0, Lz]
+                }
+                break;
+            case 1:  // xz slice
+                os << "% xz slice\n";
+                os << "% (i,j)th elem is field at (x_j, y_n, z_i) with y_n fixed\n";
+                for (int nz = 0; nz < Nz_; nz += zstride) {
+                    for (int nx = 0; nx < Nx_; nx += xstride)
+                        os << slice[nx + nz * Nx_] << ' ';
+                    os << slice[nz * Nx_] << '\n';  // repeat nx=0 to complete [0, Lx]
+                }
+                for (int nx = 0; nx < Nx_; ++nx)  // repeat nz=0 to complete [0, Lz]
+                    os << slice[nx] << ' ';
+                os << slice[0] << '\n';  // repeat nx=0 to complete [0, Lx]
+                break;
+            case 2:
+                os << "% xy slice\n";
+                os << "% (i,j)th elem is field at (x_j, y_i, z_n)\n";
+                for (int ny = 0; ny < Ny_; ny += ystride) {
+                    for (int nx = 0; nx < Nx_; nx += xstride)
+                        os << u(nx, ny, nk, i) << ' ';
+                    os << u(0, ny, nk, i) << '\n';
+                }
+                break;
+        }
     }
     u.makeState(xzstate, ystate);
 }
