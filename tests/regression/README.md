@@ -24,8 +24,10 @@ runs the CTest unit/integration tests that currently pass.
 | settle2 | quick | the same at vs/kappa = 14 (bottom boundary layer), Ny = 49 | 15 s |
 | decay1 | quick | exact decaying scalar mode (m = 1, n = 1, vs/kappa = 1) | 14 s |
 | traj1 | quick | time stepping at Ri > 0 | 14 s |
+| rotation, nonlinearity | quick | unsupported options with the scalar stop with an error | 1 s |
 | vsett1 | full | continuation in vs keeps the no-flux BC consistent | 8 min |
 | decay2 | full | exact decaying scalar mode (m = 2, n = 2, vs/kappa = 4) | 14 s |
+| steady | full | exact steady profile under every scheme and both constraints (7 XFAIL) | 45 s |
 | upo1 | full | periodic orbit (T ~ 87.8), Newton + period | 1 min |
 | mpi | full | eq1, eq3, traj1 on 2 MPI processes match the serial references (needs `-m`) | 20 s |
 
@@ -112,6 +114,23 @@ out of git.
 - Sensitivity: the same evaluation at the previous step's vs gives ~1e-3, i.e. a frozen BC would
   be detected. (Before commit 2179c53, cfDSI kept the starting vs/kappa in the BC throughout.)
 - At Ri = 0 the velocity does not depend on vs, so only the scalar changes along this branch.
+
+## steady — every time-stepping scheme and both mean constraints
+
+- From upstream's dnsParabolaTest/dnsZeroTest: the exact steady settling profile (vs/kappa = 1,
+  Ri = 0.0025, Couette flow) must stay put for T = 2 under each scheme:startup:constraint
+  combination listed in `schemes_steady.sh`.
+- Passing (1e-14 to 3e-14): CNFE1, SBDF1-4 with first-order start-up, for -mc gradp.
+- Expected failures (XFAIL), recorded in the script's xfail list and reported as XPASS once fixed:
+  CNAB2, CNRK2, SMRK2, and the SMRK2/CNRK2 start-ups, use NSE::linear, which ignores the scalar
+  (the scalar drifts by ~0.1, or ~3e-3 from the start-up alone; the velocity stays exact);
+  -mc bulkv stops with an error (not supported with the scalar yet).
+
+## rotation, nonlinearity — unsupported options
+
+- `error_rotation.sh` (-rot) and `error_nonlinearity.sh` (-nl conv) must stop with a message rather
+  than run: rotation with the scalar was silently wrong, and only the rotational form of the
+  nonlinear term handles the scalar.
 
 ## upo1 — periodic orbit, Ri = 0, vs/kappa = 0.56
 

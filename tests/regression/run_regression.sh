@@ -8,7 +8,8 @@
 #   -t TOL        tolerance on relative L2 distances to the reference and on |ax - ax_ref|
 #                 (default: 1e-8)
 #   case          run only these cases, whatever their tier: unit, or the name of any
-#                 findsoln_<case>.sh / simulate_<case>.sh / continue_<case>.sh script here
+#                 findsoln_<case>.sh / simulate_<case>.sh / continue_<case>.sh /
+#                 schemes_<case>.sh / error_<case>.sh script here
 #
 # Tiers: each case script sets tier=quick (run after every change, ~1 min in total) or
 # tier=full (minutes to an hour; before merges, restructure milestones and production runs).
@@ -32,6 +33,12 @@
 #   The -t option does not apply to traj cases.
 # For each continuesoln (continue_*) case the last continuation solution is re-evaluated with a
 #   fresh findsoln at its parameter value; that residual must be below the case's tol_fresh.
+# A schemes_* case runs one simulateflow script for each scheme:startup:constraint combination it
+#   lists, requiring the final field to equal its reference to tol_strict. Combinations listed in
+#   its xfail are known not to work yet: they report XFAIL (not a failure) while broken, and XPASS
+#   (also not a failure, but a prompt to update xfail) once they start working.
+# An error_* case runs an unsupported configuration and requires a non-zero exit with the
+#   message given by its expect=.
 # Every case also checks that its output field keeps the reference's file layout: NetCDF
 # dimensions, variables (4 components, scalar as Component_3) and geometry attributes. Scripts
 # outside channelflow read these files, so the layout is part of the interface.
@@ -64,7 +71,7 @@ if [ $# -gt 0 ]; then
 else
     cases=unit
     [ $all_tiers = 1 ] && cases="$cases mpi"
-    for f in findsoln_*.sh simulate_*.sh continue_*.sh; do
+    for f in findsoln_*.sh simulate_*.sh continue_*.sh schemes_*.sh error_*.sh; do
         c=${f#*_}; c=${c%.sh}
         t=$(sed -n 's/^tier=//p' "$f")
         { [ "$t" = quick ] || [ $all_tiers = 1 ]; } && cases="$cases $c"
@@ -122,6 +129,60 @@ check_format() {
     else
         report "$1" format FAIL "NetCDF layout differs from the reference: diff <(ncdump -h $2) <(ncdump -h $3)"
     fi
+}
+
+# run_error CASE: an unsupported configuration must stop with the expected message
+run_error() {
+    local c=$1 script=error_$1.sh out=run/error_$1/ expect status
+    expect=$(sed -n 's/^expect="\(.*\)"/\1/p' "$script")
+    rm -rf "$out" && mkdir -p "$out"
+    echo "== $c (must stop with an error)"
+    OUTDIR=$out ./"$script" > "$out/run.log" 2>&1
+    status=$?
+    if [ $status -ne 0 ] && grep -q -- "$expect" "$out/run.log"; then
+        report "$c" error PASS "stopped (exit $status): $expect"
+    elif [ $status -eq 0 ]; then
+        report "$c" error FAIL "ran to completion instead of stopping; see $out/run.log"
+    else
+        report "$c" error FAIL "stopped (exit $status) without the expected message; see $out/run.log"
+    fi
+}
+
+# run_schemes CASE: one run per scheme:startup:constraint combination, with expected failures
+run_schemes() {
+    local c=$1 script=schemes_$1.sh
+    local combos xfail T tol combo ts is mc label out ref ok worst lab d rel n nref wall rss
+    combos=$(sed -n '/^combinations="/,/"/p' "$script" | tr -d '"' | sed 's/^combinations=//')
+    xfail=$(sed -n 's/^xfail="\(.*\)"/\1/p' "$script")
+    T=$(sed -n 's/^T=//p' "$script")
+    tol=$(sed -n 's/^tol_strict=//p' "$script")
+    echo "== $c (scheme:startup:constraint)"
+    for combo in $combos; do
+        IFS=: read -r ts is mc <<< "$combo"
+        label=$c/$combo
+        out=run/$c/${ts}_${is}_${mc}/
+        rm -rf "$out" && mkdir -p "$out"
+        TS=$ts IS=$is MC=$mc OUTDIR=$out /usr/bin/time -f "%e %M" -o "$out/time" ./"$script" > "$out/simulateflow.log" 2>&1
+        ok=1
+        worst=""
+        if [ ! -f "$out/u$T.nc" ]; then
+            ok=0
+            worst="no u$T.nc: $(grep -m1 -iE 'error|not supported' "$out/simulateflow.log" | cut -c1-90)"
+        else
+            ref=$out/initial.nc
+            while read -r lab d rel n nref; do
+                [ "$lab" = all ] && continue
+                le "$rel" "$tol" || { ok=0; worst="$worst $lab $rel"; }
+                [ -z "$worst" ] && worst="max rel dist $rel"
+            done < <("$fieldcompare" "$out/u$T.nc" "$ref")
+        fi
+        case " $xfail " in
+            *" $combo "*) if [ $ok = 1 ]; then report "$c" "$combo" XPASS "now works: remove it from xfail ($worst)"
+                          else report "$c" "$combo" XFAIL "$worst"; fi ;;
+            *)            if [ $ok = 1 ]; then report "$c" "$combo" PASS "$worst"
+                          else report "$c" "$combo" FAIL "$worst; see $out"; fi ;;
+        esac
+    done
 }
 
 # run_cont CASE: continuation, then a fresh residual check of its last solution
@@ -268,6 +329,8 @@ for c in $cases; do
     if [ "$c" = mpi ]; then run_mpi; continue; fi
     if [ -f simulate_$c.sh ]; then run_traj "$c"; continue; fi
     if [ -f continue_$c.sh ]; then run_cont "$c"; continue; fi
+    if [ -f schemes_$c.sh ]; then run_schemes "$c"; continue; fi
+    if [ -f error_$c.sh ]; then run_error "$c"; continue; fi
     if [ -f findsoln_$c.sh ]; then run_findsoln "$c"; continue; fi
     echo "unknown case: $c"; nfail=$((nfail + 1))
 done
