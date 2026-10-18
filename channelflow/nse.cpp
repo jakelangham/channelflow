@@ -39,6 +39,9 @@ void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, Flo
         const bool scalar = (u.Nd() == 4);
         if (scalar && flags.nonlinearity != Rotational)
             cferror("navierstokesNL : fields with the settling scalar support only the rotational nonlinearity");
+        // densityAdvection returns f spectral, but the rotation term below expects it physical
+        if (scalar && flags.rotation != 0.0)
+            cferror("navierstokesNL : rotation is not supported with the settling scalar yet");
 
         switch (flags.nonlinearity) {
             case Rotational:
@@ -565,7 +568,11 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                     // Bulk vel is free variable determined from soln of tau eqn //TODO: write method that computes
                     // UbulkAct everytime it is needed
 
-                } 
+                } else {
+                    // The (0,0) mode used to be left unsolved here, silently filled with stale data
+                    cferror("NSE::solve : the bulk velocity constraint (-mc bulkv) is not supported with the "
+                            "settling scalar yet; use -mc gradp");
+                }
 //                    else {  // const bulk velocity
 //                    // bulk velocity is supplied, use alternative tau solver
 //
