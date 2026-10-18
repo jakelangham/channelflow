@@ -4,8 +4,22 @@ Reference solutions for checking that code changes leave the physics unchanged.
 All cases: Re = 400, vs = kappa = 2.5e-3, Lx = 5.51157, Lz = 2.51327 (0.8 pi), y in [-1, 1].
 Run serially (1 thread).
 
-    ./run_regression.sh                 # all cases against ../../build, ~25 s, ~42 MB
-    ./run_regression.sh -b OTHER_BUILD  # same cases against another build
+    ./run_regression.sh                 # quick tier against ../../build: ~40 s, ~42 MB
+    ./run_regression.sh -a              # all tiers (quick + full)
+    ./run_regression.sh -b OTHER_BUILD  # against another build
+    ./run_regression.sh eq3 settle1     # selected cases, any tier
+
+Tiers: each case script sets `tier=quick` (run after every change) or `tier=full` (slower;
+before merges, restructure milestones and production runs). The pseudo-case `unit` (quick)
+runs the CTest unit/integration tests that currently pass.
+
+| case | tier | what it checks | cost |
+|---|---|---|---|
+| unit | quick | CTest: unitTests, tridiag, cheby, helmholtz, poisson, io | <1 s |
+| eq1 | quick | Ri = 0 equilibrium, Newton | 4 s |
+| eq3 | quick | Ri > 0 travelling wave, Newton + shift | 4 s |
+| settle1 | quick | exact settling profile stays steady (analytic) | 15 s |
+| traj1 | quick | time stepping at Ri > 0 | 14 s |
 
 The full-resolution originals (`eq1.nc`, `eq3_vk1_sn.nc`, `upo_vk0.56_findsoln/`) are kept
 out of git.
@@ -36,6 +50,16 @@ out of git.
   (188 f^T evaluations; 6 trust-region-limited steps, then quadratic), 12 min 32 s,
   peak RSS 149 MB.
 - Truncation: x 4e-4, y 5e-7, z 5e-6 (adequate for regression, not for physics).
+
+## settle1 — exact settling profile, Ri = 0.0025
+
+- `tools/settlingprofile` writes C(y) = A exp(-r y), r = vs/kappa = 1, A = r / sinh(r)
+  (mean C = 1), with zero velocity perturbation. This is an exact steady state: advection by the
+  base flow vanishes and buoyancy is balanced hydrostatically. Integrated for T = 10, it must
+  not move (strict tolerance 1e-12); observed 8e-14 (velocity, absolute) and 2e-14 (scalar).
+- Sensitivity: integrating the same profile with vs = 2.0e-3 instead of 2.5e-3 moves the scalar by
+  a relative 1.4e-2 in T = 10.
+- The scalar is stored relative to the background -y of the current code (u[3] = C + y).
 
 ## traj1 — time stepping, Ri = 0.0025
 

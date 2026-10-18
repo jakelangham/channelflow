@@ -2,6 +2,7 @@
 # Regression case eq1: equilibrium at Ri = 0 (passive settling scalar), 16x35x32, s1-symmetric.
 # Reconverges eq1_16x35x32.nc; a code change that leaves the physics unchanged should start at
 # L2Norm(G) ~ 1e-13 and stay there. Run from this directory.
+tier=quick
 findsoln=${FINDSOLN:-../../build/programs/findsoln}
 Re=400
 T=20

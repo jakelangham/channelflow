@@ -1,11 +1,17 @@
 #!/bin/bash
 # Run the regression cases against their reference solutions and report PASS/FAIL.
 #
-# Usage: ./run_regression.sh [-b BUILD_DIR] [-t TOL] [case ...]
+# Usage: ./run_regression.sh [-a] [-b BUILD_DIR] [-t TOL] [case ...]
+#   -a            run every tier (quick and full); default is the quick tier only
 #   -b BUILD_DIR  channelflow build to test (default: ../../build)
 #   -t TOL        tolerance on relative L2 distances to the reference and on |ax - ax_ref|
 #                 (default: 1e-8)
-#   case          any of: eq1 eq3 traj1 (default: all)
+#   case          run only these cases, whatever their tier: unit, or the name of any
+#                 findsoln_<case>.sh / simulate_<case>.sh script here
+#
+# Tiers: each case script sets tier=quick (run after every change, ~1 min in total) or
+# tier=full (minutes to an hour; before merges, restructure milestones and production runs).
+# The pseudo-case "unit" (quick tier) runs the CTest unit/integration tests that currently pass.
 #
 # For each findsoln case the reference is re-run through Newton and checked for:
 #   G0     initial residual L2Norm(G) of the reference under the code being tested.
@@ -26,19 +32,37 @@ cd "$(dirname "$0")"
 
 build=../../build
 tol=1e-8
-while getopts "b:t:" opt; do
+all_tiers=0
+while getopts "ab:t:" opt; do
     case $opt in
+        a) all_tiers=1 ;;
         b) build=$OPTARG ;;
         t) tol=$OPTARG ;;
-        *) sed -n '2,9p' "$0"; exit 2 ;;
+        *) sed -n '2,17p' "$0"; exit 2 ;;
     esac
 done
 shift $((OPTIND - 1))
-cases=${*:-"eq1 eq3 traj1"}
+# CTest tests run by the "unit" case; extend as more of the legacy tests are fixed
+unit_tests='^(unitTests|tridiag|cheby|helmholtz|poisson|io)$'
+
+# Default case list: unit plus every case script whose tier is selected, in name order
+if [ $# -gt 0 ]; then
+    cases="$*"
+else
+    cases=unit
+    for f in findsoln_*.sh simulate_*.sh; do
+        c=${f#*_}; c=${c%.sh}
+        t=$(sed -n 's/^tier=//p' "$f")
+        { [ "$t" = quick ] || [ $all_tiers = 1 ]; } && cases="$cases $c"
+    done
+fi
 
 build=$(cd "$build" && pwd) || exit 2
 export FINDSOLN=$build/programs/findsoln
 export SIMULATEFLOW=$build/programs/simulateflow
+export SETTLINGPROFILE=$build/tools/settlingprofile
+# Older builds may predate settlingprofile; it only writes the exact field, so use this tree's
+[ -x "$SETTLINGPROFILE" ] || SETTLINGPROFILE=$(cd ../../build && pwd)/tools/settlingprofile
 fieldcompare=$build/tools/fieldcompare
 # Older builds may predate fieldcompare; it only measures, so use this tree's copy instead
 [ -x "$fieldcompare" ] || fieldcompare=$(cd ../../build && pwd)/tools/fieldcompare
@@ -70,6 +94,7 @@ run_traj() {
     local ref T tol_strict wall rss label d rel n nref loose
     ref=$(sed -n 's/^reference=//p' "$script")
     T=$(sed -n 's/^T=//p' "$script")
+    [ "$ref" = initial ] && ref=$out/initial.nc  # the case writes its own exact initial field
     tol_strict=$(sed -n 's/^tol_strict=//p' "$script")
     rm -rf "$out" && mkdir -p "$out"
     echo "== $c (reference $ref)"
@@ -89,9 +114,23 @@ run_traj() {
     echo "  ($wall s, peak RSS $((rss / 1024)) MB)"
 }
 
+# run_unit: the CTest subset, run in the build directory
+run_unit() {
+    local log=$PWD/run/unit.log
+    mkdir -p run
+    echo "== unit (ctest -R '$unit_tests')"
+    if (cd "$build" && ctest -j1 -R "$unit_tests" > "$log" 2>&1); then
+        report unit ctest PASS "$(grep -E 'tests passed' "$log")"
+    else
+        report unit ctest FAIL "$(grep -E 'tests passed' "$log"); see $log"
+    fi
+}
+
 echo "build: $build"
 echo "tolerance: $tol"
+echo "cases: $cases"
 for c in $cases; do
+    if [ "$c" = unit ]; then run_unit; continue; fi
     if [ -f simulate_$c.sh ]; then run_traj "$c"; continue; fi
     script=findsoln_$c.sh
     [ -f "$script" ] || { echo "unknown case: $c"; nfail=$((nfail + 1)); continue; }

@@ -14,3 +14,4 @@ tests/regression/processinfo
 tests/regression/run/
 tests/regression/simulateflow.args
 tests/regression/upo_vk0.56_findsoln/
+tests/regression/*.args

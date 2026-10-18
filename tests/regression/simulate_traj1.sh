@@ -3,6 +3,7 @@
 # but integrates at Ri = 0.0025, where it is not steady, for T = 10 with fixed dt. The field at
 # T = 10 is compared with traj1_T10.nc. The tolerance comes from the time-stepping error, measured
 # as the distance between runs at dt and dt/2 (see README). Run from this directory.
+tier=quick
 simulateflow=${SIMULATEFLOW:-../../build/programs/simulateflow}
 Re=400
 T=10

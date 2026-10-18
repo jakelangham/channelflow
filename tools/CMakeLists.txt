@@ -20,6 +20,7 @@ set(tool_APPS
   perturbfield
 # pressure
   randomfield
+  settlingprofile
 #  symmetrize
 #  symmetryop
   wall_shear
