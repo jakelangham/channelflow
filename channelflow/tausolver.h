@@ -65,7 +65,7 @@ class TauSolver {
 
     // These are helper functions for the above, not meant to be used alone,
     // but provided as public for testing purposes. r == div(R).
-    void solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, const ChebyCoeff& rho, Real& sigmaNb1,
+    void solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, Real& sigmaNb1,
                        Real& sigmaNb) const;
 
     Real verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry,

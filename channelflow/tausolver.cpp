@@ -201,14 +201,10 @@ void TauSolver::influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const {
     }
 }
 
-void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, const ChebyCoeff& rho, Real& sigmaNb1,
+void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, Real& sigmaNb1,
                               Real& sigmaNb) const {
-    // JL need to add on -Ri * rho'
-    ChebyCoeff tmp(r);
-    tmp -= Ri_ * diff(rho);
-
     // P is Canuto & Hussaini's Ppart particular solution after this solve
-    pressureHelmholtz_.solve(P, tmp, 0.0, 0.0);  // eqn 7.3.25 discrete HH1
+    pressureHelmholtz_.solve(P, r, 0.0, 0.0);  // eqn 7.3.25 discrete HH1
 
     // kx==kz==0 is a degenerate case for which the influence matrix is
     // rank-deficient, the v solution is identically zero and P satisfies
@@ -220,9 +216,8 @@ void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r,
     }
 
     // The rest of this method is for the case kx != 0 or kz != 0.
-    tmp = diff(P);
+    ChebyCoeff tmp = diff(P);
     tmp -= Ry;
-    tmp += Ri_ * rho; // JL buoyancy term
 
     // v is Canuto & Hussaini's vpart particular solution after this solve
     velocityHelmholtz_.solve(v, tmp, 0.0, 0.0);  // eqn 7.3.25 discrete HH2
@@ -379,17 +374,23 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     densityHelmholtz_.solve(rho.re, r.re, ga, gb, 1.0);
     densityHelmholtz_.solve(rho.im, r.im, 0.0, 0.0, 0.0);
 
+    // Buoyancy -Ri rho^{n+1} acts as part of the y-forcing. Fold it into Ry so that
+    // the pressure eqn, the v eqn and the tau correction all see the same forcing.
+    ComplexChebyCoeff Ryb(Ry);
+    for (n = 0; n < N_; ++n)
+        Ryb.sub(n, Ri_ * rho[n]);
+
     // Always solve v(y) from momentum, and get P.
     // Re and Im parts of v and P eqns decouple. Solve them seperately.
-    diff(Ry.re, rr);
+    diff(Ryb.re, rr);
     for (n = 0; n < N_; ++n)
         rr[n] -= two_pi_kxLx_ * Rx.im[n] + two_pi_kzLz_ * Rz.im[n];
-    solve_P_and_v(P.re, v.re, rr, Ry.re, rho.re, sigmaNb1, sigmaNb);
+    solve_P_and_v(P.re, v.re, rr, Ryb.re, sigmaNb1, sigmaNb);
 
-    diff(Ry.im, rr);
+    diff(Ryb.im, rr);
     for (n = 0; n < N_; ++n)
         rr[n] += two_pi_kxLx_ * Rx.re[n] + two_pi_kzLz_ * Rz.re[n];
-    solve_P_and_v(P.im, v.im, rr, Ry.im, rho.im, sigmaNb1, sigmaNb);
+    solve_P_and_v(P.im, v.im, rr, Ryb.im, sigmaNb1, sigmaNb);
 
     // Re and Im parts of u and w eqns seperate.
     // Use r as temporary space to store RHS of eqns.
