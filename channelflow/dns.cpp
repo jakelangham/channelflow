@@ -375,7 +375,7 @@ void DNS::uq2p(FlowField u, FlowField q, FlowField& p) const {
         return;
     }
 
-    assert(u.Nd() == 3);
+    assert(u.Nd() == 3 || u.Nd() == 4);
     assert(q.Nd() == 1);
     assert(main_algorithm_);
     ChebyCoeff U(main_nse_->Ubase());
@@ -388,16 +388,22 @@ void DNS::uq2p(FlowField u, FlowField q, FlowField& p) const {
     U.makePhysical();
     W.makePhysical();
 
-    int Nx = u.Nx();
-    int Ny = u.Ny();
-    int Nz = u.Nz();
+    //int Nx = u.Nx();
+    //int Ny = u.Ny();
+    //int Nz = u.Nz();
+
+    lint Nz = u.Nz();
+    lint nxlocmin = u.nxlocmin();
+    lint nxlocmax = u.nxlocmin() + u.Nxloc();
+    lint nylocmin = u.nylocmin();
+    lint nylocmax = u.nylocmax();
 
     // Set p = q - 1/2 (u+U) dot (u+U)
     p = q;
-    for (int ny = 0; ny < Ny; ++ny) {
+    for (lint ny = nylocmin; ny < nylocmax; ++ny) {
         Real Uny = U(ny);
         Real Wny = W(ny);
-        for (int nx = 0; nx < Nx; ++nx)
+        for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
             for (int nz = 0; nz < Nz; ++nz)
                 p(nx, ny, nz, 0) -=
                     0.5 * (square(u(nx, ny, nz, 0) + Uny) + square(u(nx, ny, nz, 1)) + square(u(nx, ny, nz, 2) + Wny));
