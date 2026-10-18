@@ -5,3 +5,6 @@ kdev4
 cmake-build*
 coverage*
 build/
+tests/regression/eq1.nc
+tests/regression/eq3_vk1_sn.nc
+tests/regression/*_findsoln/
