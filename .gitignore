@@ -8,3 +8,6 @@ build/
 tests/regression/eq1.nc
 tests/regression/eq3_vk1_sn.nc
 tests/regression/*_findsoln/
+tests/regression/dnsflags.txt
+tests/regression/findsoln.args
+tests/regression/processinfo
