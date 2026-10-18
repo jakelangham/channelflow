@@ -26,6 +26,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/realprofileng.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/symmetry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingtausolver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tausolver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/turbstats.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utilfuncs.cpp
     ${CMAKE_BINARY_DIR}/GitSHA1.cpp
@@ -52,6 +53,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/realprofileng.h
     ${CMAKE_CURRENT_SOURCE_DIR}/symmetry.h
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingtausolver.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/tausolver.h
     ${CMAKE_CURRENT_SOURCE_DIR}/turbstats.h
     ${CMAKE_CURRENT_SOURCE_DIR}/utilfuncs.h
 )

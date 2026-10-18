@@ -74,7 +74,8 @@ class NSE {
 
    protected:
     std::vector<Real> lambda_t_;
-    SettlingTauSolver*** tausolver_;  // 3d cfarray of tausolvers, indexed by [i][mx][mz]
+    TauSolver*** tausolver_;  // upstream tausolvers [i][mx][mz], for subclasses (e.g. OBE); unused by NSE
+    SettlingTauSolver*** settlingtausolver_;  // scalar-extended tausolvers [i][mx][mz] used by NSE
 
     DNSFlags flags_;  // User-defined integration parameters
     int taskid_;

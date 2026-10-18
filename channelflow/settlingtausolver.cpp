@@ -26,29 +26,6 @@ static int n_func(int k, int Nb) {
         return 2 * Nb;
 }
 
-Real divcheck(string& label, int kx, int kz, Real kxLx, Real kzLz, const ComplexChebyCoeff& u,
-              const ComplexChebyCoeff& v, const ComplexChebyCoeff& w, bool verbose) {
-    // Verify divergence
-    int N = u.length();
-    if (v.length() != N || w.length() != N) {
-        cout << "divcheck length problem!" << endl;
-        exit(1);
-    }
-
-    ComplexChebyCoeff tmp = diff(v);
-    Real diverge = 0.0;
-    for (int n = N - 1; n >= 0; --n)
-        diverge += abs2(tmp[n] + (pi * 2 * (kxLx * u[n] + kzLz * w[n])) * I);
-    diverge = sqrt(diverge);
-
-    if (diverge > 1e-13 || verbose) {
-        cout << label << endl;
-        cout << "kx, kz == " << kx << ", " << kz << endl;
-        cout << "kxLx, kzLz == " << kxLx << ", " << kzLz << endl;
-        cout << "divergence == " << diverge << endl;
-    }
-    return diverge;
-}
 
 #ifndef NDEBUG
 const Real MINIMUM_DISCRIMINANT = 1e-4;

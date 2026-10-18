@@ -3816,15 +3816,15 @@ void rotationalNL(const FlowField& u_, FlowField& f, FlowField& tmp, const field
     FlowField& u = (FlowField&)u_;
     FlowField& vort = tmp;
 
-    assert(u.Nd() == 4);
+    assert(u.Nd() == 3 || u.Nd() == 4);  // 4: settling scalar in u[3], advected separately
     fieldstate uxzstate = u.xzstate();
     fieldstate uystate = u.ystate();
 
-    if (!u.geomCongruent(f) || f.Nd() != 4)
-        f.resize(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+    if (!u.geomCongruent(f) || f.Nd() != u.Nd())
+        f.resize(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
     f.setState(Physical, Physical);
 
-    if (!u.geomCongruent(vort) || vort.Nd() != 3)
+    if (!u.geomCongruent(vort) || vort.Nd() < 3)
         vort.resize(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
 
     u.makeSpectral();

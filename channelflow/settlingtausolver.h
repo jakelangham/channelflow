@@ -15,6 +15,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/helmholtz.h"
 #include "channelflow/densehelmholtz.h"
+#include "channelflow/tausolver.h"  // divcheck
 
 namespace chflow {
 
@@ -27,8 +28,6 @@ namespace chflow {
 //          P(y) is in R
 // and the vector operators are interpreted accordingingly (diff in x
 // equal multiplication by 2 pi k).
-Real divcheck(std::string& label, int kx, int kz, Real Lx, Real Lz, const ComplexChebyCoeff& u,
-              const ComplexChebyCoeff& v, const ComplexChebyCoeff& w, bool verbose = false);
 
 // TauSolver extended with the settling scalar (solved first, buoyancy added to the y-forcing).
 // Used by NSE until the settling module replaces it; the upstream TauSolver is in tausolver.h.

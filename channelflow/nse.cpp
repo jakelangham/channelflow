@@ -30,51 +30,42 @@ void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, Flo
                 u.cmplx(0, ny, 0, 0) += Complex(Ubase(ny), 0.0);
             if (u.taskid() == u.task_coeff(0, 0))
                 u.cmplx(0, ny, 0, 2) += Complex(Wbase(ny), 0.0);
-            // rho -= Ubase
-            // JL taken out and put in the densityAdvection routine
-            //if (u.taskid() == u.task_coeff(0, 0)) {
-            //    u.cmplx(0, ny, 0, 3) -= Complex(Ubase(ny), 0.0);
-            //}
         }
         if (u.taskid() == u.task_coeff(0, 0)) {
             u.cmplx(0, 0, 0, 1) -= Complex(flags.Vsuck, 0.);
         }
-
-        // TODO must be better way
-//        vector<int> vel_indices = {0, 1, 2};
-//        vel.copySubfields(u, vel_indices, vel_indices);
+        // 4-component fields carry the settling scalar in u[3] (until it moves to its own module):
+        // rotational form for the velocity, then densityAdvection for the scalar
+        const bool scalar = (u.Nd() == 4);
+        if (scalar && flags.nonlinearity != Rotational)
+            cferror("navierstokesNL : fields with the settling scalar support only the rotational nonlinearity");
 
         switch (flags.nonlinearity) {
             case Rotational:
-                //rotationalNL(vel, f3d, tmp, finalstate);
                 rotationalNL(u, f, tmp, finalstate);
                 break;
-//            case Convection:
-//                convectionNL(vel, f3d, tmp, finalstate);
-//                break;
-//            case SkewSymmetric:
-//                skewsymmetricNL(vel, f3d, tmp, finalstate);
-//                break;
-//            case Divergence:
-//                divergenceNL(vel, f3d, tmp, finalstate);
-//                break;
-//            case Alternating:
-//                divergenceNL(vel, f3d, tmp, finalstate);
-//                flags.nonlinearity = Alternating_;
-//                break;
-//            case Alternating_:
-//                convectionNL(vel, f3d, tmp, finalstate);
-//                flags.nonlinearity = Alternating;
-//                break;
+            case Convection:
+                convectionNL(u, f, tmp, finalstate);
+                break;
+            case SkewSymmetric:
+                skewsymmetricNL(u, f, tmp, finalstate);
+                break;
+            case Divergence:
+                divergenceNL(u, f, tmp, finalstate);
+                break;
+            case Alternating:
+                divergenceNL(u, f, tmp, finalstate);
+                flags.nonlinearity = Alternating_;
+                break;
+            case Alternating_:
+                convectionNL(u, f, tmp, finalstate);
+                flags.nonlinearity = Alternating;
+                break;
             default:
                 cferror("navierstokesNL(method, u,U,f,tmp) : unknown method");
         }
-//        f.copySubfields(f3d, vel_indices, vel_indices);
-
-        densityAdvection(u, f, flags.vs, tmp, finalstate);
-//        vector<int> zero_index = {0};
-//        vector<int> density_index = {3};
-//        f.copySubfields(f1d, zero_index, density_index);
+        if (scalar)
+            densityAdvection(u, f, flags.vs, tmp, finalstate);
 
         // add rotation term -(omega x u) = - flags.rotation * flags.nu (y e_y + e_z x u)
         if (flags.rotation != 0.0) {
@@ -100,10 +91,6 @@ void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, Flo
                 u.cmplx(0, ny, 0, 0) -= Complex(Ubase(ny), 0.0);
             if (u.taskid() == u.task_coeff(0, 0))
                 u.cmplx(0, ny, 0, 2) -= Complex(Wbase(ny), 0.0);
-            // rho += Ubase
-            // JL taken out and put in the density advection routine
-            //if (u.taskid() == u.task_coeff(0, 0))
-            //    u.cmplx(0, ny, 0, 3) += Complex(Ubase(ny), 0.0);
         }
         if (u.taskid() == u.task_coeff(0, 0))
             u.cmplx(0, 0, 0, 1) += Complex(flags.Vsuck, 0.);
@@ -114,6 +101,7 @@ void navierstokesNL(const FlowField& u_, ChebyCoeff Ubase, ChebyCoeff Wbase, Flo
 NSE::NSE()
     : lambda_t_(0),
       tausolver_(0),
+      settlingtausolver_(0),
       flags_(),
       taskid_(0),
       // Spatial parameter members
@@ -170,6 +158,7 @@ NSE::NSE()
 NSE::NSE(const NSE& nse)
     : lambda_t_(nse.lambda_t_),
       tausolver_(0),
+      settlingtausolver_(0),
       flags_(nse.flags_),
       taskid_(nse.taskid()),
       // Spatial parameter members
@@ -225,20 +214,21 @@ NSE::NSE(const NSE& nse)
     // Allocate memory for [Nsubsteps x Mx_ x Mz_] Tausolver cfarrays
     // and copy tausolvers from nse argument
     int nsub = lambda_t_.size();
-    tausolver_ = new SettlingTauSolver**[nsub];  // new #1
+    settlingtausolver_ = new SettlingTauSolver**[nsub];  // new #1
     for (int j = 0; j < nsub; ++j) {
-        tausolver_[j] = new SettlingTauSolver*[Mxloc_];  // new #2
+        settlingtausolver_[j] = new SettlingTauSolver*[Mxloc_];  // new #2
         for (int mx = 0; mx < Mxloc_; ++mx) {
-            tausolver_[j][mx] = new SettlingTauSolver[Mzloc_];  // new #3
+            settlingtausolver_[j][mx] = new SettlingTauSolver[Mzloc_];  // new #3
             for (int mz = 0; mz < Mzloc_; ++mz)
-                tausolver_[j][mx][mz] = nse.tausolver_[j][mx][mz];
+                settlingtausolver_[j][mx][mz] = nse.settlingtausolver_[j][mx][mz];
         }
     }
 }
 
 NSE::NSE(const vector<FlowField>& fields, const DNSFlags& flags)
     : lambda_t_(0),
-      tausolver_(0),  // tausolvers are allocated when reset_lambda is called for the first time
+      tausolver_(0),
+      settlingtausolver_(0),  // tausolvers are allocated when reset_lambda is called for the first time
       flags_(flags),
       taskid_(fields[0].taskid()),
       // Spatial parameter members
@@ -321,7 +311,8 @@ NSE::NSE(const vector<FlowField>& fields, const DNSFlags& flags)
 NSE::NSE(const vector<FlowField>& fields, const vector<ChebyCoeff>& base, const DNSFlags& flags)
     :  //   fields_(fields),
       lambda_t_(0),
-      tausolver_(0),  // tausolvers are allocated when reset_lambda is called for the first time
+      tausolver_(0),
+      settlingtausolver_(0),  // tausolvers are allocated when reset_lambda is called for the first time
       flags_(flags),
       taskid_(fields[0].taskid()),
       // Spatial parameter members
@@ -396,17 +387,29 @@ NSE::NSE(const vector<FlowField>& fields, const vector<ChebyCoeff>& base, const 
 }
 
 NSE::~NSE() {
-    if (tausolver_) {
+    if (tausolver_) {  // allocated by subclasses that use the upstream TauSolver (e.g. OBE)
         for (uint j = 0; j < lambda_t_.size(); ++j) {
             for (int mx = 0; mx < Mxloc_; ++mx) {
-                delete[] tausolver_[j][mx];  // undo new #3
+                delete[] tausolver_[j][mx];
                 tausolver_[j][mx] = 0;
             }
-            delete[] tausolver_[j];  // undo new #2
+            delete[] tausolver_[j];
             tausolver_[j] = 0;
         }
-        delete[] tausolver_;  // undo new #1
+        delete[] tausolver_;
         tausolver_ = 0;
+    }
+    if (settlingtausolver_) {
+        for (uint j = 0; j < lambda_t_.size(); ++j) {
+            for (int mx = 0; mx < Mxloc_; ++mx) {
+                delete[] settlingtausolver_[j][mx];  // undo new #3
+                settlingtausolver_[j][mx] = 0;
+            }
+            delete[] settlingtausolver_[j];  // undo new #2
+            settlingtausolver_[j] = 0;
+        }
+        delete[] settlingtausolver_;  // undo new #1
+        settlingtausolver_ = 0;
     }
 }
 
@@ -540,7 +543,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
 
             // Solve the tau equations
             if (kx != 0 || kz != 0) {
-                tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_, 0.0, 0.0);
+                settlingtausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_, 0.0, 0.0);
             }
             // 		solve(ix,iz,uk_,vk_,wk_,Pk_, Ruk_,Rvk_,Rwk_);
             else {  // kx,kz == 0,0
@@ -556,7 +559,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
                     // pressure is supplied, put on RHS of tau eqn
                     Ruk_.re[0] -= dPdxRef_;
                     Rwk_.re[0] -= dPdzRef_;
-                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_, 
+                    settlingtausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, Ruk_, Rvk_, Rwk_, Rrk_, 
                                                 outfields[0].ga(), outfields[0].gb());
                     // 	  	solve(ix,iz,uk_, vk_, wk_, Pk_, Ruk_,Rvk_,Rwk_);
                     // Bulk vel is free variable determined from soln of tau eqn //TODO: write method that computes
@@ -569,7 +572,7 @@ void NSE::solve(vector<FlowField>& outfields, const vector<FlowField>& rhs, cons
 //                    // Use tausolver with additional variable and constraint:
 //                    // free variable: dPdxAct at next time-step,
 //                    // constraint:    UbulkBase + mean(u) = UbulkRef.
-//                    tausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, dPdxAct_, dPdzAct_, Ruk_, Rvk_, Rwk_,
+//                    settlingtausolver_[s][ix][iz].solve(uk_, vk_, wk_, Pk_, rk_, dPdxAct_, dPdzAct_, Ruk_, Rvk_, Rwk_,
 //                                                UbulkRef_ - UbulkBase_, WbulkRef_ - WbulkBase_);
 //                    // 		  solve(ix,iz,uk_, vk_, wk_, Pk_, dPdxAct_, dPdzAct_,
 //                    // 					    Ruk_, Rvk_, Rwk_,
@@ -711,13 +714,13 @@ void NSE::initCFConstraint(const FlowField& u) {
 void NSE::reset_lambda(vector<Real> lambda_t) {
     lambda_t_ = lambda_t;
 
-    if (tausolver_ == 0) {  // TauSolver need to be constructed
+    if (settlingtausolver_ == 0) {  // TauSolver need to be constructed
         // Allocate memory for [Nsubsteps x Mx_ x Mz_] Tausolver cfarray
-        tausolver_ = new SettlingTauSolver**[lambda_t.size()];  // new #1
+        settlingtausolver_ = new SettlingTauSolver**[lambda_t.size()];  // new #1
         for (uint j = 0; j < lambda_t.size(); ++j) {
-            tausolver_[j] = new SettlingTauSolver*[Mxloc_];  // new #2
+            settlingtausolver_[j] = new SettlingTauSolver*[Mxloc_];  // new #2
             for (int mx = 0; mx < Mxloc_; ++mx)
-                tausolver_[j][mx] = new SettlingTauSolver[Mzloc_];  // new #3
+                settlingtausolver_[j][mx] = new SettlingTauSolver[Mzloc_];  // new #3
         }
     }
 
@@ -730,7 +733,7 @@ void NSE::reset_lambda(vector<Real> lambda_t) {
 
                 if ((kx != kxmax_ || kz != kzmax_) && (!flags_.dealias_xz() || !isAliasedMode(kx, kz)))
 
-                    tausolver_[j][mx][mz] =
+                    settlingtausolver_[j][mx][mz] =
                         SettlingTauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.Pr, flags_.Ri, flags_.vs, flags_.kappa, BC_, Nyd_, flags_.taucorrection);
             }
         }

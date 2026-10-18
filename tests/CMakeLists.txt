@@ -24,7 +24,7 @@ set(
     pressureTest
     realprofileTest
 #    stratTest
-#    tausolverTest
+    tausolverTest
     timeIntegrationTest
     tridiagTest
     vector2fieldTest
