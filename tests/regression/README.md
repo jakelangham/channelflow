@@ -20,7 +20,8 @@ runs the CTest unit/integration tests that currently pass.
 | unit | quick | CTest: unitTests, tridiag, cheby, laminar, helmholtz, tausolver, poisson, io, vector2field | 1 s |
 | eq1 | quick | Ri = 0 equilibrium, Newton | 4 s |
 | eq3 | quick | Ri > 0 travelling wave, Newton + shift | 4 s |
-| settle1 | quick | exact settling profile stays steady (analytic) | 15 s |
+| settle1 | quick | exact settling profile stays steady (analytic), vs/kappa = 1 | 15 s |
+| settle2 | quick | the same at vs/kappa = 14 (bottom boundary layer), Ny = 49 | 15 s |
 | traj1 | quick | time stepping at Ri > 0 | 14 s |
 | vsett1 | full | continuation in vs keeps the no-flux BC consistent | 8 min |
 | upo1 | full | periodic orbit (T ~ 87.8), Newton + period | 1 min |
@@ -68,6 +69,13 @@ out of git.
 - Sensitivity: integrating the same profile with vs = 2.0e-3 instead of 2.5e-3 moves the scalar by
   a relative 1.4e-2 in T = 10.
 - The scalar is stored relative to the background -y of the current code (u[3] = C + y).
+
+## settle2 — exact settling profile at vs/kappa = 14
+
+- As settle1, with vs = 0.035 (vs/kappa = 14, the largest value in Langham & Hogg 2026) and Ny = 49,
+  which resolves the exponential profile to ~4e-25 (its Chebyshev coefficients scale like I_n(14)).
+  Exercises the no-flux BC rows at large alpha = 14 and explicit settling near its time-step limit
+  (vs dt / dy_min ~ 0.33 at dt = 0.02). Observed: moves by 3e-14 (velocity) and 2.6e-13 (scalar).
 
 ## traj1 — time stepping, Ri = 0.0025
 
