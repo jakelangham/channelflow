@@ -34,7 +34,7 @@
 #   The -t option does not apply to traj cases.
 # For each continuesoln (continue_*) case the last continuation solution is re-evaluated with a
 #   fresh findsoln at its parameter value; that residual must be below the case's tol_fresh.
-# A schemes_* case runs one simulateflow script for each scheme:startup:constraint combination it
+# A schemes_* case runs one simulateflow script for each scheme:startup:constraint[:nl[:rot]] combination it
 #   lists, requiring the final field to equal its reference to tol_strict. Combinations listed in
 #   its xfail are known not to work yet: they report XFAIL (not a failure) while broken, and XPASS
 #   (also not a failure, but a prompt to update xfail) once they start working.
@@ -83,10 +83,11 @@ fi
 
 build=$(cd "$build" && pwd) || exit 2
 [ -n "$mpibuild" ] && { mpibuild=$(cd "$mpibuild" && pwd) || exit 2; }
-export FINDSOLN=$build/programs/findsoln
-export SIMULATEFLOW=$build/programs/simulateflow
-export CONTINUESOLN=$build/programs/continuesoln
-export FINDEIGENVALS=$build/programs/findeigenvals
+# RR_FINDSOLN etc. override individual programs (e.g. to test a module's versions)
+export FINDSOLN=${RR_FINDSOLN:-$build/programs/findsoln}
+export SIMULATEFLOW=${RR_SIMULATEFLOW:-$build/programs/simulateflow}
+export CONTINUESOLN=${RR_CONTINUESOLN:-$build/programs/continuesoln}
+export FINDEIGENVALS=${RR_FINDEIGENVALS:-$build/programs/findeigenvals}
 export SETTLINGPROFILE=$build/tools/settlingprofile
 # Older builds may predate settlingprofile; it only writes the exact field, so use this tree's
 [ -x "$SETTLINGPROFILE" ] || SETTLINGPROFILE=$(cd ../../build && pwd)/tools/settlingprofile
@@ -178,16 +179,16 @@ run_schemes() {
     local c=$1 script=schemes_$1.sh
     local combos xfail T tol combo ts is mc label out ref ok worst lab d rel n nref wall rss
     combos=$(sed -n '/^combinations="/,/"/p' "$script" | tr -d '"' | sed 's/^combinations=//')
-    xfail=$(sed -n 's/^xfail="\(.*\)"/\1/p' "$script")
+    xfail=$(sed -n '/^xfail="/,/"/p' "$script" | tr -d '"' | sed 's/^xfail=//' | tr -s ' \n' '  ')
     T=$(sed -n 's/^T=//p' "$script")
     tol=$(sed -n 's/^tol_strict=//p' "$script")
     echo "== $c (scheme:startup:constraint)"
     for combo in $combos; do
-        IFS=: read -r ts is mc <<< "$combo"
+        IFS=: read -r ts is mc nl rot <<< "$combo"
         label=$c/$combo
-        out=run/$c/${ts}_${is}_${mc}/
+        out=run/$c/${combo//:/_}/
         rm -rf "$out" && mkdir -p "$out"
-        TS=$ts IS=$is MC=$mc OUTDIR=$out /usr/bin/time -f "%e %M" -o "$out/time" ./"$script" > "$out/simulateflow.log" 2>&1
+        TS=$ts IS=$is MC=$mc NL=${nl:-rot} ROT=${rot:-0} OUTDIR=$out /usr/bin/time -f "%e %M" -o "$out/time" ./"$script" > "$out/simulateflow.log" 2>&1
         ok=1
         worst=""
         if [ ! -f "$out/u$T.nc" ]; then
