@@ -4172,7 +4172,7 @@ Real FlowField::CFLfactor(ChebyCoeff Ubase, ChebyCoeff Wbase) const {
     if (Ubase.N() == 0)
         return CFLfactor();
 
-    assert(Nd_ >= 4);
+    assert(Nd_ >= 3);  // velocity components only (a 4th, scalar component is ignored)
     FlowField u(*this);
 
     u.makePhysical();
