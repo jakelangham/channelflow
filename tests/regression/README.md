@@ -4,7 +4,7 @@ Reference solutions for checking that code changes leave the physics unchanged.
 All cases: Re = 400, vs = kappa = 2.5e-3, Lx = 5.51157, Lz = 2.51327 (0.8 pi), y in [-1, 1].
 Run serially (1 thread).
 
-    ./run_regression.sh                 # all cases against ../../build, ~35 s, ~42 MB
+    ./run_regression.sh                 # all cases against ../../build, ~25 s, ~42 MB
     ./run_regression.sh -b OTHER_BUILD  # same cases against another build
 
 The full-resolution originals (`eq1.nc`, `eq3_vk1_sn.nc`, `upo_vk0.56_findsoln/`) are kept
@@ -39,12 +39,12 @@ out of git.
 
 ## traj1 — time stepping, Ri = 0.0025
 
-- Starts from `eq1_16x35x32.nc` (steady only at Ri = 0) and integrates to T = 20 at Ri = 0.0025
-  with fixed dt = 0.02 (sbdf3, sbdf1 start-up). Reference: `traj1_T20.nc`. Run with
-  `simulate_traj1.sh`; about 28 s, 42 MB.
-- Over T = 20 the velocity moves 12% (relative) from the initial state, the scalar 1.7%.
-- Time-stepping error at dt = 0.02, from runs at dt = 0.02, 0.01, 0.005: relative 3.9e-7
-  (velocity), 6.2e-8 (scalar). Observed order is 2, not 3: the first-order sbdf1 start-up step
+- Starts from `eq1_16x35x32.nc` (steady only at Ri = 0) and integrates to T = 10 at Ri = 0.0025
+  with fixed dt = 0.02 (sbdf3, sbdf1 start-up). Reference: `traj1_T10.nc`. Run with
+  `simulate_traj1.sh`; about 16 s, 42 MB.
+- Over T = 10 the velocity moves 3.7% (relative) from the initial state, the scalar 0.5%.
+- Time-stepping error at dt = 0.02, from runs at dt = 0.02, 0.01, 0.005: relative 3.8e-7
+  (velocity), 6.4e-8 (scalar). Observed order is 2, not 3: the first-order sbdf1 start-up step
   limits it. (The higher-order start-ups use NSE::linear, which ignores the scalar.)
 - Tolerances: strict 1e-10 (unchanged discretisation); loose 4e-6 velocity, 6e-7 scalar
   (10x the time-stepping error) for changes to the time discretisation.
@@ -58,7 +58,7 @@ Running these cases against the code before any fixes (d870ccf):
 | eq1 (Ri = 0) | G0 | 1.68e-13 vs 1.68e-13 (control, unaffected) |
 | eq3 (Ri = 0.0025) | G0 | 4.8e-10 vs 3.9e-15 |
 | eq3 | reconverged solution | rel L2 distance 1.1e-7 (velocity), 1.2e-8 (scalar); ax differs by 2.1e-8 |
-| traj1 | u(T = 20) | rel L2 distance 3.0e-9 (velocity), 5.1e-11 (scalar) |
+| traj1 | u(T = 20), before traj1 was shortened to T = 10 | rel L2 distance 3.0e-9 (velocity), 5.1e-11 (scalar) |
 
 The error scales with Ri and with the size of the top Chebyshev coefficients of the scalar,
 so it is smaller still at production resolution. Old solutions at Ri > 0 reconverge in about one
