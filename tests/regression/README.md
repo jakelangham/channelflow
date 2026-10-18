@@ -21,6 +21,10 @@ runs the CTest unit/integration tests that currently pass.
 | eq3 | quick | Ri > 0 travelling wave, Newton + shift | 4 s |
 | settle1 | quick | exact settling profile stays steady (analytic) | 15 s |
 | traj1 | quick | time stepping at Ri > 0 | 14 s |
+| vsett1 | full | continuation in vs keeps the no-flux BC consistent | 8 min |
+
+Every case also checks that its output field keeps the NetCDF layout of the reference
+(dimensions, `Component_0`..`Component_3`, geometry attributes), since external scripts read it.
 
 The full-resolution originals (`eq1.nc`, `eq3_vk1_sn.nc`, `upo_vk0.56_findsoln/`) are kept
 out of git.
@@ -73,6 +77,15 @@ out of git.
   limits it. (The higher-order start-ups use NSE::linear, which ignores the scalar.)
 - Tolerances: strict 1e-10 (unchanged discretisation); loose 4e-6 velocity, 6e-7 scalar
   (10x the time-stepping error) for changes to the time discretisation.
+
+## vsett1 — continuation in the settling velocity
+
+- `continue_vsett1.sh` continues eq1 (Ri = 0) in `vsett` for two steps (vs = 2.5e-3 to 3.1e-3),
+  then evaluates the last solution with a fresh `findsoln -Nn 0` at that vs, which builds the
+  no-flux BC from scratch. Residual must be below 1e-11; observed 2e-15.
+- Sensitivity: the same evaluation at the previous step's vs gives ~1e-3, i.e. a frozen BC would
+  be detected. (Before commit 2179c53, cfDSI kept the starting vs/kappa in the BC throughout.)
+- At Ri = 0 the velocity does not depend on vs, so only the scalar changes along this branch.
 
 ## Effect of the buoyancy tau-correction fix (commit 9ab93c7)
 

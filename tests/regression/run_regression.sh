@@ -7,7 +7,7 @@
 #   -t TOL        tolerance on relative L2 distances to the reference and on |ax - ax_ref|
 #                 (default: 1e-8)
 #   case          run only these cases, whatever their tier: unit, or the name of any
-#                 findsoln_<case>.sh / simulate_<case>.sh script here
+#                 findsoln_<case>.sh / simulate_<case>.sh / continue_<case>.sh script here
 #
 # Tiers: each case script sets tier=quick (run after every change, ~1 min in total) or
 # tier=full (minutes to an hour; before merges, restructure milestones and production runs).
@@ -25,6 +25,8 @@
 #   PASS (unchanged) if every relative distance is <= the case's tol_strict;
 #   PASS (within time-stepping error) if <= its tol_loose_* (10x the dt error); FAIL otherwise.
 #   The -t option does not apply to traj cases.
+# For each continuesoln (continue_*) case the last continuation solution is re-evaluated with a
+#   fresh findsoln at its parameter value; that residual must be below the case's tol_fresh.
 # Every case also checks that its output field keeps the reference's file layout: NetCDF
 # dimensions, variables (4 components, scalar as Component_3) and geometry attributes. Scripts
 # outside channelflow read these files, so the layout is part of the interface.
@@ -53,7 +55,7 @@ if [ $# -gt 0 ]; then
     cases="$*"
 else
     cases=unit
-    for f in findsoln_*.sh simulate_*.sh; do
+    for f in findsoln_*.sh simulate_*.sh continue_*.sh; do
         c=${f#*_}; c=${c%.sh}
         t=$(sed -n 's/^tier=//p' "$f")
         { [ "$t" = quick ] || [ $all_tiers = 1 ]; } && cases="$cases $c"
@@ -63,6 +65,7 @@ fi
 build=$(cd "$build" && pwd) || exit 2
 export FINDSOLN=$build/programs/findsoln
 export SIMULATEFLOW=$build/programs/simulateflow
+export CONTINUESOLN=$build/programs/continuesoln
 export SETTLINGPROFILE=$build/tools/settlingprofile
 # Older builds may predate settlingprofile; it only writes the exact field, so use this tree's
 [ -x "$SETTLINGPROFILE" ] || SETTLINGPROFILE=$(cd ../../build && pwd)/tools/settlingprofile
@@ -111,6 +114,33 @@ check_format() {
     fi
 }
 
+# run_cont CASE: continuation, then a fresh residual check of its last solution
+run_cont() {
+    local c=$1 script=continue_$1.sh out=run/$1/
+    local tol vs0 vs_last g wall rss
+    tol=$(sed -n 's/^tol_fresh=//p' "$script")
+    vs0=$(sed -n 's/^vs=//p' "$script")
+    rm -rf "$out" && mkdir -p "$out"
+    echo "== $c (continuation)"
+    OUTDIR=$PWD/$out /usr/bin/time -f "%e %M" -o "$out/time" ./"$script" > "$out/run.log" 2>&1
+    read -r wall rss < "$out/time"
+    if [ ! -s "$out/check/convergence.asc" ]; then
+        report "$c" continue FAIL "no fresh residual; see $out/continuesoln.log and $out/check/"
+        return
+    fi
+    vs_last=$(cat "$out/check/vs_last")
+    if le "$vs_last" "$vs0"; then
+        report "$c" continue FAIL "continuation did not advance (last vs = $vs_last); see $out/continuesoln.log"
+    else
+        report "$c" continue ok "reached vs = $vs_last from $vs0"
+    fi
+    g=$(column L2Norm\(Gx\) "$out/check/convergence.asc" 1)
+    if le "$g" "$tol"; then report "$c" fresh PASS "residual $g at vs = $vs_last with a freshly built BC"
+    else report "$c" fresh FAIL "residual $g > $tol at vs = $vs_last: BC did not follow the continuation?"; fi
+    check_format "$c" "$out/check/../$(awk '!/^ *%/ { d = $6 } END { print d }' "$out/MuD.asc")/ubest.nc" eq1_16x35x32.nc
+    echo "  ($wall s, peak RSS $((rss / 1024)) MB)"
+}
+
 # run_traj CASE: integrate a simulateflow case and compare its final field with the reference
 run_traj() {
     local c=$1 script=simulate_$1.sh out=run/$1/
@@ -156,6 +186,7 @@ echo "cases: $cases"
 for c in $cases; do
     if [ "$c" = unit ]; then run_unit; continue; fi
     if [ -f simulate_$c.sh ]; then run_traj "$c"; continue; fi
+    if [ -f continue_$c.sh ]; then run_cont "$c"; continue; fi
     script=findsoln_$c.sh
     [ -f "$script" ] || { echo "unknown case: $c"; nfail=$((nfail + 1)); continue; }
     ref=$(sed -n 's/^infile=//p' "$script")
