@@ -17,13 +17,13 @@ runs the CTest unit/integration tests that currently pass.
 
 | case | tier | what it checks | cost |
 |---|---|---|---|
-| unit | quick | CTest: unitTests, tridiag, cheby, laminar, helmholtz, poisson, io | <1 s |
+| unit | quick | CTest: unitTests, tridiag, cheby, laminar, helmholtz, tausolver, poisson, io | 1 s |
 | eq1 | quick | Ri = 0 equilibrium, Newton | 4 s |
 | eq3 | quick | Ri > 0 travelling wave, Newton + shift | 4 s |
 | settle1 | quick | exact settling profile stays steady (analytic) | 15 s |
 | traj1 | quick | time stepping at Ri > 0 | 14 s |
 | vsett1 | full | continuation in vs keeps the no-flux BC consistent | 8 min |
-| upo1 | full | periodic orbit (T ~ 87.9), Newton + period | 1.5 min |
+| upo1 | full | periodic orbit (T ~ 87.8), Newton + period | 1 min |
 | mpi | full | eq1, eq3, traj1 on 2 MPI processes match the serial references (needs `-m`) | 20 s |
 
 Every case also checks that its output field keeps the NetCDF layout of the reference
@@ -92,14 +92,15 @@ out of git.
 
 ## upo1 — periodic orbit, Ri = 0, vs/kappa = 0.56
 
-- `upo1_32x35x48.nc`, period T = 87.919012419852208, symmetry `sztxz.asc`, box Lx = 1.75 pi,
+- `upo1_24x35x40.nc`, period T = 87.84095659533736, symmetry `sztxz.asc`, box Lx = 1.75 pi,
   Lz = 1.2 pi (different from the other cases). vs = 1.4e-3, kappa = 2.5e-3. Run with
-  `findsoln_upo1.sh` (`-orb`).
+  `findsoln_upo1.sh` (`-orb`); about 50 s per f^T.
 - Provenance: the user's `upo_vk0.56_findsoln/ubest.nc` (60x61x60, T = 87.8902, L2Norm(G) = 9.9e-12,
-  written 2026-06-23 at ef3d6d6). 16x35x32 was too coarse (initial L2Norm(G) = 1.8e-2, did not
-  converge); at 32x35x48 it converged 2.5e-4 -> 1.0e-5 -> 2.3e-7 -> 9.5e-9 -> 4.3e-10 -> 2.0e-11
-  in 5 Newton steps (about 1 min per f^T, 1 h 50 min, 150 MB) and was accepted at 2.0e-11.
-- Truncation of the original at 60x61x60: x 1e-7, y 2e-11, z 3e-6.
+  written 2026-06-23 at ef3d6d6). 16x35x32 was too coarse (initial L2Norm(G) = 1.8e-2). At 32x35x48
+  it converged to 2.0e-11 in 5 Newton steps (T = 87.91901, ~95 s per f^T). Regridding that orbit to
+  24x35x40 and reconverging: 1.7e-3 -> 2.2e-4 -> 1.8e-6 -> 6.0e-9 -> 2.5e-10 -> 1.2e-11 in 5 steps
+  (1 h, 157 MB), T = 87.84096 (0.09% below the 32x35x48 period), ~46 s per f^T.
+- Truncation at 24x35x40: x 3e-4, y 3e-7, z 2e-4.
 
 ## mpi — parallel decomposition
 
