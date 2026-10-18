@@ -25,6 +25,9 @@
 #   PASS (unchanged) if every relative distance is <= the case's tol_strict;
 #   PASS (within time-stepping error) if <= its tol_loose_* (10x the dt error); FAIL otherwise.
 #   The -t option does not apply to traj cases.
+# Every case also checks that its output field keeps the reference's file layout: NetCDF
+# dimensions, variables (4 components, scalar as Component_3) and geometry attributes. Scripts
+# outside channelflow read these files, so the layout is part of the interface.
 # Output goes to run/<case>/ (git-ignored). Run serially; each case uses 1 thread.
 
 set -u
@@ -82,10 +85,30 @@ column() {
         END { if (!found && row == "last") print v }' "$2"
 }
 
+# layout FILE: the NetCDF structure that external scripts rely on (no run-specific attributes)
+layout() {
+    ncdump -h "$1" | awk '
+        /^dimensions:/ { on = 1 }
+        /global attributes/ { on = 0; glob = 1; next }
+        on { print; next }
+        glob && /:(Nx|Ny|Nz|Lx|Lz|a|b|format_version|title|Conventions) =/ { print }'
+}
+
 nfail=0
 report() {  # case check status detail
     printf "  %-6s %-10s %-5s %s\n" "$1" "$2" "$3" "$4"
     [ "$3" = FAIL ] && nfail=$((nfail + 1))
+}
+
+# check_format CASE FILE REF: the output field must keep the reference's file layout
+check_format() {
+    if ! command -v ncdump > /dev/null; then
+        report "$1" format INFO "ncdump not found, layout not checked"
+    elif diff <(layout "$2") <(layout "$3") > /dev/null; then
+        report "$1" format PASS "same NetCDF layout as the reference"
+    else
+        report "$1" format FAIL "NetCDF layout differs from the reference: diff <(ncdump -h $2) <(ncdump -h $3)"
+    fi
 }
 
 # run_traj CASE: integrate a simulateflow case and compare its final field with the reference
@@ -111,6 +134,7 @@ run_traj() {
         elif le "$rel" "$loose"; then report "$c" "$label" PASS "rel dist $rel (within time-stepping error, <= $loose)"
         else report "$c" "$label" FAIL "rel dist $rel > $loose (abs $d)"; fi
     done < <("$fieldcompare" "$out/u$T.nc" "$ref")
+    check_format "$c" "$out/u$T.nc" "$ref"
     echo "  ($wall s, peak RSS $((rss / 1024)) MB)"
 }
 
@@ -162,6 +186,7 @@ for c in $cases; do
         if le "$rel" "$tol"; then report "$c" "$label" PASS "rel dist $rel"
         else report "$c" "$label" FAIL "rel dist $rel > $tol (abs $d)"; fi
     done < <("$fieldcompare" "$out/ubest.nc" "$ref")
+    check_format "$c" "$out/ubest.nc" "$ref"
 
     if [ -n "$sigma" ]; then
         ax_ref=$(awk '{print $5}' "$sigma")
