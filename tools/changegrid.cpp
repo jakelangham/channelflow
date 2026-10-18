@@ -29,6 +29,7 @@ int main(int argc, char* argv[]) {
         const Real barg = args.getreal("-b", "--b", 0.0, "new upper wall position [default==no change]");
         const Real alpha = args.getreal("-al", "--alpha", 0.0, "new alpha == 2pi/Lx");
         const Real gamma = args.getreal("-ga", "--gamma", 0.0, "new gamma == 2pi/Lz");
+        const Real vs_o_kappa = args.getreal("-vsok", "--vsoverkappa", 0.0, "new vs/kappa == settling velocity / sediment diffusivity");
         const Real lx = (alpha == 0) ? args.getreal("-lx", "--lx", 0.0, "new Lx = 2 pi lx") : 1.0 / alpha;
         const Real lz = (gamma == 0) ? args.getreal("-lz", "--lz", 0.0, "new Lz = 2 pi lz") : 1.0 / gamma;
         /***/ Real Lx = (lx == 0.0) ? args.getreal("-Lx", "--Lx", 0.0, "streamwise (x) box length") : 2 * pi * lx;
@@ -43,8 +44,14 @@ int main(int argc, char* argv[]) {
         args.check();
         args.save("./");
 
+        if (vs_o_kappa == 0) {
+            cout << "vs_o_kappa defaulting to zero (are you sure about this?)" << endl;
+        }
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
         FlowField u0(u0name, cfmpi);
+        BoundaryCond bc(NoFlux, u0.Mx(), u0.Mz(), 
+                        1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
+        u0.setBC(bc);
 
         const int Nx = (Nxarg == 0 ? u0.Nx() : Nxarg);
         const int Ny = (Nyarg == 0 ? u0.Ny() : Nyarg);

@@ -526,7 +526,8 @@ void orthonormalize(vector<RealProfileNG>& basis) {
     }
 }
 
-struct SymmetryChecker : public unary_function<const RealProfileNG&, bool> {
+//struct SymmetryChecker : public unary_function<const RealProfileNG&, bool> {
+struct SymmetryChecker {
     vector<FieldSymmetry> s;
     RealProfileNG work;
     Real tol;
