@@ -26,7 +26,8 @@ DenseHelmholtzSolver::DenseHelmholtzSolver(int numberModes, BoundaryCond bc, Rea
       b_(b),
       lambda_(lambda),
       nu_(nu),
-      normalise_mass_(normalise_mass),
+      // Total mass is only conserved (and the constraint row only built) for no-flux BCs
+      normalise_mass_(normalise_mass && bc.type_ == NoFlux),
       Ae_(nEvenModes_),
       Ao_(nOddModes_),
       Be_(nEvenModes_),
