@@ -438,9 +438,12 @@ void RungeKuttaDNS::advance(vector<FlowField>& fields, int Nsteps) {
             // Q_{j+1} = A_j Q_j + N(u_j)}  where N = -u grad u
             // Q_{j+1} = A_j Q_j - f(u_j)}  where f =  u grad u
             // Q_j = Q_{j+1}
-            Qj_[0] *= A_[j];
+            // (for every equation: NSE subclasses may add fields, e.g. a scalar, after the velocity)
+            for (int l = 0; l < len; ++l)
+                Qj_[l] *= A_[j];
             nse_->nonlinear(uj, Qj1_);
-            Qj_[0] -= Qj1_[0];  // subtract because navierstokesNL(u) = u grad u = -N(u)
+            for (int l = 0; l < len; ++l)
+                Qj_[l] -= Qj1_[l];  // subtract because navierstokesNL(u) = u grad u = -N(u)
 
             // get linear term
             nse_->linear(uj, lt);
