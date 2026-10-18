@@ -14,7 +14,7 @@
 #include "channelflow/dns.h"
 #include "channelflow/flowfield.h"
 #include "channelflow/symmetry.h"
-#include "channelflow/tausolver.h"
+#include "channelflow/settlingtausolver.h"
 #include "nsolver/nsolver.h"
 
 using namespace std;

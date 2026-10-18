@@ -16,7 +16,7 @@
 #include "channelflow/flowfield.h"
 #include "channelflow/poissonsolver.h"
 #include "channelflow/symmetry.h"
-#include "channelflow/tausolver.h"
+#include "channelflow/settlingtausolver.h"
 #include "channelflow/utilfuncs.h"
 
 using namespace std;

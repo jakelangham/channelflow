@@ -15,7 +15,7 @@
 #include "channelflow/diffops.h"
 #include "channelflow/dnsflags.h"
 #include "channelflow/flowfield.h"
-#include "channelflow/tausolver.h"
+#include "channelflow/settlingtausolver.h"
 
 namespace chflow {
 
@@ -74,7 +74,7 @@ class NSE {
 
    protected:
     std::vector<Real> lambda_t_;
-    TauSolver*** tausolver_;  // 3d cfarray of tausolvers, indexed by [i][mx][mz]
+    SettlingTauSolver*** tausolver_;  // 3d cfarray of tausolvers, indexed by [i][mx][mz]
 
     DNSFlags flags_;  // User-defined integration parameters
     int taskid_;

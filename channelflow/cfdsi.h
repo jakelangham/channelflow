@@ -22,7 +22,7 @@
 #include "channelflow/flowfield.h"
 #include "channelflow/periodicfunc.h"
 #include "channelflow/symmetry.h"
-#include "channelflow/tausolver.h"
+#include "channelflow/settlingtausolver.h"
 #include "channelflow/utilfuncs.h"
 #include "nsolver/nsolver.h"
 

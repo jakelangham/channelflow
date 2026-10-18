@@ -225,11 +225,11 @@ NSE::NSE(const NSE& nse)
     // Allocate memory for [Nsubsteps x Mx_ x Mz_] Tausolver cfarrays
     // and copy tausolvers from nse argument
     int nsub = lambda_t_.size();
-    tausolver_ = new TauSolver**[nsub];  // new #1
+    tausolver_ = new SettlingTauSolver**[nsub];  // new #1
     for (int j = 0; j < nsub; ++j) {
-        tausolver_[j] = new TauSolver*[Mxloc_];  // new #2
+        tausolver_[j] = new SettlingTauSolver*[Mxloc_];  // new #2
         for (int mx = 0; mx < Mxloc_; ++mx) {
-            tausolver_[j][mx] = new TauSolver[Mzloc_];  // new #3
+            tausolver_[j][mx] = new SettlingTauSolver[Mzloc_];  // new #3
             for (int mz = 0; mz < Mzloc_; ++mz)
                 tausolver_[j][mx][mz] = nse.tausolver_[j][mx][mz];
         }
@@ -713,11 +713,11 @@ void NSE::reset_lambda(vector<Real> lambda_t) {
 
     if (tausolver_ == 0) {  // TauSolver need to be constructed
         // Allocate memory for [Nsubsteps x Mx_ x Mz_] Tausolver cfarray
-        tausolver_ = new TauSolver**[lambda_t.size()];  // new #1
+        tausolver_ = new SettlingTauSolver**[lambda_t.size()];  // new #1
         for (uint j = 0; j < lambda_t.size(); ++j) {
-            tausolver_[j] = new TauSolver*[Mxloc_];  // new #2
+            tausolver_[j] = new SettlingTauSolver*[Mxloc_];  // new #2
             for (int mx = 0; mx < Mxloc_; ++mx)
-                tausolver_[j][mx] = new TauSolver[Mzloc_];  // new #3
+                tausolver_[j][mx] = new SettlingTauSolver[Mzloc_];  // new #3
         }
     }
 
@@ -731,7 +731,7 @@ void NSE::reset_lambda(vector<Real> lambda_t) {
                 if ((kx != kxmax_ || kz != kzmax_) && (!flags_.dealias_xz() || !isAliasedMode(kx, kz)))
 
                     tausolver_[j][mx][mz] =
-                        TauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.Pr, flags_.Ri, flags_.vs, flags_.kappa, BC_, Nyd_, flags_.taucorrection);
+                        SettlingTauSolver(kx, kz, Lx_, Lz_, a_, b_, lambda_t[j], flags_.nu, flags_.Pr, flags_.Ri, flags_.vs, flags_.kappa, BC_, Nyd_, flags_.taucorrection);
             }
         }
     }

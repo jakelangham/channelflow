@@ -7,8 +7,8 @@
  * Original author: John F. Gibson
  */
 
-#ifndef CHANNELFLOW_TAUSOLVER_H
-#define CHANNELFLOW_TAUSOLVER_H
+#ifndef CHANNELFLOW_SETTLINGTAUSOLVER_H
+#define CHANNELFLOW_SETTLINGTAUSOLVER_H
 
 #include "cfbasics/cfvector.h"
 #include "cfbasics/mathdefs.h"
@@ -30,10 +30,12 @@ namespace chflow {
 Real divcheck(std::string& label, int kx, int kz, Real Lx, Real Lz, const ComplexChebyCoeff& u,
               const ComplexChebyCoeff& v, const ComplexChebyCoeff& w, bool verbose = false);
 
-class TauSolver {
+// TauSolver extended with the settling scalar (solved first, buoyancy added to the y-forcing).
+// Used by NSE until the settling module replaces it; the upstream TauSolver is in tausolver.h.
+class SettlingTauSolver {
    public:
-    TauSolver();
-    TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real Pr, Real Ri, Real vs, Real conc_diffusivity, BoundaryCond bc, int Ny, bool tauCorrection = true);
+    SettlingTauSolver();
+    SettlingTauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda, Real nu, Real Pr, Real Ri, Real vs, Real conc_diffusivity, BoundaryCond bc, int Ny, bool tauCorrection = true);
     // TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda,
     // Real nu, int nChebyModes, bool dx_on=true, bool dz_on=true,
     // bool tauCorrection=true);

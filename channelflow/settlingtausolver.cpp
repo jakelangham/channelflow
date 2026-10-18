@@ -5,7 +5,7 @@
  * Original author:
  */
 
-#include "channelflow/tausolver.h"
+#include "channelflow/settlingtausolver.h"
 #include <iomanip>
 #include "cfbasics/mathdefs.h"
 
@@ -15,7 +15,7 @@ namespace chflow {
 
 inline int kprime_func(int k, int Nb) { return (k % 2 == 0) ? Nb - 1 : Nb; }
 
-int n_func(int k, int Nb) {
+static int n_func(int k, int Nb) {
     if (k == 0)
         return Nb - 1;
     else if (k == Nb)
@@ -54,7 +54,7 @@ Real divcheck(string& label, int kx, int kz, Real kxLx, Real kzLz, const Complex
 const Real MINIMUM_DISCRIMINANT = 1e-4;
 #endif
 const Real EPSILON = 1e-7;
-TauSolver::TauSolver()
+SettlingTauSolver::SettlingTauSolver()
     : N_(0),
       Nb_(0),
       kx_(0),
@@ -84,7 +84,7 @@ TauSolver::TauSolver()
       i10_(0),
       i11_(0) {}
 
-TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real Pr, Real Ri, Real vs, Real conc_diffusivity, BoundaryCond bc, int nChebyModes, bool tauCorrection)
+SettlingTauSolver::SettlingTauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lambda_t, Real nu, Real Pr, Real Ri, Real vs, Real conc_diffusivity, BoundaryCond bc, int nChebyModes, bool tauCorrection)
     : N_(nChebyModes),
       Nb_(nChebyModes - 1),
       kx_(kx),
@@ -186,7 +186,7 @@ TauSolver::TauSolver(int kx, int kz, Real Lx, Real Lz, Real a, Real b, Real lamb
     sigma0_Nb_ = lambda_ * v_0_[Nb_] + dP0dy[Nb_] - nu_ * v0yy[Nb_];
 }
 
-void TauSolver::influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const {
+void SettlingTauSolver::influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const {
     ChebyCoeff tmp = diff(v);
     Real dvp_dy_plus = tmp.eval_b();
     Real dvp_dy_minus = tmp.eval_a();
@@ -201,7 +201,7 @@ void TauSolver::influenceCorrection(ChebyCoeff& P, ChebyCoeff& v) const {
     }
 }
 
-void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, Real& sigmaNb1,
+void SettlingTauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry, Real& sigmaNb1,
                               Real& sigmaNb) const {
     // P is Canuto & Hussaini's Ppart particular solution after this solve
     pressureHelmholtz_.solve(P, r, 0.0, 0.0);  // eqn 7.3.25 discrete HH1
@@ -261,12 +261,12 @@ void TauSolver::solve_P_and_v(ChebyCoeff& P, ChebyCoeff& v, const ChebyCoeff& r,
     return;
 }
 
-Real TauSolver::verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry,
+Real SettlingTauSolver::verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const ChebyCoeff& r, const ChebyCoeff& Ry,
                                Real sigmaNb1, Real sigmaNb, bool verbose) const {
     Real error = 0.0;
 
     if (verbose) {
-        cout << "--------TauSolver::verify_P_and_v(P,v,r,Ry,sigmaNb1,sigmaNb) {" << endl;
+        cout << "--------SettlingTauSolver::verify_P_and_v(P,v,r,Ry,sigmaNb1,sigmaNb) {" << endl;
         cout << "nu = " << nu_ << "; lambda = " << lambda_ << endl;
     }
 
@@ -350,12 +350,12 @@ Real TauSolver::verify_P_and_v(const ChebyCoeff& P, const ChebyCoeff& v, const C
     // assert(v_err < EPSILON);
     // assert(p_err < EPSILON);
     if (verbose)
-        cout << "} TauSolver::verify_P_and_v" << endl;
+        cout << "} SettlingTauSolver::verify_P_and_v" << endl;
 
     return error;
 }
 
-void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, 
+void SettlingTauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, 
                       ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
                       const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, 
                       const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho,
@@ -428,7 +428,7 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
     return;
 }
 
-//void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
+//void SettlingTauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCoeff& w, ComplexChebyCoeff& P, ComplexChebyCoeff& rho,
 //                      Real& dPdx, Real& dPdz, const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
 //                      const ComplexChebyCoeff& Rz, Real umean, Real wmean) const {
 //    // TODO this hasn't been properly stratified
@@ -478,7 +478,7 @@ void TauSolver::solve(ComplexChebyCoeff& u, ComplexChebyCoeff& v, ComplexChebyCo
 //    return;
 //}
 
-Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
+Real SettlingTauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                        const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, 
                        const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry,
                        const ComplexChebyCoeff& Rz, const ComplexChebyCoeff& Rrho, bool verbose) const {
@@ -489,7 +489,7 @@ Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, c
     return verify(u, v, w, P, rho, dPdx, dPdz, Rx, Ry, Rz, Rrho, umean, wmean, verbose);
 }
 
-Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
+Real SettlingTauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, const ComplexChebyCoeff& w,
                        const ComplexChebyCoeff& P, const ComplexChebyCoeff& rho, Real dPdx, Real dPdz, 
                        const ComplexChebyCoeff& Rx, const ComplexChebyCoeff& Ry, const ComplexChebyCoeff& Rz, 
                        const ComplexChebyCoeff& Rrho, Real umean, Real wmean,
@@ -499,7 +499,7 @@ Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, c
     //                                    u(+-1) = 0
 
     if (verbose) {
-        cout << "TauSolver::verify(u,v,w,P,dPdx,dPdz,Rx,Ry,Rz,umean,wmean,verbose) {" << endl;
+        cout << "SettlingTauSolver::verify(u,v,w,P,dPdx,dPdz,Rx,Ry,Rz,umean,wmean,verbose) {" << endl;
         cout << " kx kz == " << kx_ << ' ' << kz_ << endl;
     }
     ComplexChebyCoeff lhs(N_, a_, b_, Spectral);
@@ -675,25 +675,25 @@ Real TauSolver::verify(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v, c
 
     if (verbose) {
         cout << "total verification error == " << error << endl;
-        cout << "} TauSolver::verify(...)" << endl;
+        cout << "} SettlingTauSolver::verify(...)" << endl;
     }
     return error;
 }
 
-Real TauSolver::tauNorm(const ChebyCoeff& u) const {
+Real SettlingTauSolver::tauNorm(const ChebyCoeff& u) const {
     ChebyCoeff tmp(u.numModes() - 2, u);
     return L2Norm(u);
 }
-Real TauSolver::tauNorm(const ComplexChebyCoeff& u) const {
+Real SettlingTauSolver::tauNorm(const ComplexChebyCoeff& u) const {
     ComplexChebyCoeff tmp(u.numModes() - 2, u);
     return L2Norm(u);
 }
-Real TauSolver::tauDist(const ChebyCoeff& u, const ChebyCoeff& v) const {
+Real SettlingTauSolver::tauDist(const ChebyCoeff& u, const ChebyCoeff& v) const {
     ChebyCoeff utmp(u.numModes() - 2, u);
     ChebyCoeff vtmp(v.numModes() - 2, v);
     return L2Dist(utmp, vtmp);
 }
-Real TauSolver::tauDist(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v) const {
+Real SettlingTauSolver::tauDist(const ComplexChebyCoeff& u, const ComplexChebyCoeff& v) const {
     ComplexChebyCoeff utmp(u.numModes() - 2, u);
     ComplexChebyCoeff vtmp(v.numModes() - 2, v);
     return L2Dist(utmp, vtmp);

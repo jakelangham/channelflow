@@ -19,7 +19,7 @@
 #include "channelflow/flowfield.h"
 #include "channelflow/periodicfunc.h"
 #include "channelflow/symmetry.h"
-#include "channelflow/tausolver.h"
+#include "channelflow/settlingtausolver.h"
 #include "nsolver/nsolver.h"
 
 #include <sys/time.h>
