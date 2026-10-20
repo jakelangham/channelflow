@@ -31,6 +31,7 @@ runs the CTest unit/integration tests that currently pass.
 | steady | full | exact steady profile under every scheme and both constraints, nonlinear forms and rotation | 45 s |
 | onset1 | full | stability onset of the laminar state vs Langham & Hogg (2026) App. B | 10 min |
 | upo1 | full | periodic orbit (T ~ 87.8), Newton + period | 1 min |
+| floquet1 | full | Floquet multipliers of upo1 (Arnoldi, 40 vectors): leading, number unstable, two marginal | 12 min |
 | mpi | full | the MPI build's CTest suite; eq1, eq3, traj1 on 2 MPI processes, grids 2x1 and 1x2, match serial (needs `-m`) | 2.5 min |
 
 Every case also checks that its output field keeps the NetCDF layout of the reference
@@ -156,6 +157,18 @@ out of git.
   24x35x40 and reconverging: 1.7e-3 -> 2.2e-4 -> 1.8e-6 -> 6.0e-9 -> 2.5e-10 -> 1.2e-11 in 5 steps
   (1 h, 157 MB), T = 87.84096 (0.09% below the 32x35x48 period), ~46 s per f^T.
 - Truncation at 24x35x40: x 3e-4, y 3e-7, z 2e-4.
+
+## floquet1 — Floquet multipliers of upo1
+
+- `floquet_floquet1.sh`: findeigenvals on upo1 (T = 87.84095659533736, `sztxz.asc`, `-is sbdf1`, as
+  findsoln_upo1.sh) with 40 Arnoldi vectors. The multipliers Lambda of sigma f^T are the Floquet
+  multipliers; findeigenvals also prints the exponents (1/T) log Lambda.
+- Observed (2026-10-20, 60 vectors; 40 agree to ~14 digits): Lambda = -14.319 (real), |Lambda| = 2.33
+  and 1.65 (complex pairs): 5 unstable; marginal 1.00049 and 0.99993 (time and x-translation, which
+  commutes with sztxz; their distance from 1 is the finite-difference Jacobian's error); the next is
+  a complex pair at |Lambda| = 0.89.
+- Checks (`checks.txt`, read by the runner's floquet case type): leading multiplier within 1.4e-5 of
+  -14.31902963, exactly 5 with |Lambda| > 1.002, the two real ones closest to 1 within 2e-3 of it.
 
 ## mpi — parallel decomposition
 
