@@ -118,6 +118,18 @@ int main(int argc, char* argv[]) {
         if (perr > tol)
             failure = 1;
 
+        // 4. A symmetry acts on the velocity as a vector and on the scalar as a scalar (overall sign
+        // only), e.g. x-reflection with a shift: (u, v, w, c)(x, y, z) -> (-u, v, w, c)(-x + ax, y, z + az)
+        const FieldSymmetry sigma(-1, 1, 1, 0.25, 0.5);
+        FlowField su4 = sigma(u), uv, cv, suv, scv;
+        splitVelocityScalar(u, uv, cv);
+        splitVelocityScalar(su4, suv, scv);
+        const Real svel = L2Dist(suv, sigma(uv)) / L2Norm(uv);
+        const Real sscal = L2Dist(scv, sigma(cv)) / L2Norm(cv);
+        cout << "symmetry: velocity " << svel << ", scalar " << sscal << endl;
+        if (svel > tol || sscal > tol)
+            failure = 1;
+
         cout << (failure ? "\t** FAIL **" : "\t   pass   ") << endl;
     }
     cfMPI_Finalize();

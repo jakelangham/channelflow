@@ -1100,8 +1100,11 @@ int sign_i(const FieldSymmetry& sigma, int n, int Nd) {
         case 1:
             return 1;
         case 3:
-        case 4: // JL 3 becomes 4 for strat version
             return sigma.s(n);
+        case 4:
+            // velocity and a scalar (the settling module's state): the scalar takes only the overall
+            // sign sigma.s(), which multiplies every component
+            return n < 3 ? sigma.s(n) : 1;
         case 6: {
             //***** Components of a symmetric tensor *****
             //  ***** 0 ---------- 00 *****
