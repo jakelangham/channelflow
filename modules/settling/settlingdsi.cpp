@@ -5,6 +5,9 @@
 #include "modules/settling/settlingdsi.h"
 #include "channelflow/utilfuncs.h"
 
+#include <algorithm>
+#include <stdexcept>
+
 using namespace std;
 using namespace Eigen;
 
@@ -170,6 +173,68 @@ void SettlingDSI::vectorToField(const VectorXd& x, FlowField& u4) {
     vectorToScalar(x, n, c, settlingScalars(dnsflags_)[0]);
     combineVelocityScalar(u, c, u4);
 }
+
+settling_continuationParameter SettlingDSI::s2settling_cPar(string muName) {
+    std::transform(muName.begin(), muName.end(), muName.begin(), ::tolower);
+    if (muName == "ri")
+        return settling_continuationParameter::Ri;
+    else if (muName == "vsett")
+        return settling_continuationParameter::vsett;
+    else if (muName == "kappa")
+        return settling_continuationParameter::kappa;
+    return settling_continuationParameter::none;
+}
+
+string SettlingDSI::settling_cPar2s(settling_continuationParameter cPar) {
+    switch (cPar) {
+        case settling_continuationParameter::Ri:
+            return "Ri";
+        case settling_continuationParameter::vsett:
+            return "vsett";
+        case settling_continuationParameter::kappa:
+            return "kappa";
+        default:
+            throw invalid_argument("SettlingDSI::settling_cPar2s(): not a settling continuation parameter");
+    }
+}
+
+void SettlingDSI::chooseMuSettling(string muName) {
+    settling_cPar_ = s2settling_cPar(muName);
+    switch (settling_cPar_) {
+        case settling_continuationParameter::none:
+            cfDSI::chooseMu(muName);
+            break;
+        case settling_continuationParameter::Ri:
+            updateMu(dnsflags_.Ri);
+            break;
+        case settling_continuationParameter::vsett:
+            updateMu(dnsflags_.vs);
+            break;
+        case settling_continuationParameter::kappa:
+            updateMu(dnsflags_.kappa);
+            break;
+    }
+}
+
+void SettlingDSI::updateMu(Real mu) {
+    if (settling_cPar_ == settling_continuationParameter::none) {
+        cfDSI::updateMu(mu);
+        return;
+    }
+    DSI::updateMu(mu);
+    if (settling_cPar_ == settling_continuationParameter::Ri)
+        dnsflags_.Ri = mu;
+    else if (settling_cPar_ == settling_continuationParameter::vsett)
+        dnsflags_.vs = mu;
+    else if (settling_cPar_ == settling_continuationParameter::kappa)
+        dnsflags_.kappa = mu;
+}
+
+string SettlingDSI::printMu() {
+    return settling_cPar_ == settling_continuationParameter::none ? cfDSI::printMu() : settling_cPar2s(settling_cPar_);
+}
+
+string SettlingDSI::statsHeader() { return fieldstatsheader_t(printMu()); }
 
 void SettlingDSI::integrate(const FlowField& u4, Real& T, PoincareCondition* h, FlowField& fu, const DNSFlags& flags_,
                             const TimeStep& dt_, int& fcount, Real& CFL, ostream& os) {

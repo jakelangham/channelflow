@@ -21,9 +21,8 @@ namespace chflow {
 
 cfDSI::cfDSI() {}
 
-cfDSI::cfDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, TimeStep dt, 
-    bool Tsearch, bool xrelative, bool zrelative, bool Tnormalize, Real Unormalize, 
-    const FlowField& u, ostream* os)
+cfDSI::cfDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, TimeStep dt, bool Tsearch, bool xrelative,
+             bool zrelative, bool Tnormalize, Real Unormalize, const FlowField& u, ostream* os)
     : DSI(os),
       dnsflags_(dnsflags),
       cfmpi_(u.cfmpi()),
@@ -47,16 +46,14 @@ cfDSI::cfDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, Time
       Lz_(u.Lz()),
       ya_(u.a()),
       yb_(u.b()),
-      BC_(u.BC()),
       CFL_(0),
       uunk_(u.taskid() == 0 ? xrelative_ + zrelative_ + Tsearch_ : 0) {}
 
 VectorXd cfDSI::eval(const VectorXd& x) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     Real T;
     extractVector(x, u, sigma_, T);
-
-    FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     // G(u) = sigma f^T(u) - u, normalised as in the free function G
     integrate(u, T, h_, Gu, dnsflags_, dt_, fcount_, CFL_, *os_);
     Real funorm = L2Norm3d(Gu);
@@ -72,14 +69,14 @@ VectorXd cfDSI::eval(const VectorXd& x) {
 }
 
 VectorXd cfDSI::eval(const VectorXd& x0, const VectorXd& x1, bool symopt) {
-    FlowField u0(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
-    FlowField u1(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u0(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField u1(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     Real T0, T1;
     FieldSymmetry sigma0, sigma1;
     extractVector(x0, u0, sigma0, T0);
     extractVector(x1, u1, sigma1, T1);
 
-    FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
 
     integrate(u0, T0, h_, Gu, dnsflags_, dt_, fcount_, CFL_, *os_);
     Real funorm = L2Norm3d(Gu);
@@ -100,7 +97,7 @@ VectorXd cfDSI::eval(const VectorXd& x0, const VectorXd& x1, bool symopt) {
 }
 
 void cfDSI::save(const VectorXd& x, const string filebase, const string outdir, const bool fieldsonly) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     FieldSymmetry sigma;
     Real T;
     extractVector(x, u, sigma, T);
@@ -127,7 +124,7 @@ void cfDSI::save(const VectorXd& x, const string filebase, const string outdir, 
 }
 
 void cfDSI::saveEigenvec(const VectorXd& ev, const string label, const string outdir) {
-    FlowField ef(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField ef(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     vectorToField(ev, ef);
     ef *= 1.0 / L2Norm(ef);
     ef.save(outdir + "ef" + label);
@@ -135,8 +132,8 @@ void cfDSI::saveEigenvec(const VectorXd& ev, const string label, const string ou
 
 void cfDSI::saveEigenvec(const VectorXd& evA, const VectorXd& evB, const string label1, const string label2,
                          const string outdir) {
-    FlowField efA(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
-    FlowField efB(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField efA(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
+    FlowField efB(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     vectorToField(evA, efA);
     vectorToField(evB, efB);
     Real c = 1.0 / sqrt(L2Norm2(efA) + L2Norm2(efB));
@@ -147,13 +144,13 @@ void cfDSI::saveEigenvec(const VectorXd& evA, const VectorXd& evB, const string 
 }
 
 string cfDSI::stats(const VectorXd& x) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     vectorToField(x, u);
     return fieldstats_t(u, mu_);
 }
 
 pair<string, string> cfDSI::stats_minmax(const VectorXd& x) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     FlowField Gu(u);
     FieldSymmetry sigma;
     Real T;
@@ -198,30 +195,11 @@ pair<string, string> cfDSI::stats_minmax(const VectorXd& x) {
 
 string cfDSI::statsHeader() { return fieldstatsheader_t(cPar2s(cPar_)); }
 
-// The no-flux condition kappa c' + vs c = 0 depends on vs/kappa, so it must follow continuation
-// in either; otherwise every point after the first would keep the starting vs/kappa in the BC.
-void cfDSI::resetNoFluxBC() {
-    if (BC_.type_ != NoFlux)
-        return;
-    const Real r = dnsflags_.vs / dnsflags_.kappa;
-    BC_ = BoundaryCond(NoFlux, BC_.Mx_, BC_.Mz_, 1.0 - r, 1.0 + r, r);
-}
-
 void cfDSI::updateMu(Real mu) {
     DSI::updateMu(mu);
 
     if (cPar_ == continuationParameter::Re) {
         dnsflags_.nu = 1. / mu;
-    } else if (cPar_ == continuationParameter::Ri) {
-        dnsflags_.Ri = mu;
-    } else if (cPar_ == continuationParameter::vs) {
-        dnsflags_.vs = mu;
-        resetNoFluxBC();
-    } else if (cPar_ == continuationParameter::kappa) {
-        dnsflags_.kappa = mu;
-        resetNoFluxBC();
-    } else if (cPar_ == continuationParameter::Pr) {
-        dnsflags_.Pr = mu;
     } else if (cPar_ == continuationParameter::T) {
         Tinit_ = mu;
     } else if (cPar_ == continuationParameter::P) {
@@ -326,18 +304,6 @@ void cfDSI::chooseMu(continuationParameter mu) {
         case continuationParameter::Re:
             updateMu(1. / dnsflags_.nu);
             break;
-        case continuationParameter::Ri:
-            updateMu(dnsflags_.Ri);
-            break;
-        case continuationParameter::vs:
-            updateMu(dnsflags_.vs);
-            break;
-        case continuationParameter::kappa:
-            updateMu(dnsflags_.kappa);
-            break;
-        case continuationParameter::Pr:
-            updateMu(dnsflags_.Pr);
-            break;
         case continuationParameter::T:
             updateMu(Tinit_);
             break;
@@ -405,15 +371,7 @@ continuationParameter cfDSI::s2cPar(string muname) {
     std::transform(muname.begin(), muname.end(), muname.begin(), ::tolower);
     if (muname == "re")
         return continuationParameter::Re;
-    else if (muname == "ri")
-        return continuationParameter::Ri;
-    else if (muname == "vsett")
-        return continuationParameter::vs;
-    else if (muname == "kappa")
-        return continuationParameter::kappa;
-    else if (muname == "pr")
-        return continuationParameter::Pr;
-    else if (muname == "t")
+    else if (muname == "t")  // muname is lower case
         return continuationParameter::T;
     else if (muname == "p")
         return continuationParameter::P;
@@ -488,12 +446,6 @@ string cfDSI::cPar2s(continuationParameter cPar) {
         return "Lt";
     else if (cPar == continuationParameter::Vs)
         return "Vs";
-    else if (cPar == continuationParameter::Ri)
-        return "Ri";
-    else if (cPar == continuationParameter::vs)
-        return "vsett";
-    else if (cPar == continuationParameter::kappa)
-        return "kappa";
     else if (cPar == continuationParameter::ReVs)
         return "ReVs";
     else if (cPar == continuationParameter::H)
@@ -510,7 +462,7 @@ void cfDSI::saveParameters(string searchdir) { dnsflags_.save(searchdir); }
 
 /// after finding new solution fix phases
 void cfDSI::phaseShift(VectorXd& x) {
-    FlowField unew(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField unew(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     FieldSymmetry sigma;
     Real T;
     extractVector(x, unew, sigma, T);
@@ -547,7 +499,7 @@ void cfDSI::phaseShift(VectorXd& x) {
 }
 
 void cfDSI::phaseShift(MatrixXd& y) {
-    FlowField unew(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField unew(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     VectorXd yvec;
     FieldSymmetry sigma;
     Real T;
@@ -580,7 +532,7 @@ void cfDSI::phaseShift(MatrixXd& y) {
 }
 
 Real cfDSI::DSIL2Norm(const VectorXd& x) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     vectorToField(x, u);
     return L2Norm(u);
 }
@@ -638,7 +590,7 @@ void cfDSI::extractVector(const VectorXd& x, FlowField& u, FieldSymmetry& sigma,
 Real cfDSI::extractT(const VectorXd& x) {
     Real Tvec;
     FieldSymmetry sigma;
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     extractVector(x, u, sigma, Tvec);
     return Tvec;
 }
@@ -646,7 +598,7 @@ Real cfDSI::extractT(const VectorXd& x) {
 Real cfDSI::extractXshift(const VectorXd& x) {
     Real Tvec;
     FieldSymmetry sigma;
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     extractVector(x, u, sigma, Tvec);
     return sigma.ax();
 }
@@ -654,13 +606,13 @@ Real cfDSI::extractXshift(const VectorXd& x) {
 Real cfDSI::extractZshift(const VectorXd& x) {
     Real Tvec;
     FieldSymmetry sigma;
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     extractVector(x, u, sigma, Tvec);
     return sigma.az();
 }
 
 VectorXd cfDSI::xdiff(const VectorXd& a) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     vectorToField(a, u);
     VectorXd dadx(a.size());
     dadx.setZero();
@@ -671,7 +623,7 @@ VectorXd cfDSI::xdiff(const VectorXd& a) {
 }
 
 VectorXd cfDSI::zdiff(const VectorXd& a) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     vectorToField(a, u);
     VectorXd dadx(a.size());
     dadx.setZero();
@@ -682,7 +634,7 @@ VectorXd cfDSI::zdiff(const VectorXd& a) {
 }
 
 VectorXd cfDSI::tdiff(const VectorXd& a, Real epsDt) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     FlowField edudtf(u);
     vectorToField(a, u);
     integrate(u, epsDt, 0, edudtf, dnsflags_, dt_, fcount_, CFL_, *os_);
@@ -695,7 +647,7 @@ VectorXd cfDSI::tdiff(const VectorXd& a, Real epsDt) {
 
 Real cfDSI::observable(VectorXd& x) {
     printout("computing mean dissipation", false);
-    FlowField uarg(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField uarg(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     Real T;
     extractVector(x, uarg, sigma_, T);
 
@@ -724,13 +676,11 @@ Real cfDSI::observable(VectorXd& x) {
 }
 
 Real cfDSI::tph_observable(VectorXd& x) {
-    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
+    FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, cfmpi_);
     Real T;
     extractVector(x, u, sigma_, T);
     return Ecf(u);
 }
-
-// return f^{N dt}(u) = time-(N dt) DNS integration of u
 
 void cfDSI::integrate(const FlowField& u, Real& T, PoincareCondition* h, FlowField& fu, const DNSFlags& flags,
                       const TimeStep& dt, int& fcount, Real& CFL, ostream& os) {
@@ -740,6 +690,7 @@ int cfDSI::fieldVectorSize(const FlowField& u) { return field2vector_size(u); }
 void cfDSI::fieldToVector(const FlowField& u, VectorXd& x) { field2vector(u, x); }
 void cfDSI::vectorToField(const VectorXd& x, FlowField& u) { vector2field(x, u); }
 
+// return f^{N dt}(u) = time-(N dt) DNS integration of u
 void f(const FlowField& u, int N, Real dt, FlowField& f_u, const DNSFlags& flags_, ostream& os) {
     os << "f(u, N, dt, f_u, flags, dt) : " << flush;
     DNSFlags flags(flags_);
@@ -757,7 +708,6 @@ void G(const FlowField& u, Real& T, PoincareCondition* h, const FieldSymmetry& s
        const DNSFlags& flags, const TimeStep& dt, bool Tnormalize, Real Unormalize, int& fcount, Real& CFL,
        ostream& os) {
     f(u, T, h, Gu, flags, dt, fcount, CFL, os);
-
     Real funorm = L2Norm3d(Gu);
     Gu *= sigma;
     Gu -= u;
@@ -778,7 +728,7 @@ void f(const FlowField& u, Real& T, PoincareCondition* h, FlowField& f_u, const 
     DNSFlags flags(flags_);
     flags.logstream = &os;
     TimeStep dt(dt_);
-    vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi())};
+    vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi())};
     f_u = u;
     // No Poincare section, just integration to time T
     if (h == 0) {

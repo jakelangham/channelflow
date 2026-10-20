@@ -14,7 +14,7 @@
 #include "channelflow/dns.h"
 #include "channelflow/flowfield.h"
 #include "channelflow/symmetry.h"
-#include "channelflow/settlingtausolver.h"
+#include "channelflow/tausolver.h"
 #include "nsolver/nsolver.h"
 
 using namespace std;
@@ -83,11 +83,6 @@ int main(int argc, char* argv[]) {
         PoincareCondition* h = poincare ? new DragDissipation() : 0;
 
         FlowField u(uname, cfmpi);  // u*, the solution of sigma f^T(u*) - u* = 0
-        if (u.Nd() == 4) {
-            // settling scalar in u[3]: no-flux BC kappa c' + vs c = 0, as in findsoln/continuesoln
-            const Real vs_o_kappa = dnsflags.vs / dnsflags.kappa;
-            u.setBC(BoundaryCond(NoFlux, u.Mx(), u.Mz(), 1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa));
-        }
 
         const int Nx = u.Nx();
         const int Ny = u.Ny();
@@ -154,7 +149,7 @@ int main(int argc, char* argv[]) {
 
         // Check if sigma f^T(u) - u = 0
         VectorXd x;
-        dsi->fieldToVector(u, x);  // the DSI's packing (a module may pack its fields differently)
+        dsi->fieldToVector(u, x);  // the DSI's packing (a subclass may pack its fields differently)
 
         VectorXd Gx = dsi->eval(x);
 

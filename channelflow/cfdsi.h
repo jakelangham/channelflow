@@ -22,7 +22,7 @@
 #include "channelflow/flowfield.h"
 #include "channelflow/periodicfunc.h"
 #include "channelflow/symmetry.h"
-#include "channelflow/settlingtausolver.h"
+#include "channelflow/tausolver.h"
 #include "channelflow/utilfuncs.h"
 #include "nsolver/nsolver.h"
 
@@ -31,10 +31,6 @@ namespace chflow {
 enum class continuationParameter {
     T,
     Re,
-    Ri,
-    Pr,
-    vs,
-    kappa,
     P,
     Ub,
     Uw,
@@ -148,8 +144,6 @@ class cfDSI : public DSI {
     Real Lz_;
     Real ya_;
     Real yb_;
-    BoundaryCond BC_;
-    void resetNoFluxBC();  // rebuild the no-flux BC of the scalar from dnsflags_.vs and dnsflags_.kappa
     Real CFL_;
     int uunk_;
     bool xphasehack_;

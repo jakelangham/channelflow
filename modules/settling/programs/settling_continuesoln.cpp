@@ -102,8 +102,7 @@ int main(int argc, char* argv[]) {
         FieldSymmetry sigma[3];
         cfarray<Real> mu(3);
         Real T[3];
-        unique_ptr<cfDSI> dsi;
-        dsi = unique_ptr<cfDSI>(new cfDSI());
+        unique_ptr<SettlingDSI> dsi;
 
         if (restart) {
             cout << "Restarting from previous solutions. Please be aware that the DNSFlags "
@@ -237,7 +236,7 @@ int main(int argc, char* argv[]) {
         }
         // end superfluous output
 
-        dsi = unique_ptr<cfDSI>(new SettlingDSI(dnsflags, sigma[0], 0, dt, Tsearch, Rxsearch, Rzsearch, Tnormalize,
+        dsi = unique_ptr<SettlingDSI>(new SettlingDSI(dnsflags, sigma[0], 0, dt, Tsearch, Rxsearch, Rzsearch, Tnormalize,
                                           Unormalize, u_with_density[0], N->getLogstream()));
 
         cout << setprecision(8);
@@ -254,7 +253,7 @@ int main(int argc, char* argv[]) {
         cout << "DNSFlags == " << dnsflags << endl << endl;
 
         dsi->setPhaseShifts(xphasehack, zphasehack, uUbasehack);
-        dsi->chooseMu(muname);
+        dsi->chooseMuSettling(muname);
         if (!restart) {
             mu[1] = dsi->mu();
             mu[0] = mu[1] + cflags.initialParamStep;

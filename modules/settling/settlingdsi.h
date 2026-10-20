@@ -22,6 +22,9 @@ int scalarVectorSize(const FlowField& c);
 void scalarToVector(const FlowField& c, Eigen::VectorXd& x, int& n);  // writes from x(n), advances n
 void vectorToScalar(const Eigen::VectorXd& x, int& n, FlowField& c, const SettlingScalar& sc);
 
+/** Continuation parameters of the settling equations; none defers to cfDSI's (Re, T, P, ...) */
+enum class settling_continuationParameter { none, Ri, vsett, kappa };
+
 class SettlingDSI : public cfDSI {
    public:
     SettlingDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, TimeStep dt, bool Tsearch,
@@ -33,6 +36,18 @@ class SettlingDSI : public cfDSI {
     int fieldVectorSize(const FlowField& u) override;
     void fieldToVector(const FlowField& u, Eigen::VectorXd& x) override;
     void vectorToField(const Eigen::VectorXd& x, FlowField& u) override;
+
+    /// \name Continuation in Ri, vsett, kappa (names as for -cont), or any of cfDSI's parameters.
+    /// The no-flux BC follows vsett and kappa, since it is rebuilt from dnsflags_ when unpacking.
+    void chooseMuSettling(std::string muName);
+    void updateMu(Real mu) override;
+    std::string printMu() override;
+    std::string statsHeader() override;
+    static settling_continuationParameter s2settling_cPar(std::string muName);
+    static std::string settling_cPar2s(settling_continuationParameter cPar);
+
+   protected:
+    settling_continuationParameter settling_cPar_ = settling_continuationParameter::none;
 };
 
 }  // namespace chflow
