@@ -92,8 +92,11 @@ out of git.
   satisfy sin(mu) cos(mu) = 0: mu = m pi/2 and sigma = -kappa (k^2 + r^2/4 + mu^2) (m >= 1), or
   phi = exp(-r y), sigma = -kappa k^2 (m = 0). `tools/settlingprofile -eps -m -n -t` writes it.
 - The only tests of the non-mean scalar modes and the Robin BC against an exact solution (settle1/2
-  test the mean mode). Errors are second order in dt: decay1 2.9e-8 at dt = 0.02, 7.2e-9 at 0.01;
-  decay2 (faster decay, x0.38 over T = 10) 2.2e-7. Tolerances are 10x these. The m = 0 mode was also
+  test the mean mode). They use SBDF3 with the default SMRK2 start-up, which is third order in dt
+  (decay1: 2.6e-12 at dt = 0.04, 3.3e-13 at 0.02, then round-off 3e-14; decay2, faster decay, x0.38
+  over T = 10: 1.6e-10 at 0.02). Tolerances are 10x these, so a start-up or linear() that drops the
+  order fails. With -is sbdf1 (the other cases, whose references were computed with it) the error is
+  second order: decay1 2.8e-8 at 0.02. The m = 0 mode was also
   checked (6.7e-9) but is not a case.
 
 ## traj1 — time stepping, Ri = 0.0025

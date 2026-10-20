@@ -28,12 +28,13 @@ for t in 0 $T; do
         -eps $eps -m $m -n $n -t $t $outdir/$name.nc
 done
 $simulateflow -R $Re -vsett $vs -kap $kappa -ri $Ri \
-    -T $T -dT $T -dt $dt -vdt false -ts sbdf3 -is sbdf1 \
+    -T $T -dT $T -dt $dt -vdt false -ts sbdf3 \
     -o $outdir $outdir/initial.nc
 
-# Compared by run_regression.sh with the exact field at T. The scalar differs by the time-stepping
-# error (2.2e-7 relative at dt = 0.02, second order); tolerance 10x that. The velocity must stay zero.
+# Compared by run_regression.sh with the exact field at T. With the default SMRK2 start-up the scalar
+# error is 1.6e-10 relative at dt = 0.02 (third order; 2.2e-7 with -is sbdf1); tolerance 10x that.
+# The velocity must stay zero.
 reference=exact
 tol_strict=1e-12
 tol_loose_velocity=1e-12
-tol_loose_scalar=2e-6
+tol_loose_scalar=2e-9
