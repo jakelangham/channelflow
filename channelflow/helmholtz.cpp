@@ -94,8 +94,7 @@ void HelmholtzSolver::solve(ChebyCoeff& u, const ChebyCoeff& f, Real ua, Real ub
     u.setState(Spectral);
 }
 
-//Real HelmholtzSolver::residual(const ChebyCoeff& u, const ChebyCoeff& f, Real ua, Real ub) const {
-Real HelmholtzSolver::residual(const ChebyCoeff& u, const ChebyCoeff& f, Real g0, Real g1) const {
+Real HelmholtzSolver::residual(const ChebyCoeff& u, const ChebyCoeff& f, Real ua, Real ub) const {
     ChebyTransform trans(nModes_);
     assert(nModes_ == u.length());
 
@@ -112,8 +111,8 @@ Real HelmholtzSolver::residual(const ChebyCoeff& u, const ChebyCoeff& f, Real g0
     ChebyCoeff g(nModes_, a_, b_, Spectral);
     Be_.multiplyStrided(f, g, 0, 2);
     Bo_.multiplyStrided(f, g, 1, 2);
-    g[0] = g0; //(ub + ua) / 2;
-    g[1] = g1; //(ub - ua) / 2;
+    g[0] = (ub + ua) / 2;
+    g[1] = (ub - ua) / 2;
 
     // h = A*u
     ChebyCoeff h(nModes_, a_, b_, Spectral);
