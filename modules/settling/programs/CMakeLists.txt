@@ -3,6 +3,9 @@
 set(
     settling_APPS
     settling_simulateflow
+    settling_findsoln
+    settling_continuesoln
+    settling_findeigenvals
 )
 
 foreach (program ${settling_APPS})

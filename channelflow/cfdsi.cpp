@@ -57,9 +57,17 @@ VectorXd cfDSI::eval(const VectorXd& x) {
     extractVector(x, u, sigma_, T);
 
     FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
-    G(u, T, h_, sigma_, Gu, dnsflags_, dt_, Tnormalize_, Unormalize_, fcount_, CFL_, *os_);
+    // G(u) = sigma f^T(u) - u, normalised as in the free function G
+    integrate(u, T, h_, Gu, dnsflags_, dt_, fcount_, CFL_, *os_);
+    Real funorm = L2Norm3d(Gu);
+    Gu *= sigma_;
+    Gu -= u;
+    if (Tnormalize_)
+        Gu *= 1.0 / T;
+    if (Unormalize_ != 0.0)
+        Gu *= 1. / sqrt(abs(funorm * (Unormalize_ - funorm)));
     VectorXd Gx(VectorXd::Zero(x.rows()));
-    field2vector(Gu, Gx);  // This does not change the size of Gx and automatically leaves the last entries zero
+    fieldToVector(Gu, Gx);  // This does not change the size of Gx and automatically leaves the last entries zero
     return Gx;
 }
 
@@ -73,7 +81,7 @@ VectorXd cfDSI::eval(const VectorXd& x0, const VectorXd& x1, bool symopt) {
 
     FlowField Gu(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
 
-    f(u0, T0, h_, Gu, dnsflags_, dt_, fcount_, CFL_, *os_);
+    integrate(u0, T0, h_, Gu, dnsflags_, dt_, fcount_, CFL_, *os_);
     Real funorm = L2Norm3d(Gu);
     if (symopt)
         Gu *= sigma0;
@@ -86,7 +94,7 @@ VectorXd cfDSI::eval(const VectorXd& x0, const VectorXd& x1, bool symopt) {
 
     VectorXd Gx(VectorXd::Zero(x0.rows()));
 
-    field2vector(Gu, Gx);  // This does not change the size of Gx and automatically leaves the last entries zero
+    fieldToVector(Gu, Gx);  // This does not change the size of Gx and automatically leaves the last entries zero
 
     return Gx;
 }
@@ -120,7 +128,7 @@ void cfDSI::save(const VectorXd& x, const string filebase, const string outdir, 
 
 void cfDSI::saveEigenvec(const VectorXd& ev, const string label, const string outdir) {
     FlowField ef(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
-    vector2field(ev, ef);
+    vectorToField(ev, ef);
     ef *= 1.0 / L2Norm(ef);
     ef.save(outdir + "ef" + label);
 }
@@ -129,8 +137,8 @@ void cfDSI::saveEigenvec(const VectorXd& evA, const VectorXd& evB, const string 
                          const string outdir) {
     FlowField efA(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     FlowField efB(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
-    vector2field(evA, efA);
-    vector2field(evB, efB);
+    vectorToField(evA, efA);
+    vectorToField(evB, efB);
     Real c = 1.0 / sqrt(L2Norm2(efA) + L2Norm2(efB));
     efA *= c;
     efB *= c;
@@ -140,7 +148,7 @@ void cfDSI::saveEigenvec(const VectorXd& evA, const VectorXd& evB, const string 
 
 string cfDSI::stats(const VectorXd& x) {
     FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
-    vector2field(x, u);
+    vectorToField(x, u);
     return fieldstats_t(u, mu_);
 }
 
@@ -165,7 +173,7 @@ pair<string, string> cfDSI::stats_minmax(const VectorXd& x) {
 
     *os_ << "Using flag -orbOut: Calculate minmax-statistics of periodic orbit." << endl;
     for (int t = 0; t < 100; t++) {
-        f(u, timep, h, Gu, dnsflags_, dt, fcount, CFL, muted_os);
+        integrate(u, timep, h, Gu, dnsflags_, dt, fcount, CFL, muted_os);
         stats = fieldstats_vector(u);
         for (uint i = 0; i < stats.size(); i++) {
             minstats[i] = (minstats[i] < stats[i]) ? minstats[i] : stats[i];
@@ -573,13 +581,13 @@ void cfDSI::phaseShift(MatrixXd& y) {
 
 Real cfDSI::DSIL2Norm(const VectorXd& x) {
     FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
-    vector2field(x, u);
+    vectorToField(x, u);
     return L2Norm(u);
 }
 
 void cfDSI::makeVector(const FlowField& u, const FieldSymmetry& sigma, const Real T, VectorXd& x) {
     int taskid = u.taskid();
-    int uunk = field2vector_size(u);                         // # of variables for u unknonwn
+    int uunk = fieldVectorSize(u);                         // # of variables for u unknonwn
     const int Tunk = (Tsearch_ && taskid == 0) ? uunk : -1;  // index for T unknown
     const int xunk = (xrelative_ && taskid == 0) ? uunk + Tsearch_ : -1;
     const int zunk = (zrelative_ && taskid == 0) ? uunk + Tsearch_ + xrelative_ : -1;
@@ -588,7 +596,7 @@ void cfDSI::makeVector(const FlowField& u, const FieldSymmetry& sigma, const Rea
     //   VectorXd x(Nunk);
     if (x.rows() < Nunk)
         x.resize(Nunk);
-    field2vector(u, x);
+    fieldToVector(u, x);
 
     if (taskid == 0) {
         if (Tsearch_)
@@ -601,9 +609,9 @@ void cfDSI::makeVector(const FlowField& u, const FieldSymmetry& sigma, const Rea
 }
 
 void cfDSI::extractVector(const VectorXd& x, FlowField& u, FieldSymmetry& sigma, Real& T) {
-    int uunk = field2vector_size(u);  // Important for arclength method
+    int uunk = fieldVectorSize(u);  // Important for arclength method
 
-    vector2field(x, u);
+    vectorToField(x, u);
     const int Tunk = uunk + Tsearch_ - 1;
     const int xunk = uunk + Tsearch_ + xrelative_ - 1;
     const int zunk = uunk + Tsearch_ + xrelative_ + zrelative_ - 1;
@@ -653,22 +661,22 @@ Real cfDSI::extractZshift(const VectorXd& x) {
 
 VectorXd cfDSI::xdiff(const VectorXd& a) {
     FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
-    vector2field(a, u);
+    vectorToField(a, u);
     VectorXd dadx(a.size());
     dadx.setZero();
     u = chflow::xdiff(u);
-    field2vector(u, dadx);
+    fieldToVector(u, dadx);
     dadx *= 1. / L2Norm(dadx);
     return dadx;
 }
 
 VectorXd cfDSI::zdiff(const VectorXd& a) {
     FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
-    vector2field(a, u);
+    vectorToField(a, u);
     VectorXd dadx(a.size());
     dadx.setZero();
     u = chflow::zdiff(u);
-    field2vector(u, dadx);
+    fieldToVector(u, dadx);
     dadx *= 1. / L2Norm(dadx);
     return dadx;
 }
@@ -676,11 +684,11 @@ VectorXd cfDSI::zdiff(const VectorXd& a) {
 VectorXd cfDSI::tdiff(const VectorXd& a, Real epsDt) {
     FlowField u(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, ya_, yb_, BC_, cfmpi_);
     FlowField edudtf(u);
-    vector2field(a, u);
-    f(u, epsDt, 0, edudtf, dnsflags_, dt_, fcount_, CFL_, *os_);
+    vectorToField(a, u);
+    integrate(u, epsDt, 0, edudtf, dnsflags_, dt_, fcount_, CFL_, *os_);
     edudtf -= u;
     VectorXd dadt(a.size());
-    field2vector(edudtf, dadt);
+    fieldToVector(edudtf, dadt);
     dadt *= 1. / L2Norm(dadt);
     return dadt;
 }
@@ -723,6 +731,15 @@ Real cfDSI::tph_observable(VectorXd& x) {
 }
 
 // return f^{N dt}(u) = time-(N dt) DNS integration of u
+
+void cfDSI::integrate(const FlowField& u, Real& T, PoincareCondition* h, FlowField& fu, const DNSFlags& flags,
+                      const TimeStep& dt, int& fcount, Real& CFL, ostream& os) {
+    f(u, T, h, fu, flags, dt, fcount, CFL, os);
+}
+int cfDSI::fieldVectorSize(const FlowField& u) { return field2vector_size(u); }
+void cfDSI::fieldToVector(const FlowField& u, VectorXd& x) { field2vector(u, x); }
+void cfDSI::vectorToField(const VectorXd& x, FlowField& u) { vector2field(x, u); }
+
 void f(const FlowField& u, int N, Real dt, FlowField& f_u, const DNSFlags& flags_, ostream& os) {
     os << "f(u, N, dt, f_u, flags, dt) : " << flush;
     DNSFlags flags(flags_);

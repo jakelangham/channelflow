@@ -116,6 +116,15 @@ class cfDSI : public DSI {
     bool ZrelSearch() const override { return zrelative_; };
     bool Tsearch() const override { return Tsearch_; };
 
+    // Hooks for subclasses that solve other equations on the same state FlowField (e.g. a module that
+    // stores extra fields in further components): time integration f^T(u), and packing of the state
+    // into the Newton vector. Defaults: the free functions f, field2vector, vector2field.
+    virtual void integrate(const FlowField& u, Real& T, PoincareCondition* h, FlowField& fu, const DNSFlags& flags,
+                           const TimeStep& dt, int& fcount, Real& CFL, std::ostream& os);
+    virtual int fieldVectorSize(const FlowField& u);
+    virtual void fieldToVector(const FlowField& u, Eigen::VectorXd& x);
+    virtual void vectorToField(const Eigen::VectorXd& x, FlowField& u);
+
    protected:
     DNSFlags dnsflags_;
     CfMPI* cfmpi_;

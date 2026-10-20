@@ -166,6 +166,8 @@ out of git.
 - Re-runs eq1, eq3 and traj1 with `mpirun -np 2`, on process grids 2x1 and 1x2, using an MPI build (`-m DIR` or `MPI_BUILD`), with
   the same references and tolerances as the serial cases. Observed: residuals agree with serial to
   the last digits (e.g. 1.67888e-13 vs 1.67907e-13), distances <= 2e-13.
+- `RR_MPI_FINDSOLN` / `RR_MPI_SIMULATEFLOW` override the MPI build's programs (as `RR_FINDSOLN` etc.
+  do for the serial cases).
 
 ## kappa1, ri1 — continuation in kappa and Ri
 

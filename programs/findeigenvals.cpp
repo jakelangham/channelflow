@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
 
         // Check if sigma f^T(u) - u = 0
         VectorXd x;
-        field2vector(u, x);
+        dsi->fieldToVector(u, x);  // the DSI's packing (a module may pack its fields differently)
 
         VectorXd Gx = dsi->eval(x);
 
@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
         printout("L2Norm(du) = " + r2s(L2Norm(du)));
 
         VectorXd dx;
-        field2vector(du, dx);
+        dsi->fieldToVector(du, dx);
 
         E->solve(*dsi, x, dx, dnsflags.T, eps);
 

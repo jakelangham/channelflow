@@ -347,12 +347,15 @@ run_mpi() {
         return
     fi
     local fs=$FINDSOLN sf=$SIMULATEFLOW layout np0 np1 tag
+    # RR_MPI_FINDSOLN / RR_MPI_SIMULATEFLOW override the MPI programs (e.g. a module's versions)
+    local mfs=${RR_MPI_FINDSOLN:-$mpibuild/programs/findsoln}
+    local msf=${RR_MPI_SIMULATEFLOW:-$mpibuild/programs/simulateflow}
     # two process grids: 2x1 (the default) and 1x2 (a different transpose decomposition)
     for layout in 2:1 1:2; do
         IFS=: read -r np0 np1 <<< "$layout"
         tag=mpi${np0}x${np1}
-        export FINDSOLN="$mpirun -np 2 $mpibuild/programs/findsoln -np0 $np0 -np1 $np1"
-        export SIMULATEFLOW="$mpirun -np 2 $mpibuild/programs/simulateflow -np0 $np0 -np1 $np1"
+        export FINDSOLN="$mpirun -np 2 $mfs -np0 $np0 -np1 $np1"
+        export SIMULATEFLOW="$mpirun -np 2 $msf -np0 $np0 -np1 $np1"
         run_findsoln eq1 ${tag}_eq1
         run_findsoln eq3 ${tag}_eq3
         run_traj traj1 ${tag}_traj1

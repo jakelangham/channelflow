@@ -8,12 +8,14 @@ set(
     settling_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingnse.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingdns.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/settlingdsi.cpp
 )
 
 set(
     settling_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingnse.h
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingdns.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/settlingdsi.h
 )
 
 install_channelflow_library(settling)
