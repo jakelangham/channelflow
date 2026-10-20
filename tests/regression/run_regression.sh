@@ -66,7 +66,7 @@ while getopts "ab:m:t:" opt; do
 done
 shift $((OPTIND - 1))
 # CTest tests run by the "unit" case; extend as more of the legacy tests are fixed
-unit_tests='^(unitTests|tridiag|cheby|laminar|helmholtz|tausolver|poisson|io|vector2field)$'
+unit_tests='^(unitTests|tridiag|cheby|laminar|helmholtz|tausolver|poisson|io|vector2field|settling_packing)$'
 
 # Default case list: unit plus every case script whose tier is selected, in name order
 if [ $# -gt 0 ]; then

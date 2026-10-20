@@ -22,6 +22,11 @@ int scalarVectorSize(const FlowField& c);
 void scalarToVector(const FlowField& c, Eigen::VectorXd& x, int& n);  // writes from x(n), advances n
 void vectorToScalar(const Eigen::VectorXd& x, int& n, FlowField& c, const SettlingScalar& sc);
 
+/** Impose the scalar's no-flux BC and unit mass on c (a round trip through its packing) */
+void projectScalar(FlowField& c, const SettlingScalar& sc);
+/** As fixdivnoslip for a 4-component state: divergence-free no-slip velocity, and projectScalar */
+void fixdivnoslipSettling(FlowField& u4, const SettlingScalar& sc);
+
 /** Continuation parameters of the settling equations; none defers to cfDSI's (Re, T, P, ...) */
 enum class settling_continuationParameter { none, Ri, vsett, kappa };
 

@@ -17,7 +17,7 @@ runs the CTest unit/integration tests that currently pass.
 
 | case | tier | what it checks | cost |
 |---|---|---|---|
-| unit | quick | CTest: unitTests, tridiag, cheby, laminar, helmholtz, tausolver, poisson, io, vector2field | 1 s |
+| unit | quick | CTest: unitTests, tridiag, cheby, laminar, helmholtz, tausolver, poisson, io, vector2field, settling_packing (module: SettlingDSI packing round trip, constraints, MPI conjugates) | 1 s |
 | eq1 | quick | Ri = 0 equilibrium, Newton | 4 s |
 | eq3 | quick | Ri > 0 travelling wave, Newton + shift | 4 s |
 | settle1 | quick | exact settling profile stays steady (analytic), vs/kappa = 1 | 15 s |

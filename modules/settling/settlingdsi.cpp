@@ -134,6 +134,22 @@ void vectorToScalar(const VectorXd& x, int& n, FlowField& c, const SettlingScala
     c.setPadded(true);
 }
 
+void projectScalar(FlowField& c, const SettlingScalar& sc) {
+    VectorXd x(scalarVectorSize(c));
+    int n = 0;
+    scalarToVector(c, x, n);
+    n = 0;
+    vectorToScalar(x, n, c, sc);
+}
+
+void fixdivnoslipSettling(FlowField& u4, const SettlingScalar& sc) {
+    FlowField u, c;
+    splitVelocityScalar(u4, u, c);
+    fixdivnoslip(u);
+    projectScalar(c, sc);
+    combineVelocityScalar(u, c, u4);
+}
+
 SettlingDSI::SettlingDSI(DNSFlags& dnsflags, FieldSymmetry sigma, PoincareCondition* h, TimeStep dt, bool Tsearch,
                          bool xrelative, bool zrelative, bool Tnormalize, Real Unormalize, const FlowField& u,
                          ostream* os)

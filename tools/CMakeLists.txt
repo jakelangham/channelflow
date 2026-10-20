@@ -7,7 +7,6 @@
 set(tool_APPS
   addfields
 #  benchmark
-  changegrid
   correlation
 #  diffop
 #  extrapolatefields
@@ -25,6 +24,11 @@ set(tool_APPS
 #  symmetryop
   wall_shear
   )
+
+# With the settling module (the default) its version of changegrid is built instead
+if (NOT WITH_SETTLING)
+    set(tool_APPS ${tool_APPS} changegrid)
+endif ()
 
 foreach (program ${tool_APPS})
     install_channelflow_application(${program} bin)

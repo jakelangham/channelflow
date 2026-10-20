@@ -187,7 +187,7 @@ int main(int argc, char* argv[]) {
             u_with_density[1].setBC(bc);
 
             project(dnsflags.symmetries, u_with_density[1], "initial value u", cout);
-            fixdivnoslip(u_with_density[1]);
+            fixdivnoslipSettling(u_with_density[1], settlingScalars(dnsflags)[0]);
 
             u_with_density[2] = u_with_density[1];
             printout("Optimizing FFTW...", false);

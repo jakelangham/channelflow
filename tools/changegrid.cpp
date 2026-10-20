@@ -29,7 +29,6 @@ int main(int argc, char* argv[]) {
         const Real barg = args.getreal("-b", "--b", NAN, "new upper wall position [default==no change]");
         const Real alpha = args.getreal("-al", "--alpha", 0.0, "new alpha == 2pi/Lx");
         const Real gamma = args.getreal("-ga", "--gamma", 0.0, "new gamma == 2pi/Lz");
-        const Real vs_o_kappa = args.getreal("-vsok", "--vsoverkappa", 0.0, "new vs/kappa == settling velocity / sediment diffusivity");
         const Real lx = (alpha == 0) ? args.getreal("-lx", "--lx", 0.0, "new Lx = 2 pi lx") : 1.0 / alpha;
         const Real lz = (gamma == 0) ? args.getreal("-lz", "--lz", 0.0, "new Lz = 2 pi lz") : 1.0 / gamma;
         /***/ Real Lx = (lx == 0.0) ? args.getreal("-Lx", "--Lx", 0.0, "streamwise (x) box length") : 2 * pi * lx;
@@ -44,14 +43,8 @@ int main(int argc, char* argv[]) {
         args.check();
         args.save("./");
 
-        if (vs_o_kappa == 0) {
-            cout << "vs_o_kappa defaulting to zero (are you sure about this?)" << endl;
-        }
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
         FlowField u0(u0name, cfmpi);
-        BoundaryCond bc(NoFlux, u0.Mx(), u0.Mz(), 
-                        1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
-        u0.setBC(bc);
 
         const int Nx = (Nxarg == 0 ? u0.Nx() : Nxarg);
         const int Ny = (Nyarg == 0 ? u0.Ny() : Nyarg);
@@ -59,7 +52,7 @@ int main(int argc, char* argv[]) {
         const Real a = (std::isnan(aarg) ? u0.a() : aarg);
         const Real b = (std::isnan(barg) ? u0.b() : barg);
 
-        FlowField u1(Nx, Ny, Nz, u0.Nd(), u0.Lx(), u0.Lz(), u0.a(), u0.b(), u0.BC(), cfmpi);
+        FlowField u1(Nx, Ny, Nz, u0.Nd(), u0.Lx(), u0.Lz(), u0.a(), u0.b(), cfmpi);
         u1.interpolate(u0);
 
         if (Lx == 0)
@@ -76,14 +69,14 @@ int main(int argc, char* argv[]) {
         cout << "bcNorm(u0)  == " << bcNorm(u0) << endl;
         cout << "bcNorm(u1)  == " << bcNorm(u1) << endl;
 
-        if (u0.Nd() >= 3) {
+        if (u0.Nd() == 3) {
             cout << "divNorm(u0) == " << divNorm(u0) << endl;
             cout << "divNorm(u1) == " << divNorm(u1) << endl;
 
             // if ((Ny < u0.Ny() || a != u0.a() || b != u0.b()) & fixdiv) {
             if (fixdiv) {
                 VectorXd v;
-                FlowField foo(Nx, Ny, Nz, u1.Nd(), Lx, Lz, a, b, u1.BC());
+                FlowField foo(Nx, Ny, Nz, u1.Nd(), Lx, Lz, a, b);
                 field2vector(u1, v);
                 vector2field(v, foo);
                 // cout << "L2Dist(u1,2)== " << L2Dist(u1,foo) << endl;   //Commented by Sajjad: becuase this program
