@@ -682,10 +682,16 @@ void FlowField::fftw_initialize(uint fftw_flags) {
         t_plan_ = nullptr;
         t_iplan_ = nullptr;
 
-        // Initialize y plan
-        if (Ny_ >= 2)
-            y_plan_.reset(fftw_plan_r2r_1d(Ny_, scratch_.get(), scratch_.get(), FFTW_REDFT00, fftw_flags));
-        else
+        // Initialize y plan: every y-transform of the field in one in-place plan. Element (nx,ny,nz,i)
+        // is at nz + Nzpad (nx + Nx (ny + Ny i)): length Ny at stride S = Nx Nzpad, for each of the S
+        // (nx,nz) points (distance 1) of each of the Nd components (distance Ny S).
+        if (Ny_ >= 2) {
+            const int S = Nx_ * Nzpad_;
+            fftw_iodim dims[1] = {{Ny_, S, S}};
+            fftw_iodim howmany[2] = {{S, 1, 1}, {Nd_, Ny_ * S, Ny_ * S}};
+            fftw_r2r_kind kind[1] = {FFTW_REDFT00};
+            y_plan_.reset(fftw_plan_guru_r2r(1, dims, 2, howmany, rdata_, rdata_, kind, fftw_flags));
+        } else
             y_plan_ = nullptr;
 
 #endif
@@ -1997,27 +2003,18 @@ void FlowField::makeSpectral_y() {
 
 #else
     Real nrm = 1.0 / (Ny_ - 1);  // needed because FFTW does unnormalized transforms
-    for (int i = 0; i < Nd_; ++i) {
-        unique_ptr<Real, void (*)(void*)> scratch_handle(static_cast<Real*>(fftw_malloc(Ny_ * sizeof(Real))),
-                                                         fftw_free);
-        auto scratch_t = scratch_handle.get();
-        for (int nx = 0; nx < Nx_; ++nx) {
-            for (int nz = 0; nz < Nzpad_; ++nz) {
-                // Copy data spread through memory into a stride-1 scratch cfarray.
-                for (int ny = 0; ny < Ny_; ++ny)
-                    scratch_t[ny] = rdata_[flatten(nx, ny, nz, i)];
-
-                // Transform data
-                fftw_execute_r2r(y_plan_.get(), scratch_t, scratch_t);
-
-                // Copy back to multi-d cfarrays, normalizing on the way
-                // 0th elem is different because of reln btwn cos and Cheb transforms
-                rdata_[flatten(nx, 0, nz, i)] = 0.5 * nrm * scratch_t[0];
-                for (int ny = 1; ny < Ny_ - 1; ++ny)
-                    rdata_[flatten(nx, ny, nz, i)] = nrm * scratch_t[ny];
-                rdata_[flatten(nx, Ny_ - 1, nz, i)] = 0.5 * nrm * scratch_t[Ny_ - 1];
-            }
-        }
+    // all y-transforms at once (see fftw_initialize), then normalize; the 0th and last elems are
+    // different because of reln btwn cos and Cheb transforms
+    fftw_execute_r2r(y_plan_.get(), rdata_, rdata_);
+    const lint S = Nx_ * Nzpad_;
+    for (lint i = 0; i < Nd_; ++i) {
+        Real* fi = rdata_ + i * Ny_ * S;
+        for (lint n = 0; n < S; ++n)
+            fi[n] *= 0.5 * nrm;
+        for (lint n = S; n < (Ny_ - 1) * S; ++n)
+            fi[n] *= nrm;
+        for (lint n = (Ny_ - 1) * S; n < Ny_ * S; ++n)
+            fi[n] *= 0.5 * nrm;
     }
 #endif
     ystate_ = Spectral;
@@ -2046,29 +2043,15 @@ void FlowField::makePhysical_y() {
         }
 
 #else
-    for (int i = 0; i < Nd_; ++i) {
-        unique_ptr<Real, void (*)(void*)> scratch_handle(static_cast<Real*>(fftw_malloc(Ny_ * sizeof(Real))),
-                                                         fftw_free);
-        auto scratch_t = scratch_handle.get();
-        for (int nx = 0; nx < Nx_; ++nx) {
-            for (int nz = 0; nz < Nzpad_; ++nz) {
-                // Copy data spread through memory into a stride-1 scratch cfarray.
-                // 0th and last elems are different because of reln btwn cos and
-                // Cheb transforms.
-                scratch_t[0] = rdata_[flatten(nx, 0, nz, i)];
-                for (int ny = 1; ny < Ny_ - 1; ++ny)
-                    scratch_t[ny] = 0.5 * rdata_[flatten(nx, ny, nz, i)];
-                scratch_t[Ny_ - 1] = rdata_[flatten(nx, Ny_ - 1, nz, i)];
-
-                // Transform data
-                fftw_execute_r2r(y_plan_.get(), scratch_t, scratch_t);
-
-                // Copy transformed data back into main data cfarray
-                for (int ny = 0; ny < Ny_; ++ny)
-                    rdata_[flatten(nx, ny, nz, i)] = scratch_t[ny];
-            }
-        }
+    // 0th and last elems are different because of reln btwn cos and Cheb transforms; then all
+    // y-transforms at once (see fftw_initialize)
+    const lint S = Nx_ * Nzpad_;
+    for (lint i = 0; i < Nd_; ++i) {
+        Real* fi = rdata_ + i * Ny_ * S;
+        for (lint n = S; n < (Ny_ - 1) * S; ++n)
+            fi[n] *= 0.5;
     }
+    fftw_execute_r2r(y_plan_.get(), rdata_, rdata_);
 #endif
     ystate_ = Physical;
 }
