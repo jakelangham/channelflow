@@ -4,16 +4,20 @@
 # This file is a part of channelflow version 2.0 https://channelflow.ch.
 # License is GNU GPL version 2 or later: ./LICENCE
 #
+# With the settling module (the default) its programs take these names; the ones here are the
+# velocity-only solver.
 set(program_APPS
-   simulateflow
 #  edgetracking
   )
 
-if (WITH_NSOLVER)
-    set(program_APPS ${program_APPS}
-         continuesoln
-         findsoln
-         findeigenvals)
+if (NOT WITH_SETTLING)
+    set(program_APPS ${program_APPS} simulateflow)
+    if (WITH_NSOLVER)
+        set(program_APPS ${program_APPS}
+             continuesoln
+             findsoln
+             findeigenvals)
+    endif ()
 endif ()
 
 

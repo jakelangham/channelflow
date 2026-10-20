@@ -75,6 +75,7 @@ else
     cases=unit
     [ $all_tiers = 1 ] && cases="$cases mpi"
     for f in findsoln_*.sh simulate_*.sh continue_*.sh schemes_*.sh error_*.sh eigen_*.sh; do
+        [ -f "$f" ] || continue  # a pattern with no matching scripts stays unexpanded
         c=${f#*_}; c=${c%.sh}
         t=$(sed -n 's/^tier=//p' "$f")
         { [ "$t" = quick ] || [ $all_tiers = 1 ]; } && cases="$cases $c"
@@ -179,7 +180,9 @@ run_schemes() {
     local c=$1 script=schemes_$1.sh
     local combos xfail T tol combo ts is mc label out ref ok worst lab d rel n nref wall rss
     combos=$(sed -n '/^combinations="/,/"/p' "$script" | tr -d '"' | sed 's/^combinations=//')
-    xfail=$(sed -n '/^xfail="/,/"/p' "$script" | tr -d '"' | sed 's/^xfail=//' | tr -s ' \n' '  ')
+    # the xfail="..." assignment, which may span lines (or be empty, xfail="")
+    xfail=$(awk '/^xfail="/ { on = 1; sub(/^xfail="/, "") } on { if (sub(/".*/, "")) { print; exit } print }' \
+        "$script" | tr -s ' \n' '  ')
     T=$(sed -n 's/^T=//p' "$script")
     tol=$(sed -n 's/^tol_strict=//p' "$script")
     echo "== $c (scheme:startup:constraint)"

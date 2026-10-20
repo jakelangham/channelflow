@@ -41,13 +41,9 @@ combinations="cnfe1:sbdf1:gradp sbdf1:sbdf1:gradp sbdf2:sbdf1:gradp sbdf3:sbdf1:
               sbdf3:sbdf1:bulkv cnrk2:sbdf1:bulkv
               sbdf3:sbdf1:gradp:conv sbdf3:sbdf1:gradp:skew sbdf3:sbdf1:gradp:div sbdf3:sbdf1:gradp:alt
               sbdf3:sbdf1:gradp:rot:0.5"
-# Combinations known not to work yet (see TODO.md); reported as XFAIL, or XPASS once they work:
-# - CNAB2, CNRK2, SMRK2 (and the RK start-ups) use NSE::linear, which ignores the scalar: the scalar
-#   drifts by ~0.1 in T = 2 (~3e-3 when only the start-up uses them); the velocity stays exact.
-# - -mc bulkv stops with an error: the scalar's (0,0) mode is not solved for that constraint.
-# - Non-rotational nonlinear forms and rotation stop with an error with the scalar.
-# (All pass with the settling module's programs.)
-xfail="sbdf3:smrk2:gradp sbdf3:cnrk2:gradp cnab2:sbdf1:gradp cnrk2:sbdf1:gradp smrk2:sbdf1:gradp sbdf3:sbdf1:bulkv cnrk2:sbdf1:bulkv
-       sbdf3:sbdf1:gradp:conv sbdf3:sbdf1:gradp:skew sbdf3:sbdf1:gradp:div sbdf3:sbdf1:gradp:alt sbdf3:sbdf1:gradp:rot:0.5"
+# Combinations known not to work yet (see TODO.md); reported as XFAIL, or XPASS once they work.
+# (Before the settling module: CNAB2/CNRK2/SMRK2 and the RK start-ups ignored the scalar in
+# NSE::linear, and -mc bulkv, non-rotational nonlinear forms and rotation stopped with an error.)
+xfail=""
 reference=initial
 tol_strict=1e-12

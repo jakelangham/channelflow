@@ -11,7 +11,9 @@ namespace chflow {
 vector<SettlingScalar> settlingScalars(const DNSFlags& flags) { return {SettlingScalar{flags.Ri, flags.vs, flags.kappa}}; }
 
 void splitVelocityScalar(const FlowField& u4, FlowField& u, FlowField& c) {
-    assert(u4.Nd() == 4);
+    if (u4.Nd() != 4)
+        cferror("splitVelocityScalar : expected a 4-component field (velocity and scalar), got " +
+                i2s(u4.Nd()) + " components");
     u = FlowField(u4.Nx(), u4.Ny(), u4.Nz(), 3, u4.Lx(), u4.Lz(), u4.a(), u4.b(), u4.cfmpi(), u4.xzstate(),
                   u4.ystate());
     c = FlowField(u4.Nx(), u4.Ny(), u4.Nz(), 1, u4.Lx(), u4.Lz(), u4.a(), u4.b(), u4.cfmpi(), u4.xzstate(),
