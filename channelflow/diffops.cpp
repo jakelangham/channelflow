@@ -3847,67 +3847,6 @@ void convectionNL(const FlowField& u_, FlowField& f, FlowField& tmp, const field
     dotgrad(u_, u_, f, tmp);
 }
 
-// set f[3] = u dot grad(rho)
-// where rho = u[3], u = u{0,1,2}
-void densityAdvection(const FlowField& u_, FlowField& f, Real v_s, FlowField& tmp, const fieldstate finalstate) {
-    FlowField& u = (FlowField&)u_;
-    FlowField& grad_rho = tmp;
-
-    assert(u.Nd() == 4);
-
-    if (!u.geomCongruent(f) || f.Nd() != 4)
-        f.resize(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
-
-    if (!u.geomCongruent(grad_rho) || grad_rho.Nd() < 3)
-        grad_rho.resize(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
-
-    fieldstate uxzstate = u.xzstate();
-    fieldstate uystate = u.ystate();
-
-    u.makeSpectral();
-    grad(u[3], grad_rho);
-    grad_rho.makePhysical();
-    u.makePhysical();
-
-    f.makePhysical();
-
-
-    lint Nz = u.Nz();
-    lint nxlocmin = u.nxlocmin();
-    lint nxlocmax = u.nxlocmin() + u.Nxloc();
-    lint nylocmin = u.nylocmin();
-    lint nylocmax = u.nylocmax();
-
-#ifdef HAVE_MPI
-    for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
-        for (lint nz = 0; nz < Nz; ++nz)
-            for (lint ny = nylocmin; ny < nylocmax; ++ny) {
-                f(nx, ny, nz, 3) = 0.0;
-                for (int j = 0; j < 3; ++j)
-                    f(nx, ny, nz, 3) += u(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
-
-                f(nx, ny, nz, 3) -= u(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
-                f(nx, ny, nz, 3) -= v_s * grad_rho(nx, ny, nz, 1);
-            }
-#else
-    for (lint ny = nylocmin; ny < nylocmax; ++ny)
-        for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
-            for (lint nz = 0; nz < Nz; ++nz) {
-                f(nx, ny, nz, 3) = 0.0;
-                for (int j = 0; j < 3; ++j) {
-                    f(nx, ny, nz, 3) += u(nx, ny, nz, j) * grad_rho(nx, ny, nz, j);
-                }
-
-                f(nx, ny, nz, 3) -= u(nx, ny, nz, 1) - v_s; // advective term -v from vert strat
-                f(nx, ny, nz, 3) -= v_s * grad_rho(nx, ny, nz, 1);
-            }
-#endif
-
-    f.makeSpectral();
-
-    u.makeState(uxzstate, uystate);
-}
-
 void adjointTerms(const FlowField& u_, FlowField& u_dir_, FlowField& f, FlowField& tmp, FlowField& tmpadj,
                   const fieldstate finalstate) {
     FlowField& v = (FlowField&)u_;

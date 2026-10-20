@@ -3,10 +3,8 @@
  *
  * Encapsulated code from DNSAlgo classes (FS)
  *
- * This file is a part of channelflow version 2.0.
- * License is GNU GPL version 2 or later: https://channelflow.org/license
- *
- * Original author: John F. Gibson
+ * This file is a part of channelflow version 2.0, https://channelflow.ch .
+ * License is GNU GPL version 2 or later: ./LICENSE
  */
 
 #ifndef CHANNELFLOW_NSE_H
@@ -15,7 +13,7 @@
 #include "channelflow/diffops.h"
 #include "channelflow/dnsflags.h"
 #include "channelflow/flowfield.h"
-#include "channelflow/settlingtausolver.h"
+#include "channelflow/tausolver.h"
 
 namespace chflow {
 
@@ -74,8 +72,7 @@ class NSE {
 
    protected:
     std::vector<Real> lambda_t_;
-    TauSolver*** tausolver_;  // upstream tausolvers [i][mx][mz], for subclasses (e.g. OBE); unused by NSE
-    SettlingTauSolver*** settlingtausolver_;  // scalar-extended tausolvers [i][mx][mz] used by NSE
+    TauSolver*** tausolver_;  // 3d cfarray of tausolvers, indexed by [i][mx][mz]
 
     DNSFlags flags_;  // User-defined integration parameters
     int taskid_;
@@ -102,7 +99,6 @@ class NSE {
     int kzmax_;
     std::vector<int> kxloc_;
     std::vector<int> kzloc_;
-    BoundaryCond BC_;
 
     // Base flow members
     Real dPdxRef_;    // Enforced mean pressure gradient (0.0 if unused).
@@ -128,12 +124,10 @@ class NSE {
     ComplexChebyCoeff vk_;
     ComplexChebyCoeff wk_;
     ComplexChebyCoeff Pk_;   // profile of P_{kx,kz} (y)
-    ComplexChebyCoeff rk_;
     ComplexChebyCoeff Pyk_;  // profile of dP_{kx,kz}/dy (y)
     ComplexChebyCoeff Ruk_;
     ComplexChebyCoeff Rvk_;
     ComplexChebyCoeff Rwk_;
-    ComplexChebyCoeff Rrk_;
 
     int kxmaxDealiased() const;
     int kzmaxDealiased() const;
