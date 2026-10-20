@@ -14,6 +14,7 @@
 #include "channelflow/chebyshev.h"
 #include "channelflow/dns.h"
 #include "modules/settling/settlingdns.h"
+#include "modules/settling/settlingstats.h"
 #include "channelflow/flowfield.h"
 #include "channelflow/poissonsolver.h"
 #include "channelflow/symmetry.h"

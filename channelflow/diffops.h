@@ -160,26 +160,6 @@ FlowField outer(const FlowField& f, const FlowField& g);  // fi gj ei ej
 FlowField dot(const FlowField& f, const FlowField& g);
 FlowField energy(const FlowField& u);
 FlowField energy(const FlowField& u, ChebyCoeff& U);
-FlowField TKE(const FlowField& u);
-FlowField dissipation_field(const FlowField& u);
-FlowField sed_dissipation_field(const FlowField& u);
-FlowField turbulent_convection(const FlowField& u);
-FlowField sediment_fluctuation_convection(const FlowField& u);
-FlowField pressure_transport(const FlowField& u, const FlowField& p);
-FlowField Reynolds_stress_uu(const FlowField& u);
-FlowField Reynolds_stress_uv(const FlowField& u);
-FlowField Reynolds_stress_uw(const FlowField& u);
-FlowField Reynolds_stress_vv(const FlowField& u);
-FlowField Reynolds_stress_vw(const FlowField& u);
-FlowField Reynolds_stress_ww(const FlowField& u);
-FlowField u_skewness(const FlowField& u);
-FlowField u_kurtosis(const FlowField& u);
-FlowField turbulent_sediment_flux_uc(const FlowField& u);
-FlowField turbulent_sediment_flux_vc(const FlowField& u);
-FlowField turbulent_sediment_flux_cc(const FlowField& u);
-FlowField c_skewness(const FlowField& u);
-FlowField c_kurtosis(const FlowField& u);
-FlowField intermittency_factor(const FlowField& u, double thresh);
 
 // The following are some fluid dynamics measures of vorticity
 // Q = 1/2 (||A||^2 - ||S||^2) pointwise
@@ -212,23 +192,6 @@ void outer(const FlowField& f, const FlowField& g, FlowField& fg);  // fi gj ei 
 void dot(const FlowField& f, const FlowField& g, FlowField& f_dot_g);
 void energy(const FlowField& u, FlowField& e);
 void energy(const FlowField& u, const ChebyCoeff& U, FlowField& e);
-void TKE(const FlowField& u, FlowField& e);
-void dissipation_field(const FlowField& u, FlowField& e);
-void turbulent_convection(const FlowField& u, FlowField& e);
-void pressure_transport(const FlowField& u, const FlowField& p, FlowField& e);
-void Reynolds_stress_uu(const FlowField& u, FlowField& e);
-void Reynolds_stress_uv(const FlowField& u, FlowField& e);
-void Reynolds_stress_uw(const FlowField& u, FlowField& e);
-void Reynolds_stress_vv(const FlowField& u, FlowField& e);
-void Reynolds_stress_vw(const FlowField& u, FlowField& e);
-void Reynolds_stress_ww(const FlowField& u, FlowField& e);
-void u_skewness(const FlowField& u, FlowField& e);
-void u_kurtosis(const FlowField& u, FlowField& e);
-void c_skewness(const FlowField& u, FlowField& e);
-void c_kurtosis(const FlowField& u, FlowField& e);
-void turbulent_sediment_flux_uc(const FlowField& u, FlowField& e);
-void turbulent_sediment_flux_vc(const FlowField& u, FlowField& e);
-void intermittency_factor(const FlowField& u, FlowField& e, double thresh);
 void Qcriterion(const FlowField& u, FlowField& Q);
 
 // Different ways to calculate nonlinear term of Navier-Stokes equation.
@@ -326,19 +289,13 @@ Real L2Norm_uvw(const FlowField& u, const bool ux, const bool uy, const bool uz)
 
 Real getdPdx(const FlowField& u, Real nu);
 Real getdPdz(const FlowField& u, Real nu);
-Real getbulk(const FlowField& u, int i);
 Real getUbulk(const FlowField& u);
 Real getWbulk(const FlowField& u);
-Real getCbulk(const FlowField& u);
 
 std::string fieldstats_t(const FlowField& u, Real t);           // return some information about u
 std::string fieldstatsheader_t(const std::string tname = "t");  // header for fieldstats
 std::string fieldstats(const FlowField& u);                     // return some information about u
 std::string fieldstatsheader();                                 // header for fieldstats
-std::string concstats_t(const FlowField& u, FlowField& vel, FlowField& uc, Real t);           // return some information about c
-std::string concstatsheader_t(const std::string tname = "t");  // header for concstats
-std::string concstats(const FlowField& u, FlowField& vel, FlowField& uc);                     // return some information about c
-std::string concstatsheader();                                 // header for concstats
 
 }  // namespace chflow
 #endif
