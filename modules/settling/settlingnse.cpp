@@ -109,6 +109,81 @@ void SettlingNSE::freeSolvers() {
 }
 
 void SettlingNSE::nonlinear(const vector<FlowField>& infields, vector<FlowField>& outfields) {
+    if (flags_.nonlinearity == Rotational)
+        rotationalNonlinear(infields, outfields);
+    else
+        genericNonlinear(infields, outfields);
+
+    if (flags_.dealias_xz())
+        for (int i = 0; i <= nscalars(); ++i)
+            outfields[i].zeroPaddedModes();
+}
+
+// Rotational form in one pass: the total velocity u + Ubase (with suction) goes to physical space once,
+// for both (curl u) x u and the scalars' advection, and is never transformed back (it is a copy).
+// The same arithmetic as navierstokesNL + scalarAdvection, with 13 instead of 22 transforms per scalar.
+void SettlingNSE::rotationalNonlinear(const vector<FlowField>& infields, vector<FlowField>& outfields) {
+    const FlowField& u0 = infields[0];
+    assert(u0.xzstate() == Spectral && u0.ystate() == Spectral);
+    utot_ = u0;
+    if (utot_.taskid() == utot_.task_coeff(0, 0)) {
+        for (int ny = 0; ny < utot_.Ny(); ++ny) {
+            utot_.cmplx(0, ny, 0, 0) += Complex(Ubase_(ny), 0.0);
+            utot_.cmplx(0, ny, 0, 2) += Complex(Wbase_(ny), 0.0);
+        }
+        utot_.cmplx(0, 0, 0, 1) -= Complex(flags_.Vsuck, 0.);
+    }
+
+    // velocity: f = (curl u) x u, minus the rotation term, as rotationalNL and navierstokesNL
+    FlowField& vort = tmp_;
+    curl(utot_, vort);
+    utot_.makePhysical();
+    vort.makePhysical();
+    FlowField& f = outfields[0];
+    cross(vort, utot_, f, Physical);
+
+    const lint Nz = utot_.Nz();
+    const lint nxlocmin = utot_.nxlocmin();
+    const lint nxlocmax = utot_.nxlocmin() + utot_.Nxloc();
+    const lint nylocmin = utot_.nylocmin();
+    const lint nylocmax = utot_.nylocmax();
+    if (flags_.rotation != 0.0)
+        for (lint ny = nylocmin; ny < nylocmax; ++ny)
+            for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
+                for (lint nz = 0; nz < Nz; ++nz) {
+                    f(nx, ny, nz, 0) -= flags_.rotation * utot_(nx, ny, nz, 1);
+                    f(nx, ny, nz, 1) += flags_.rotation * utot_(nx, ny, nz, 0);
+                }
+    f.makeSpectral();
+
+    // scalars: as scalarAdvection, with the physical total velocity
+    for (int i = 0; i < nscalars(); ++i) {
+        FlowField& c = const_cast<FlowField&>(infields[1 + i]);
+        FlowField& fc = outfields[1 + i];
+        const Real vs = scalars_[i].vs;
+        assert(c.xzstate() == Spectral && c.ystate() == Spectral);
+        if (!c.geomCongruent(fc) || fc.Nd() != 1)
+            fc.resize(c.Nx(), c.Ny(), c.Nz(), 1, c.Lx(), c.Lz(), c.a(), c.b(), c.cfmpi());
+        FlowField& gradc = tmp_;
+        grad(c, gradc);
+        gradc.makePhysical();
+        fc.setState(Physical, Physical);
+        for (lint ny = nylocmin; ny < nylocmax; ++ny)
+            for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
+                for (lint nz = 0; nz < Nz; ++nz) {
+                    Real fcn = 0.0;
+                    for (int j = 0; j < 3; ++j)
+                        fcn += utot_(nx, ny, nz, j) * gradc(nx, ny, nz, j);
+                    fcn -= utot_(nx, ny, nz, 1) - vs;     // advection of the background -y, with settling
+                    fcn -= vs * gradc(nx, ny, nz, 1);      // settling of the perturbation
+                    fc(nx, ny, nz, 0) = fcn;
+                }
+        fc.makeSpectral();
+    }
+}
+
+// Any nonlinear form: the upstream navierstokesNL for the velocity, then scalarAdvection
+void SettlingNSE::genericNonlinear(const vector<FlowField>& infields, vector<FlowField>& outfields) {
     // Velocity: the upstream nonlinear term (any method; base flow and suction added internally)
     navierstokesNL(infields[0], Ubase_, Wbase_, outfields[0], tmp_, flags_);
 
@@ -133,10 +208,6 @@ void SettlingNSE::nonlinear(const vector<FlowField>& infields, vector<FlowField>
         }
     if (owner)
         u.cmplx(0, 0, 0, 1) += Complex(flags_.Vsuck, 0.);
-
-    if (flags_.dealias_xz())
-        for (int i = 0; i <= nscalars(); ++i)
-            outfields[i].zeroPaddedModes();
 }
 
 void SettlingNSE::linear(const vector<FlowField>& infields, vector<FlowField>& outfields) {

@@ -76,6 +76,10 @@ class SettlingNSE : public NSE {
     std::vector<ComplexChebyCoeff> ck_;  // scalar profiles of the current mode
     ComplexChebyCoeff Rck_;              // scalar right-hand side of the current mode
 
+    FlowField utot_;  // work field: total velocity u + Ubase, physical in rotationalNonlinear
+
+    void rotationalNonlinear(const std::vector<FlowField>& infields, std::vector<FlowField>& outfields);
+    void genericNonlinear(const std::vector<FlowField>& infields, std::vector<FlowField>& outfields);
     void freeSolvers();
 };
 
