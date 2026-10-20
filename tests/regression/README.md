@@ -17,7 +17,7 @@ runs the CTest unit/integration tests that currently pass.
 
 | case | tier | what it checks | cost |
 |---|---|---|---|
-| unit | quick | CTest: unitTests, tridiag, cheby, laminar, helmholtz, tausolver, poisson, io, vector2field, settling_packing (module: SettlingDSI packing round trip, constraints, MPI conjugates), settling_scalarsolver (module: scalar solver and fixBC for every BC type) | 1 s |
+| unit | quick | CTest: every test (upstream's unit and DNS tests, settling_packing: the module's Newton packing, settling_scalarsolver: its scalar solver for every BC type) | 20 s |
 | eq1 | quick | Ri = 0 equilibrium, Newton | 4 s |
 | eq3 | quick | Ri > 0 travelling wave, Newton + shift | 4 s |
 | settle1 | quick | exact settling profile stays steady (analytic), vs/kappa = 1 | 15 s |
@@ -31,7 +31,7 @@ runs the CTest unit/integration tests that currently pass.
 | steady | full | exact steady profile under every scheme and both constraints, nonlinear forms and rotation | 45 s |
 | onset1 | full | stability onset of the laminar state vs Langham & Hogg (2026) App. B | 10 min |
 | upo1 | full | periodic orbit (T ~ 87.8), Newton + period | 1 min |
-| mpi | full | eq1, eq3, traj1 on 2 MPI processes, grids 2x1 and 1x2, match serial (needs `-m`) | 30 s |
+| mpi | full | the MPI build's CTest suite; eq1, eq3, traj1 on 2 MPI processes, grids 2x1 and 1x2, match serial (needs `-m`) | 2.5 min |
 
 Every case also checks that its output field keeps the NetCDF layout of the reference
 (dimensions, `Component_0`..`Component_3`, geometry attributes), since external scripts read it.

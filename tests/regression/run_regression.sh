@@ -66,7 +66,8 @@ while getopts "ab:m:t:" opt; do
 done
 shift $((OPTIND - 1))
 # CTest tests run by the "unit" case; extend as more of the legacy tests are fixed
-unit_tests='^(unitTests|tridiag|cheby|laminar|helmholtz|tausolver|poisson|io|vector2field|settling_packing|settling_scalarsolver)$'
+# every CTest test (upstream's, including the DNS tests, and the settling module's): ~20 s
+unit_tests='.'
 
 # Default case list: unit plus every case script whose tier is selected, in name order
 if [ $# -gt 0 ]; then
@@ -273,11 +274,11 @@ run_traj() {
     echo "  ($wall s, peak RSS $((rss / 1024)) MB)"
 }
 
-# run_unit: the CTest subset, run in the build directory
+# run_unit: the CTest suite, run in the build directory
 run_unit() {
     local log=$PWD/run/unit.log
     mkdir -p run
-    echo "== unit (ctest -R '$unit_tests')"
+    echo "== unit (ctest)"
     if (cd "$build" && ctest -j1 -R "$unit_tests" > "$log" 2>&1); then
         report unit ctest PASS "$(grep -E 'tests passed' "$log")"
     else
@@ -343,13 +344,22 @@ run_findsoln() {
     echo "  ($wall s, peak RSS $((rss / 1024)) MB)"
 }
 
-# run_mpi: re-run eq1, eq3 and traj1 on 2 MPI processes against the same references
+# run_mpi: the MPI build's CTest suite, then eq1, eq3 and traj1 on 2 MPI processes against the
+# same references
 run_mpi() {
     if [ -z "$mpibuild" ]; then
         report mpi build INFO "no MPI build given (-m DIR), skipped"
         return
     fi
     local fs=$FINDSOLN sf=$SIMULATEFLOW layout np0 np1 tag
+    # the MPI build's CTest suite (the serial tests on 1 process, the mpi_* tests on 2): ~2 min
+    local log=$PWD/run/mpi_ctest.log
+    mkdir -p run
+    if (cd "$mpibuild" && ctest -j1 > "$log" 2>&1); then
+        report mpi ctest PASS "$(grep -E 'tests passed' "$log")"
+    else
+        report mpi ctest FAIL "$(grep -E 'tests passed' "$log"); see $log"
+    fi
     # RR_MPI_FINDSOLN / RR_MPI_SIMULATEFLOW override the MPI programs (e.g. a module's versions)
     local mfs=${RR_MPI_FINDSOLN:-$mpibuild/programs/findsoln}
     local msf=${RR_MPI_SIMULATEFLOW:-$mpibuild/programs/simulateflow}
