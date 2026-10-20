@@ -19,8 +19,8 @@
 #define SETTLINGNSE_H
 
 #include <vector>
-#include "channelflow/boundarycond.h"
-#include "channelflow/densehelmholtz.h"
+#include "modules/settling/boundarycond.h"
+#include "modules/settling/densehelmholtz.h"
 #include "channelflow/diffops.h"
 #include "channelflow/dnsflags.h"
 #include "channelflow/flowfield.h"
@@ -38,7 +38,7 @@ struct SettlingScalar {
     // No-flux BC kappa c' + vs c = 0 for the stored field c + y: c' + alpha c = 1 + alpha y,
     // alpha = vs/kappa, i.e. g = 1 -/+ alpha at y = -1, 1 for the mean mode, 0 for the others.
     Real alpha() const { return vs / kappa; }
-    BoundaryCond bc(int Mx, int Mz) const { return BoundaryCond(NoFlux, Mx, Mz, 1.0 - alpha(), 1.0 + alpha(), alpha()); }
+    BoundaryCond bc(int Mx, int Mz) const { return BoundaryCond(ScalarBCType::NoFlux, Mx, Mz, 1.0 - alpha(), 1.0 + alpha(), alpha()); }
 };
 
 /** The settling scalars defined by DNSFlags (currently one: Ri, vs, kappa) */

@@ -8,7 +8,6 @@ set(
     chflow_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/bandedtridiag.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/basisfunc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/boundarycond.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chebyshev.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cfmpi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/diffops.cpp
@@ -18,10 +17,8 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/dns.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/flowfield.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/helmholtz.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/densehelmholtz.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/periodicfunc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/poissonsolver.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/realdensematrix.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/realprofile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/realprofileng.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/symmetry.cpp
@@ -35,7 +32,6 @@ set(
     chflow_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/bandedtridiag.h
     ${CMAKE_CURRENT_SOURCE_DIR}/basisfunc.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/boundarycond.h
     ${CMAKE_CURRENT_SOURCE_DIR}/cfmpi.h
     ${CMAKE_CURRENT_SOURCE_DIR}/chebyshev.h
     ${CMAKE_CURRENT_SOURCE_DIR}/diffops.h
@@ -47,7 +43,6 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/helmholtz.h
     ${CMAKE_CURRENT_SOURCE_DIR}/periodicfunc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/poissonsolver.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/realdensematrix.h
     ${CMAKE_CURRENT_SOURCE_DIR}/realprofile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/realprofileng.h
     ${CMAKE_CURRENT_SOURCE_DIR}/symmetry.h

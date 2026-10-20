@@ -13,7 +13,8 @@
 #include "cfbasics/mathdefs.h"
 #include "channelflow/bandedtridiag.h"
 #include "channelflow/chebyshev.h"
-#include "channelflow/realdensematrix.h"
+#include "modules/settling/boundarycond.h"
+#include "modules/settling/realdensematrix.h"
 
 namespace chflow {
 

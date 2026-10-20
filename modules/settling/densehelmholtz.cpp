@@ -5,7 +5,7 @@
  * Original author: John F. Gibson
  */
 
-#include "channelflow/densehelmholtz.h"
+#include "modules/settling/densehelmholtz.h"
 #include "channelflow/chebyshev.h"
 
 using namespace std;
@@ -27,7 +27,7 @@ DenseHelmholtzSolver::DenseHelmholtzSolver(int numberModes, BoundaryCond bc, Rea
       lambda_(lambda),
       nu_(nu),
       // Total mass is only conserved (and the constraint row only built) for no-flux BCs
-      normalise_mass_(normalise_mass && bc.type_ == NoFlux),
+      normalise_mass_(normalise_mass && bc.type_ == ScalarBCType::NoFlux),
       Ae_(nEvenModes_),
       Ao_(nOddModes_),
       Be_(nEvenModes_),
@@ -107,7 +107,7 @@ DenseHelmholtzSolver::DenseHelmholtzSolver(int numberModes, BoundaryCond bc, Rea
 
     // Boundary conditions
     // Dirichlet
-    if (bc.type_ == Diri) {
+    if (bc.type_ == ScalarBCType::Diri) {
         for (i = 0; i < nModes_; ++i) {
             if (i % 2 == 0)
                 A_.elem(0, i) = 1.0;
@@ -125,7 +125,7 @@ DenseHelmholtzSolver::DenseHelmholtzSolver(int numberModes, BoundaryCond bc, Rea
     //        A_.elem(1, i) = -i * i;
     //}
     // Dirichlet on bottom, Robin on top
-    } else if (bc.type_ == DiriRobin) {
+    } else if (bc.type_ == ScalarBCType::DiriRobin) {
         for (i = 0; i < nModes_; ++i) {
             if (i % 2 == 0)
                 A_.elem(0, i) = 1.0;
@@ -134,7 +134,7 @@ DenseHelmholtzSolver::DenseHelmholtzSolver(int numberModes, BoundaryCond bc, Rea
 
             A_.elem(1, i) = i * i + bc.alpha_;
         }
-    } else if (bc.type_ == NeumRobin) {
+    } else if (bc.type_ == ScalarBCType::NeumRobin) {
         for (i = 0; i < nModes_; ++i) {
             if (i % 2 == 0)
                 A_.elem(0, i) = -i * i;
@@ -143,7 +143,7 @@ DenseHelmholtzSolver::DenseHelmholtzSolver(int numberModes, BoundaryCond bc, Rea
 
             A_.elem(1, i) = i * i + bc.alpha_;
         }
-    } else if (bc.type_ == NoFlux) {
+    } else if (bc.type_ == ScalarBCType::NoFlux) {
         for (i = 0; i < nModes_; ++i) {
             if (i % 2 == 0) {
                 A_.elem(0, i) = bc.alpha_ - i * i;

@@ -124,10 +124,6 @@ int main(int argc, char* argv[]) {
                 else
                     T[i] = dnsflags.T;
 
-                Real vs_o_kappa = dnsflags.vs / dnsflags.kappa;
-                BoundaryCond bc(NoFlux, u_with_density[i].Mx(), u_with_density[i].Mz(), 
-                                1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
-                u_with_density[i].setBC(bc);
             }
             cout << "Loading dnsflags from " + restartdir[0] + "dnsflags.txt, neglecting command line switches."
                  << endl;
@@ -180,11 +176,8 @@ int main(int argc, char* argv[]) {
             cout << endl << "loaded the following data..." << endl;
         } else {  // not a restart
             // Compute initial data points for extrapolation from perturbations of given solution
-            Real vs_o_kappa = dnsflags.vs / dnsflags.kappa;
             u_with_density[1] = FlowField(uname, cfmpi);
-            BoundaryCond bc(NoFlux, u_with_density[1].Mx(), u_with_density[1].Mz(), 
-                            1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
-            u_with_density[1].setBC(bc);
+
 
             project(dnsflags.symmetries, u_with_density[1], "initial value u", cout);
             fixdivnoslipSettling(u_with_density[1], settlingScalars(dnsflags)[0]);

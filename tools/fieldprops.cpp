@@ -71,8 +71,8 @@ int main(int argc, char* argv[]) {
         const Real unorm = L2Norm(u);
         cout << setprecision(digits);
 
-        vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC())};
-        FlowField uvel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
+        vector<FlowField> fields = {u, FlowField(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b())};
+        FlowField uvel(u.Nx(), u.Ny(), u.Nz(), 3, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
         vector<int> vel_indices = {0, 1, 2};
         uvel.copySubfields(u, vel_indices, vel_indices);
 
@@ -553,7 +553,7 @@ int main(int argc, char* argv[]) {
                 }
                 ChebyCoeff Ubase = Baseflow[0];
                 TurbStats stats(Ubase, flags.nu);
-                FlowField tmp(u.Nx(), u.Ny(), u.Nz(), 9, u.Lx(), u.Lz(), u.a(), u.b(), u.BC());
+                FlowField tmp(u.Nx(), u.Ny(), u.Nz(), 9, u.Lx(), u.Lz(), u.a(), u.b());
                 stats.addData(u, tmp);
 
                 cout << "ustar == " << stats.ustar() << endl;

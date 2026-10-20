@@ -13,7 +13,6 @@
 #include "cfbasics/cfvector.h"
 #include "cfbasics/mathdefs.h"
 #include "channelflow/basisfunc.h"
-#include "channelflow/boundarycond.h"
 #include "channelflow/cfmpi.h"
 #include "channelflow/chebyshev.h"
 #include "channelflow/realprofile.h"
@@ -56,20 +55,11 @@ class FlowField {
    public:
     FlowField();
 
-    FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, BoundaryCond BC, CfMPI* cfmpi = NULL,
-              fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE);
-
-    FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, BoundaryCond BC, CfMPI* cfmpi = NULL,
-              fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE);
-
-    // As above, with the default (homogeneous Dirichlet) scalar boundary condition
     FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi = NULL,
-              fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE)
-        : FlowField(Nx, Ny, Nz, Nd, Lx, Lz, a, b, BoundaryCond(), cfmpi, xzstate, ystate, fftw_flags) {}
+              fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE);
 
     FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi = NULL,
-              fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE)
-        : FlowField(Nx, Ny, Nz, Nd, tensorOrder, Lx, Lz, a, b, BoundaryCond(), cfmpi, xzstate, ystate, fftw_flags) {}
+              fieldstate xzstate = Spectral, fieldstate ystate = Spectral, uint fftw_flags = FFTW_ESTIMATE);
 
     FlowField(const FlowField& u);
     FlowField(const std::string& filebase, CfMPI* cfmpi = NULL);  // opens filebase.h5 or filebase.ff
@@ -125,7 +115,6 @@ class FlowField {
     void makeState(fieldstate xzstate, fieldstate ystate);
 
     void setToZero();
-    void setBC(BoundaryCond bc);
     void perturb(Real magnitude, Real spectralDecay, bool meanflow = true);
     void addPerturbation(int kx, int kz, Real mag, Real spectralDecay);
     void addPerturbation1D(int kx, int kz, Real mag, Real spectralDecay);
@@ -186,9 +175,6 @@ class FlowField {
     inline Real Lz() const;
     inline Real a() const;
     inline Real b() const;
-    inline Real ga() const;
-    inline Real gb() const;
-    inline BoundaryCond BC() const;
     inline Real x(int nx) const;  // the x coord of the nxth gridpoint
     inline Real y(int ny) const;
     inline Real z(int nz) const;
@@ -328,8 +314,6 @@ class FlowField {
     Real Lz_ = 0;
     Real a_ = 0;
     Real b_ = 0;
-
-    BoundaryCond BC_;
 
     // size parameters for dealiased I/O
     int Nx_io_;
@@ -482,9 +466,6 @@ inline Real FlowField::Ly() const { return b_ - a_; }
 inline Real FlowField::Lz() const { return Lz_; }
 inline Real FlowField::a() const { return a_; }
 inline Real FlowField::b() const { return b_; }
-inline Real FlowField::ga() const { return BC_.ga_; }
-inline Real FlowField::gb() const { return BC_.gb_; }
-inline BoundaryCond FlowField::BC() const { return BC_; }
 
 inline int FlowField::kx(int mx) const {
     assert(mx >= 0 && mx < Nx_);

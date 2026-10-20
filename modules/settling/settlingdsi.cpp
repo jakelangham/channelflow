@@ -71,6 +71,10 @@ void vectorToScalar(const VectorXd& x, int& n, FlowField& c, const SettlingScala
     c.setState(Spectral, Spectral);
     const int Kx = c.kxmaxDealiased(), Kz = c.kzmaxDealiased(), Ny = c.Ny();
     const BoundaryCond bc = sc.bc(c.Mx(), c.Mz());
+    // The packing (Ny - 3 free coefficients in the mean mode, Ny - 2 in the others) and the mean-mode
+    // BC values assume no flux with unit mass; other BC types need their own counts.
+    if (bc.type_ != ScalarBCType::NoFlux)
+        cferror("vectorToScalar : only the no-flux BC is supported by the settling packing");
     ComplexChebyCoeff f(Ny, c.a(), c.b(), Spectral);
 
     // unpack one non-mean mode and restore coefficients 0, 1 from the homogeneous no-flux BC

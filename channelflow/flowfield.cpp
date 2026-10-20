@@ -73,9 +73,9 @@ FlowField::FlowField() {
 #endif
 }
 
-FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, BoundaryCond BC, CfMPI* cfmpi, fieldstate xzstate,
+FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi, fieldstate xzstate,
                      fieldstate ystate, uint fftw_flags)
-    : BC_(BC), xzstate_(xzstate), ystate_(ystate) {
+    : xzstate_(xzstate), ystate_(ystate) {
 #ifdef HAVE_MPI
     if (cfmpi == nullptr)
         cfmpi = &CfMPI::getInstance();
@@ -84,9 +84,9 @@ FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, Real Lx, Real Lz, Real a, R
     resize(Nx, Ny, Nz, Nd, Lx, Lz, a, b, cfmpi, fftw_flags);
 }
 
-FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, BoundaryCond BC, CfMPI* cfmpi,
+FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, Real Lz, Real a, Real b, CfMPI* cfmpi,
                      fieldstate xzstate, fieldstate ystate, uint fftw_flags)
-    : Nd_(intpow(Nd, tensorOrder)), BC_(BC), xzstate_(xzstate), ystate_(ystate) {
+    : Nd_(intpow(Nd, tensorOrder)), xzstate_(xzstate), ystate_(ystate) {
 #ifdef HAVE_MPI
     if (cfmpi == nullptr)
         cfmpi = &CfMPI::getInstance();
@@ -95,7 +95,7 @@ FlowField::FlowField(int Nx, int Ny, int Nz, int Nd, int tensorOrder, Real Lx, R
     resize(Nx, Ny, Nz, Nd_, Lx, Lz, a, b, cfmpi, fftw_flags);
 }
 
-FlowField::FlowField(const FlowField& f) : BC_(f.BC_), padded_(f.padded_), cfmpi_(f.cfmpi_) {
+FlowField::FlowField(const FlowField& f) : padded_(f.padded_), cfmpi_(f.cfmpi_) {
     resize(f.Nx_, f.Ny_, f.Nz_, f.Nd_, f.Lx_, f.Lz_, f.a_, f.b_, f.cfmpi_);
 
     setState(f.xzstate_, f.ystate_);
@@ -196,7 +196,7 @@ FlowField::FlowField(const string& filebase, CfMPI* cfmpi) {
         if (Nx == Nx_ && Ny == Ny_ && Nz == Nz_) {  // means that FlowField isn't padded
 #ifdef HAVE_MPI
             CfMPI_single* CfMPI_one = &CfMPI_single::getInstance();
-            FlowField v(Nx, Ny, Nz, Nd_, Lx_, Lz_, a_, b_, BC_, CfMPI_one, Physical, Physical);
+            FlowField v(Nx, Ny, Nz, Nd_, Lx_, Lz_, a_, b_, CfMPI_one, Physical, Physical);
             hdf5read(v, "data/u", h5file);
             this->interpolate(v);
 #else
@@ -208,7 +208,7 @@ FlowField::FlowField(const string& filebase, CfMPI* cfmpi) {
 #ifdef HAVE_MPI
             CfMPI_one = &CfMPI_single::getInstance();
 #endif
-            FlowField v(Nx, Ny, Nz, Nd_, Lx_, Lz_, a_, b_, BC_, CfMPI_one, Physical, Physical);
+            FlowField v(Nx, Ny, Nz, Nd_, Lx_, Lz_, a_, b_, CfMPI_one, Physical, Physical);
             hdf5read(v, "data/u", h5file);
 
             this->interpolate(v);
@@ -253,7 +253,7 @@ FlowField::FlowField(const string& filebase, CfMPI* cfmpi) {
         resize(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, a_, b_, cfmpi_);
 #ifdef HAVE_MPI
         CfMPI_single* CfMPI_one = &CfMPI_single::getInstance();
-        FlowField v(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, a_, b_, BC_, CfMPI_one);
+        FlowField v(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, a_, b_, CfMPI_one);
         v.setState(xzstate_, ystate_);
 
         if (taskid() == 0) {
@@ -455,7 +455,6 @@ FlowField& FlowField::operator=(const FlowField& f) {
     cfmpi_ = f.cfmpi_;
     resize(f.Nx_, f.Ny_, f.Nz_, f.Nd_, f.Lx_, f.Lz_, f.a_, f.b_, cfmpi_);
     setState(f.xzstate_, f.ystate_);
-    setBC(f.BC_);
     padded_ = f.padded_;
     for (int i = 0; i < Nloc_; ++i)
         rdata_[i] = f.rdata_[i];
@@ -1065,7 +1064,7 @@ ComplexChebyCoeff FlowField::profile(int mx, int mz, int i) const {
         }
     } else {
         CfMPI_single* CfMPI_one = &CfMPI_single::getInstance();
-        FlowField v(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, a_, b_, BC_, CfMPI_one);  // FlowField v is only on process 0
+        FlowField v(Nx_, Ny_, Nz_, Nd_, Lx_, Lz_, a_, b_, CfMPI_one);  // FlowField v is only on process 0
         v.interpolate(*this);
         if (taskid() == 0) {
             Real vmxnymzi;
@@ -1818,7 +1817,7 @@ FlowField& FlowField::operator/=(const FlowField& u) {
 }
 
 FlowField FlowField::operator[](int i) const {
-    FlowField ui(Nx_, Ny_, Nz_, 1, Lx_, Lz_, a_, b_, BC_, cfmpi_, xzstate_, ystate_);
+    FlowField ui(Nx_, Ny_, Nz_, 1, Lx_, Lz_, a_, b_, cfmpi_, xzstate_, ystate_);
 
     if (xzstate_ == Spectral)
         for (int my = 0; my < My(); ++my)
@@ -1835,7 +1834,7 @@ FlowField FlowField::operator[](int i) const {
 
 FlowField FlowField::operator[](const cfarray<int>& indices) const {
     const int Nd = indices.length();
-    FlowField rtn(Nx_, Ny_, Nz_, Nd, Lx_, Lz_, a_, b_, BC_, cfmpi_, xzstate_, ystate_);
+    FlowField rtn(Nx_, Ny_, Nz_, Nd, Lx_, Lz_, a_, b_, cfmpi_, xzstate_, ystate_);
 
     if (xzstate_ == Spectral) {
         for (int i = 0; i < Nd; ++i) {
@@ -2315,10 +2314,6 @@ void FlowField::setToZero() {
     //     int Ntotal = Nx_*Ny_*Nzpad_*Nd_;
     for (int i = 0; i < Nloc_; ++i)
         rdata_[i] = 0.0;
-}
-
-void FlowField::setBC(BoundaryCond bc) {
-    BC_ = bc;
 }
 
 void FlowField::zeroPaddedModes() {
@@ -2889,7 +2884,7 @@ void FlowField::hdf5Save(const string& filebase) const {
 #ifdef HAVE_MPI
     CfMPI_one = &CfMPI_single::getInstance();
 #endif
-    v = FlowField(Nx, Ny_, Nz, Nd_, Lx_, Lz_, a_, b_, BC_, CfMPI_one);  // FlowField is only on process 0 -- serial io
+    v = FlowField(Nx, Ny_, Nz, Nd_, Lx_, Lz_, a_, b_, CfMPI_one);  // FlowField is only on process 0 -- serial io
     v.interpolate(u);
 
     v.makePhysical();
@@ -4322,7 +4317,7 @@ FlowField quadraticInterpolate(cfarray<FlowField>& un, const cfarray<Real>& mun,
     const Real b = isconst(fn) ? fn[0] : quadraticInterpolate(fn, mun, mu);
 
     // Extrapolate gridpoint values as function of mu
-    FlowField u(Nx, Ny, Nz, Nd, Lx, Lz, a, b, BoundaryCond(), un[0].cfmpi(), Physical, Physical);
+    FlowField u(Nx, Ny, Nz, Nd, Lx, Lz, a, b, un[0].cfmpi(), Physical, Physical);
 
     lint nylocmin = u.nylocmin();
     lint nylocmax = u.nylocmax();
@@ -4400,7 +4395,7 @@ FlowField polynomialInterpolate(cfarray<FlowField>& un, cfarray<Real>& mun, Real
     const Real b = polynomialInterpolate(fn, mun, mu);
 
     // Extrapolate gridpoint values as function of mu
-    FlowField u(Nx, Ny, Nz, Nd, Lx, Lz, a, b, BoundaryCond(), un[0].cfmpi(), Physical, Physical);
+    FlowField u(Nx, Ny, Nz, Nd, Lx, Lz, a, b, un[0].cfmpi(), Physical, Physical);
     // u.makeState(Physical,Physical);
     // ug.binarySave("uginit");
 

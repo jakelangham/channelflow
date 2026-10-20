@@ -3,7 +3,7 @@
  * forthcoming septdiagonal matrix class. */
 // TODO a complex septdiagonal matrix class would be more efficient
  
-#include "channelflow/realdensematrix.h"
+#include "modules/settling/realdensematrix.h"
 
 namespace chflow {
 

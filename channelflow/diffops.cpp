@@ -955,7 +955,7 @@ void coeff2field(const std::vector<RealProfileNG>& basis, const std::vector<Real
 
     std::vector<RealProfileNG>::const_iterator ei = basis.begin();
     std::vector<Real>::const_iterator ai = a.begin();
-    FlowField tmp(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
+    FlowField tmp(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
     tmp += *ei;
     tmp *= *ai;
     u += tmp;
@@ -2697,8 +2697,8 @@ void TKE(const FlowField& u_, FlowField& e) {
     fieldstate sxz = u.xzstate();
     fieldstate sy = u.ystate();
 
-    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
-    FlowField wp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
+    FlowField wp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     up = u[0];
     wp = u[2];
     for (int my = 0; my < u.My(); ++my) {
@@ -2881,8 +2881,8 @@ void turbulent_convection(const FlowField& u_, FlowField& e) {
     fieldstate sxz = u.xzstate();
     fieldstate sy = u.ystate();
 
-    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
-    FlowField wp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
+    FlowField wp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     up = u[0];
     wp = u[2];
     for (int my = 0; my < u.My(); ++my) {
@@ -2938,7 +2938,7 @@ void sediment_fluctuation_convection(const FlowField& u_, FlowField& e) {
     fieldstate sxz = u.xzstate();
     fieldstate sy = u.ystate();
 
-    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     cp = u[3];
     for (int my = 0; my < u.My(); ++my) {
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3027,7 +3027,7 @@ void Reynolds_stress_uu(const FlowField& u_, FlowField& e) {
     lint nylocmin = u.nylocmin();
     lint nylocmax = u.nylocmax();
 
-    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     up = u[0];
     for (int my = 0; my < u.My(); ++my)
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3064,7 +3064,7 @@ void u_skewness(const FlowField& u_, FlowField& e) {
     lint nylocmin = u.nylocmin();
     lint nylocmax = u.nylocmax();
 
-    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     up = u[0];
     for (int my = 0; my < u.My(); ++my)
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3100,7 +3100,7 @@ void u_kurtosis(const FlowField& u_, FlowField& e) {
     lint nylocmin = u.nylocmin();
     lint nylocmax = u.nylocmax();
 
-    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     up = u[0];
     for (int my = 0; my < u.My(); ++my)
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3137,7 +3137,7 @@ void Reynolds_stress_uv(const FlowField& u_, FlowField& e) {
     lint nylocmin = u.nylocmin();
     lint nylocmax = u.nylocmax();
 
-    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     up = u[0];
     for (int my = 0; my < u.My(); ++my)
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3166,8 +3166,8 @@ void Reynolds_stress_uv(const FlowField& u_, FlowField& e) {
 void Reynolds_stress_uw(const FlowField& u_, FlowField& e) {
     FlowField& u = (FlowField&)u_;
 
-    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
-    FlowField wp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
+    FlowField wp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     up = u[0]; wp = u[2];
     for (int my = 0; my < u.My(); ++my) {
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3234,7 +3234,7 @@ void Reynolds_stress_vw(const FlowField& u_, FlowField& e) {
     fieldstate sxz = u.xzstate();
     fieldstate sy = u.ystate();
 
-    FlowField wp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField wp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     wp = u[2];
     for (int my = 0; my < u.My(); ++my) {
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3273,7 +3273,7 @@ void Reynolds_stress_ww(const FlowField& u_, FlowField& e) {
     fieldstate sxz = u.xzstate();
     fieldstate sy = u.ystate();
 
-    FlowField wp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField wp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     wp = u[2];
     for (int my = 0; my < u.My(); ++my) {
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3313,8 +3313,8 @@ void turbulent_sediment_flux_uc(const FlowField& u_, FlowField& e) {
     //fieldstate sxz = u.xzstate();
     //fieldstate sy = u.ystate();
 
-    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
-    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField up(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
+    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     up = u[0];
     cp = u[3];
     for (int my = 0; my < u.My(); ++my) {
@@ -3369,7 +3369,7 @@ void turbulent_sediment_flux_vc(const FlowField& u_, FlowField& e) {
     lint nylocmin = u.nylocmin();
     lint nylocmax = u.nylocmax();
 
-    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     cp = u[3];
     for (int my = 0; my < u.My(); ++my)
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3401,7 +3401,7 @@ void turbulent_sediment_flux_cc(const FlowField& u_, FlowField& e) {
     //fieldstate sxz = u.xzstate();
     //fieldstate sy = u.ystate();
 
-    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     cp = u[3];
     for (int my = 0; my < u.My(); ++my) {
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3439,7 +3439,7 @@ void turbulent_sediment_flux_cc(const FlowField& u_, FlowField& e) {
 void c_skewness(const FlowField& u_, FlowField& e) {
     FlowField& u = (FlowField&)u_;
 
-    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     cp = u[3];
     for (int my = 0; my < u.My(); ++my) {
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3473,7 +3473,7 @@ void c_skewness(const FlowField& u_, FlowField& e) {
 void c_kurtosis(const FlowField& u_, FlowField& e) {
     FlowField& u = (FlowField&)u_;
 
-    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi(), Spectral, Spectral);
+    FlowField cp(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi(), Spectral, Spectral);
     cp = u[3];
     for (int my = 0; my < u.My(); ++my) {
         if (0 >= u.mxlocmin() && 0 < u.Mxloc() + u.mxlocmin() && 
@@ -3561,7 +3561,7 @@ FlowField xyavg(FlowField& u) {
     // const Real a = u.a();
     // const Real b = u.b();
 
-    FlowField uxyavg(4, 1, Nz, Nd, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
+    FlowField uxyavg(4, 1, Nz, Nd, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
     u.makeSpectral();
 
     for (int i = 0; i < Nd; ++i)
@@ -4779,7 +4779,7 @@ void calc_dedt(const FlowField& u, const ChebyCoeff& U, const FlowField& p,
 ***********************************************************************/
 FlowField extractRolls(const FlowField& u) {
     assert(u.xzstate() == Spectral && u.Nd() == 3);
-    FlowField rolls(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
+    FlowField rolls(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
     rolls.makeSpectral();
     rolls.setToZero();
     const lint mxlocmin = u.mxlocmin();
@@ -4881,8 +4881,8 @@ Real getScalarCorrelation (const FlowField& u, FlowField& vel, FlowField& uc, in
     Real ucbulk;
 
     assert(i >= 0 && i <= 2);
-    //FlowField vel(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
-    //FlowField uc(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.BC(), u.cfmpi());
+    //FlowField vel(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
+    //FlowField uc(u.Nx(), u.Ny(), u.Nz(), 1, u.Lx(), u.Lz(), u.a(), u.b(), u.cfmpi());
     //FlowField vel, uc;
     ChebyCoeff Ubase = ChebyCoeff(u.My(), u.a(), u.b(), Spectral);
     ChebyCoeff Cbase = ChebyCoeff(u.My(), u.a(), u.b(), Spectral);

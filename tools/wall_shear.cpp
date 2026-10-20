@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
 
         FlowField u(uname, cfmpi);
         FlowField dudy(u.Nx(), u.Ny(), u.Nz(), u.Nd(), u.Lx(), u.Lz(), 
-                        u.a(), u.b(), u.BC(), cfmpi);
+                        u.a(), u.b(), cfmpi);
         dudy.setPadded(u.padded());
 
         // add on linear base state

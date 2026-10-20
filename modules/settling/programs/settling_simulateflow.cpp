@@ -77,12 +77,7 @@ int main(int argc, char* argv[]) {
         printout("Constructing u,q, and optimizing FFTW...");
         FlowField u(uname, cfmpi);
         // JL check if there's a density field. If not, add a zero density field
-        Real vs_o_kappa = flags.vs / flags.kappa;
-        //BoundaryCond bc(DiriRobin, u.Mx(), u.Mz(), 0.0, 1.0 + vs_o_kappa, vs_o_kappa);
-        //BoundaryCond bc(NeumRobin, u.Mx(), u.Mz(), 1.0, 1.0 + vs_o_kappa, vs_o_kappa);
-        BoundaryCond bc(NoFlux, u.Mx(), u.Mz(), 1.0 - vs_o_kappa, 1.0 + vs_o_kappa, vs_o_kappa);
-        //BoundaryCond bc(Diri, 0.0, 0.0);
-        FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), bc, cfmpi);
+        FlowField u_with_density(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
         if (u.padded())
             u_with_density.setPadded(true);
         vector<int> vel_indices = {0, 1, 2};
@@ -101,8 +96,8 @@ int main(int argc, char* argv[]) {
         const Real a = u.a();
         const Real b = u.b();
 
-        FlowField q(Nx, Ny, Nz, 1, Lx, Lz, a, b, BoundaryCond(), cfmpi);
-        FlowField p(Nx, Ny, Nz, 1, Lx, Lz, a, b, BoundaryCond(), cfmpi);
+        FlowField q(Nx, Ny, Nz, 1, Lx, Lz, a, b, cfmpi);
+        FlowField p(Nx, Ny, Nz, 1, Lx, Lz, a, b, cfmpi);
         const bool inttime =
             (abs(saveint * dt.dT() - int(saveint * dt.dT())) < 1e-12) && (abs(flags.t0 - int(flags.t0)) < 1e-12)
                 ? true
@@ -139,8 +134,8 @@ int main(int argc, char* argv[]) {
         concout << concstatsheader_t() << endl;
 
         FlowField u0, du, tmp;
-        FlowField vel(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), bc, cfmpi);
-        FlowField uc(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), bc, cfmpi);
+        FlowField vel(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
+        FlowField uc(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
 
         int i = 0;
         for (Real t = flags.t0; t <= flags.T; t += dt.dT()) {
