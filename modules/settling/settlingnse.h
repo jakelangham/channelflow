@@ -20,7 +20,7 @@
 
 #include <vector>
 #include "modules/settling/boundarycond.h"
-#include "modules/settling/densehelmholtz.h"
+#include "modules/settling/scalarsolver.h"
 #include "channelflow/diffops.h"
 #include "channelflow/dnsflags.h"
 #include "channelflow/flowfield.h"
@@ -72,7 +72,7 @@ class SettlingNSE : public NSE {
    protected:
     std::vector<SettlingScalar> scalars_;
     // scalarsolver_[i][j][mx][mz]: scalar i, substep j, Fourier mode (mx, mz)
-    std::vector<DenseHelmholtzSolver***> scalarsolver_;
+    std::vector<ScalarSolver***> scalarsolver_;
     std::vector<ComplexChebyCoeff> ck_;  // scalar profiles of the current mode
     ComplexChebyCoeff Rck_;              // scalar right-hand side of the current mode
 

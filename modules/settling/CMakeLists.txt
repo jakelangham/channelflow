@@ -9,6 +9,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/boundarycond.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/densehelmholtz.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/realdensematrix.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scalarsolver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingnse.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingdns.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingdsi.cpp
@@ -20,6 +21,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/boundarycond.h
     ${CMAKE_CURRENT_SOURCE_DIR}/densehelmholtz.h
     ${CMAKE_CURRENT_SOURCE_DIR}/realdensematrix.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/scalarsolver.h
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingnse.h
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingdns.h
     ${CMAKE_CURRENT_SOURCE_DIR}/settlingdsi.h

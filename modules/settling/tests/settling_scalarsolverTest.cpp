@@ -1,5 +1,6 @@
 /**
- * Test DenseHelmholtzSolver (the settling module's scalar solver) for every boundary-condition type:
+ * Test the settling module's scalar solvers (ScalarSolver, and DenseHelmholtzSolver, its reference)
+ * for every boundary-condition type:
  * solve nu u'' - lambda u = f for a smooth exact u, with the BC values (and, for NoFlux, the mean)
  * taken from u, and compare with u. Also check fixBC / fixNoFluxNormaliseMass, which must leave an
  * expansion already satisfying its BC unchanged and impose it on one that does not.
@@ -12,6 +13,7 @@
 #include "channelflow/chebyshev.h"
 #include "modules/settling/boundarycond.h"
 #include "modules/settling/densehelmholtz.h"
+#include "modules/settling/scalarsolver.h"
 
 using namespace std;
 using namespace chflow;
@@ -59,19 +61,56 @@ int main() {
         {"NoFlux+mass", ScalarBCType::NoFlux, dua + alpha * ua, dub + alpha * ub, true},
     };
 
-    cout << "solver: max |u - u_exact| (coefficients)" << endl;
+    cout << "solvers: max |u - u_exact| (coefficients), dense and ScalarSolver" << endl;
     for (const Case& c : cases) {
         BoundaryCond bc(c.type, 1, 1, c.g0, c.g1, alpha);
-        DenseHelmholtzSolver solver(N, bc, -1, 1, lambda, nu, c.mass);
-        ChebyCoeff v(N, -1, 1, Spectral);
-        solver.solve(v, f, c.g0, c.g1, u.mean());
-        Real err = 0;
-        for (int n = 0; n < N; ++n)
+        DenseHelmholtzSolver dense(N, bc, -1, 1, lambda, nu, c.mass);
+        ScalarSolver banded(N, bc, -1, 1, lambda, nu, c.mass);
+        ChebyCoeff v(N, -1, 1, Spectral), w(N, -1, 1, Spectral);
+        dense.solve(v, f, c.g0, c.g1, u.mean());
+        banded.solve(w, f, c.g0, c.g1, u.mean());
+        Real err = 0, errb = 0;
+        for (int n = 0; n < N; ++n) {
             err = max(err, abs(v[n] - u[n]));
-        cout << "  " << c.name << " " << err << endl;
-        if (!(err < tol))
+            errb = max(errb, abs(w[n] - u[n]));
+        }
+        cout << "  " << c.name << " " << err << " " << errb << endl;
+        if (!(err < tol) || !(errb < tol))
             failure = 1;
     }
+
+    // ScalarSolver against DenseHelmholtzSolver for random right-hand sides and BC values, over the
+    // resolutions and lambda of the settling runs (lambda ~ 1/dt dominates nu = kappa in time steps)
+    cout << "ScalarSolver vs dense, random f: max |u_banded - u_dense| / max |u_dense|" << endl;
+    srand(7);
+    Real worst = 0;
+    for (int Nm : {17, 35, 61, 181})
+        for (Real lam : {0.0, 3.1, 2.0e4})
+            for (const Case& c : cases) {
+                const Real nuk = 2.5e-3;
+                BoundaryCond bc(c.type, 1, 1, 0.3, -0.7, alpha);
+                DenseHelmholtzSolver dense(Nm, bc, -1, 1, lam, nuk, c.mass);
+                ScalarSolver banded(Nm, bc, -1, 1, lam, nuk, c.mass);
+                ChebyCoeff fr(Nm, -1, 1, Spectral), v(Nm, -1, 1, Spectral), w(Nm, -1, 1, Spectral);
+                for (int n = 0; n < Nm; ++n)
+                    fr[n] = (2.0 * rand() / RAND_MAX - 1.0) * pow(0.8, n);
+                const Real g0 = 0.3, g1 = -0.7, mass = 1.0;
+                dense.solve(v, fr, g0, g1, mass);
+                banded.solve(w, fr, g0, g1, mass);
+                Real d = 0, nv = 0;
+                for (int n = 0; n < Nm; ++n) {
+                    d = max(d, abs(w[n] - v[n]));
+                    nv = max(nv, abs(v[n]));
+                }
+                const Real rel = d / nv;
+                worst = max(worst, rel);
+                if (!(rel < 1e-10)) {
+                    cout << "  N=" << Nm << " lambda=" << lam << " " << c.name << " " << rel << "  ** too large" << endl;
+                    failure = 1;
+                }
+            }
+    cout << "  worst over N = 17, 35, 61, 181, lambda = 0, 3.1, 2e4, every BC: " << worst
+         << " (cases above 1e-10 are listed)" << endl;
 
     // fixBC imposes the inhomogeneous BC through coefficients 0 and 1 (Diri, DiriRobin, NoFlux)
     cout << "fixBC: BC residual after perturbing coefficients 0, 1" << endl;

@@ -372,11 +372,11 @@ void SettlingNSE::reset_lambda(const vector<Real> lambda_t) {
     }
     for (auto& solver : scalarsolver_)
         if (!solver) {
-            solver = new DenseHelmholtzSolver**[nsub];
+            solver = new ScalarSolver**[nsub];
             for (uint j = 0; j < nsub; ++j) {
-                solver[j] = new DenseHelmholtzSolver*[Mxloc_];
+                solver[j] = new ScalarSolver*[Mxloc_];
                 for (int mx = 0; mx < Mxloc_; ++mx)
-                    solver[j][mx] = new DenseHelmholtzSolver[Mzloc_];
+                    solver[j][mx] = new ScalarSolver[Mzloc_];
             }
         }
 
@@ -394,7 +394,7 @@ void SettlingNSE::reset_lambda(const vector<Real> lambda_t) {
                 for (int i = 0; i < nscalars(); ++i) {
                     const SettlingScalar& sc = scalars_[i];
                     scalarsolver_[i][j][mx][mz] =
-                        DenseHelmholtzSolver(Nyd_, sc.bc(Mxloc_, Mzloc_), a_, b_, lambda_t[j] + sc.kappa * k2,
+                        ScalarSolver(Nyd_, sc.bc(Mxloc_, Mzloc_), a_, b_, lambda_t[j] + sc.kappa * k2,
                                              sc.kappa, kx == 0 && kz == 0);
                 }
             }
