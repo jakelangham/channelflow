@@ -31,6 +31,7 @@ runs the CTest unit/integration tests that currently pass.
 | steady | full | exact steady profile under every scheme and both constraints, nonlinear forms and rotation | 45 s |
 | onset1 | full | stability onset of the laminar state vs Langham & Hogg (2026) App. B | 10 min |
 | upo1 | full | periodic orbit (T ~ 87.8), Newton + period | 1 min |
+| rpo1 | full | relative periodic orbit at Ri = 5.24e-4 (drifting in x), Newton + period + shift | 20 s |
 | floquet1 | full | Floquet multipliers of upo1 (Arnoldi, 40 vectors): leading, number unstable, two marginal | 12 min |
 | mpi | full | the MPI build's CTest suite; eq1, eq3, traj1 on 2 MPI processes, grids 2x1 and 1x2, match serial (needs `-m`) | 2.5 min |
 
@@ -157,6 +158,24 @@ out of git.
   24x35x40 and reconverging: 1.7e-3 -> 2.2e-4 -> 1.8e-6 -> 6.0e-9 -> 2.5e-10 -> 1.2e-11 in 5 steps
   (1 h, 157 MB), T = 87.84096 (0.09% below the 32x35x48 period), ~46 s per f^T.
 - Truncation at 24x35x40: x 3e-4, y 3e-7, z 2e-4.
+
+## rpo1 — relative periodic orbit at Ri > 0
+
+- `rpo1_24x35x40.nc`, `rpo1_sigma.asc` (x-shift ax = 0.0019060755361261226 of Lx per period),
+  T = 88.094540922300993, Ri = 0.00052412185045274274, otherwise as upo1 (vs = 1.4e-3, kappa =
+  2.5e-3, sztxz, Lx = 1.75 pi, Lz = 1.2 pi). L2Norm(G) = 1.9e-11.
+- Provenance (2026-10-21): upo1 continued in Ri with `continuesoln -orb -xrel -cont ri -ns 2`
+  (default -dmu, -es 1e-10; 1.8 h). Ri > 0 breaks the symmetries that reflect y (the settling
+  profile is not symmetric in y), so nothing pins the orbit's x-phase and it drifts: a relative
+  periodic orbit, whose shift grows linearly with Ri. Each solve converged in 4-6 Newton steps:
+
+  | Ri | T | ax | L2Norm(G) |
+  |---|---|---|---|
+  | -1e-4 | 87.8076 | -3.22e-4 | 6.7e-12 |
+  | 0 (upo1) | 87.8410 | 0 | 1.2e-11 |
+  | 1e-4 | 87.8788 | 3.32e-4 | 6.8e-12 |
+  | 3.42e-4 | 87.9907 | 1.19e-3 | 4.5e-11 |
+  | 5.24e-4 (rpo1) | 88.0945 | 1.91e-3 | 1.9e-11 |
 
 ## floquet1 — Floquet multipliers of upo1
 
