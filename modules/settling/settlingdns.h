@@ -14,7 +14,8 @@ namespace chflow {
 
 class SettlingDNS : public DNS {
    public:
-    SettlingDNS(const std::vector<FlowField>& fields, const DNSFlags& flags);
+    // prescribedVelocity: step only the scalars (see SettlingNSE::setPrescribedVelocity)
+    SettlingDNS(const std::vector<FlowField>& fields, const DNSFlags& flags, bool prescribedVelocity = false);
     virtual ~SettlingDNS() = default;
 
     // The velocity CFL number, or the settling one if larger: settling is explicit, and unlike v it does

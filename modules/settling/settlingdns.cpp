@@ -8,18 +8,30 @@ using namespace std;
 
 namespace chflow {
 
-SettlingDNS::SettlingDNS(const vector<FlowField>& fields, const DNSFlags& flags) : DNS() {
+SettlingDNS::SettlingDNS(const vector<FlowField>& fields, const DNSFlags& flags, bool prescribedVelocity) : DNS() {
     for (const SettlingScalar& s : settlingScalars(flags)) {
         vs_.push_back(s.vs);
         kappa_.push_back(s.kappa);
     }
-    main_nse_ = make_shared<SettlingNSE>(fields, flags);
+    if (prescribedVelocity) {
+        // MultistepDNS only: Runge-Kutta and CNAB-style substeps would need the velocity between steps
+        auto multistep = [](TimeStepMethod m) {
+            return m == SBDF1 || m == SBDF2 || m == SBDF3 || m == SBDF4 || m == CNFE1;
+        };
+        if (!multistep(flags.timestepping) || !multistep(flags.initstepping))
+            cferror("SettlingDNS : a prescribed velocity needs multistep schemes (e.g. -ts sbdf3 -is sbdf1)");
+    }
+    auto nse = make_shared<SettlingNSE>(fields, flags);
+    nse->setPrescribedVelocity(prescribedVelocity);
+    main_nse_ = nse;
     main_algorithm_ = newAlgorithm(fields, main_nse_, flags);
     if (!main_algorithm_->full() && flags.initstepping != flags.timestepping) {
         DNSFlags initflags = flags;
         initflags.timestepping = flags.initstepping;
         initflags.dt = flags.dt;
-        init_nse_ = make_shared<SettlingNSE>(fields, initflags);
+        auto initnse = make_shared<SettlingNSE>(fields, initflags);
+        initnse->setPrescribedVelocity(prescribedVelocity);
+        init_nse_ = initnse;
         init_algorithm_ = newAlgorithm(fields, init_nse_, initflags);
         if (init_algorithm_->Ninitsteps() != 0)
             cerr << "SettlingDNS : " << flags.initstepping << " can't initialize " << flags.timestepping

@@ -108,6 +108,17 @@ void SettlingNSE::freeSolvers() {
     }
 }
 
+void SettlingNSE::setPrescribedVelocity(bool prescribed) {
+    if (prescribed) {
+        for (const SettlingScalar& s : scalars_)
+            if (s.Ri != 0.0)
+                cferror("SettlingNSE : a prescribed velocity needs Ri == 0 (a passive scalar)");
+        if (flags_.nonlinearity != Rotational)
+            cferror("SettlingNSE : a prescribed velocity needs the rotational nonlinearity");
+    }
+    prescribedVelocity_ = prescribed;
+}
+
 // Project a spectral field onto real fields: the kz = 0 modes kx and -kx become complex conjugates and
 // the kx = 0 one real, as a transform to physical space and back would leave them. Returns false,
 // changing nothing, if this process does not hold every kx (x distributed over MPI processes); that is
@@ -145,8 +156,9 @@ void SettlingNSE::nonlinear(const vector<FlowField>& infields, vector<FlowField>
     // upo1 and its 60x61x60 parent; not at 0.56). The upstream nonlinear terms, and the original settling
     // code's densityAdvection, transformed the fields in place each step, which removes it; projecting
     // directly does the same far more cheaply (the round trip cost 38% at 24x35x40), and the round trip
-    // remains the fallback with x distributed over MPI processes.
-    for (int i = 0; i <= nscalars(); ++i) {
+    // remains the fallback with x distributed over MPI processes. With a prescribed velocity, the caller
+    // supplies a velocity that has been through this.
+    for (int i = prescribedVelocity_ ? 1 : 0; i <= nscalars(); ++i) {
         FlowField& f = const_cast<FlowField&>(infields[i]);
         if (!makeRealField(f)) {
             f.makePhysical();
@@ -179,27 +191,33 @@ void SettlingNSE::rotationalNonlinear(const vector<FlowField>& infields, vector<
         utot_.cmplx(0, 0, 0, 1) -= Complex(flags_.Vsuck, 0.);
     }
 
-    // velocity: f = (curl u) x u, minus the rotation term, as rotationalNL and navierstokesNL
-    FlowField& vort = tmp_;
-    curl(utot_, vort);
-    utot_.makePhysical();
-    vort.makePhysical();
-    FlowField& f = outfields[0];
-    cross(vort, utot_, f, Physical);
-
     const lint Nz = utot_.Nz();
     const lint nxlocmin = utot_.nxlocmin();
     const lint nxlocmax = utot_.nxlocmin() + utot_.Nxloc();
     const lint nylocmin = utot_.nylocmin();
     const lint nylocmax = utot_.nylocmax();
-    if (flags_.rotation != 0.0)
+
+    // velocity: f = (curl u) x u, minus the rotation term, as rotationalNL and navierstokesNL
+    FlowField& f = outfields[0];
+    if (prescribedVelocity_) {
+        utot_.makePhysical();
+        f.setToZero();
+    } else {
+        FlowField& vort = tmp_;
+        curl(utot_, vort);
+        utot_.makePhysical();
+        vort.makePhysical();
+        cross(vort, utot_, f, Physical);
+    }
+    if (flags_.rotation != 0.0 && !prescribedVelocity_)
         for (lint ny = nylocmin; ny < nylocmax; ++ny)
             for (lint nx = nxlocmin; nx < nxlocmax; ++nx)
                 for (lint nz = 0; nz < Nz; ++nz) {
                     f(nx, ny, nz, 0) -= flags_.rotation * utot_(nx, ny, nz, 1);
                     f(nx, ny, nz, 1) += flags_.rotation * utot_(nx, ny, nz, 0);
                 }
-    f.makeSpectral();
+    if (!prescribedVelocity_)
+        f.makeSpectral();
 
     // scalars: as scalarAdvection, with the physical total velocity
     for (int i = 0; i < nscalars(); ++i) {
@@ -362,6 +380,17 @@ void SettlingNSE::solve(vector<FlowField>& outfields, const vector<FlowField>& r
                 scalarsolver_[i][s][ix][iz].solve(ck_[i].im, Rck_.im, 0.0, 0.0, 0.0);
                 for (int ny = 0; ny < Nyd_; ++ny)
                     Rvk_.sub(ny, scalars_[i].Ri * ck_[i][ny]);
+            }
+
+            if (prescribedVelocity_) {
+                const bool realmode = mean || (outfields[0].Nx() % 2 == 0 && kx == kxmax && kz == 0) ||
+                                      (outfields[0].Nz() % 2 == 0 && kz == kzmax && kx == 0) ||
+                                      (outfields[0].Nx() % 2 == 0 && outfields[0].Nz() % 2 == 0 &&
+                                       kx == kxmax && kz == kzmax);
+                for (int i = 0; i < nscalars(); ++i)
+                    for (int ny = 0; ny < Nyd_; ++ny)
+                        outfields[1 + i].cmplx(mx, ny, mz, 0) = realmode ? Complex(Re(ck_[i][ny]), 0.0) : ck_[i][ny];
+                continue;
             }
 
             if (!mean)

@@ -7,6 +7,7 @@ set(
     findsoln
     continuesoln
     findeigenvals
+    scalarorbit
 )
 
 foreach (program ${settling_APPS})

@@ -69,6 +69,11 @@ class SettlingNSE : public NSE {
     int nscalars() const { return scalars_.size(); }
     const std::vector<SettlingScalar>& scalars() const { return scalars_; }
 
+    // Prescribed velocity (Ri = 0 only): step only the scalars; the velocity and pressure fields are
+    // left as they are, for the caller to set to u(t) before each step. Multistep schemes only.
+    void setPrescribedVelocity(bool prescribed);
+    bool prescribedVelocity() const { return prescribedVelocity_; }
+
    protected:
     std::vector<SettlingScalar> scalars_;
     // scalarsolver_[i][j][mx][mz]: scalar i, substep j, Fourier mode (mx, mz)
@@ -77,6 +82,7 @@ class SettlingNSE : public NSE {
     ComplexChebyCoeff Rck_;              // scalar right-hand side of the current mode
 
     FlowField utot_;  // work field: total velocity u + Ubase, physical in rotationalNonlinear
+    bool prescribedVelocity_ = false;
 
     void rotationalNonlinear(const std::vector<FlowField>& infields, std::vector<FlowField>& outfields);
     void genericNonlinear(const std::vector<FlowField>& infields, std::vector<FlowField>& outfields);
