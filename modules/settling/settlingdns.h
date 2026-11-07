@@ -16,6 +16,15 @@ class SettlingDNS : public DNS {
    public:
     SettlingDNS(const std::vector<FlowField>& fields, const DNSFlags& flags);
     virtual ~SettlingDNS() = default;
+
+    // The velocity CFL number, or the settling one if larger: settling is explicit, and unlike v it does
+    // not vanish at the walls, where the grid is finest. The settling number allows for the damping by
+    // the implicit diffusion (see settlingdns.cpp).
+    Real CFL(FlowField& u) const override;
+
+   private:
+    std::vector<Real> vs_;
+    std::vector<Real> kappa_;
 };
 
 }  // namespace chflow

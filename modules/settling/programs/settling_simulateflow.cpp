@@ -126,6 +126,12 @@ int main(int argc, char* argv[]) {
         psolver.solve(q, uvel);
         vector<FlowField> fields = {uvel, conc, q};
 
+        // Check the CFL number before the first step, not only after the first dT: a dt beyond the
+        // settling limit can ruin the scalar within one dT. The settling part is not linear in dt
+        // (see SettlingDNS::CFL), so iterate.
+        for (int iter = 0; iter < 10 && dt.variable() && dt.adjust(dns.CFL(fields[0])); ++iter)
+            dns.reset_dt(dt);
+
         ios::openmode openflag = (flags.t0 > 0) ? ios::app : ios::out;
 
         ofstream eout, x0out, concout;
