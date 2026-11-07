@@ -108,7 +108,52 @@ void SettlingNSE::freeSolvers() {
     }
 }
 
+// Project a spectral field onto real fields: the kz = 0 modes kx and -kx become complex conjugates and
+// the kx = 0 one real, as a transform to physical space and back would leave them. Returns false,
+// changing nothing, if this process does not hold every kx (x distributed over MPI processes); that is
+// the same on every process, so the caller's fallback stays collective.
+static bool makeRealField(FlowField& f) {
+    assert(f.xzstate() == Spectral);
+    if (f.Mxloc() != f.Mx())
+        return false;
+    if (f.mzlocmin() != 0)
+        return true;  // no kz = 0 modes on this process
+    for (int mx = 0; mx < f.Mx(); ++mx) {
+        const int kx = f.kx(mx);
+        if (kx < 0)
+            continue;
+        const int mxm = f.mx(-kx);
+        const bool self = (kx == 0 || mxm == mx);  // kx = 0, or the Nyquist mode of an even Nx
+        for (int i = 0; i < f.Nd(); ++i)
+            for (int my = 0; my < f.My(); ++my) {
+                if (self) {
+                    f.cmplx(mx, my, 0, i) = Complex(Re(f.cmplx(mx, my, 0, i)), 0.0);
+                } else {
+                    const Complex a = 0.5 * (f.cmplx(mx, my, 0, i) + conj(f.cmplx(mxm, my, 0, i)));
+                    f.cmplx(mx, my, 0, i) = a;
+                    f.cmplx(mxm, my, 0, i) = conj(a);
+                }
+            }
+    }
+    return true;
+}
+
 void SettlingNSE::nonlinear(const vector<FlowField>& infields, vector<FlowField>& outfields) {
+    // Keep the fields real. The solve updates every Fourier mode on its own, so the kz = 0 modes kx and
+    // -kx can drift by round-off from the conjugate symmetry of a real field. That part is invisible in
+    // physical space, but at high vs/kappa the scalar's grows: from t ~ 300 at vs/kappa = 10 (Ri = 0,
+    // upo1 and its 60x61x60 parent; not at 0.56). The upstream nonlinear terms, and the original settling
+    // code's densityAdvection, transformed the fields in place each step, which removes it; projecting
+    // directly does the same far more cheaply (the round trip cost 38% at 24x35x40), and the round trip
+    // remains the fallback with x distributed over MPI processes.
+    for (int i = 0; i <= nscalars(); ++i) {
+        FlowField& f = const_cast<FlowField&>(infields[i]);
+        if (!makeRealField(f)) {
+            f.makePhysical();
+            f.makeSpectral();
+        }
+    }
+
     if (flags_.nonlinearity == Rotational)
         rotationalNonlinear(infields, outfields);
     else

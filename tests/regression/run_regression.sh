@@ -75,7 +75,7 @@ if [ $# -gt 0 ]; then
 else
     cases=unit
     [ $all_tiers = 1 ] && cases="$cases mpi"
-    for f in findsoln_*.sh simulate_*.sh continue_*.sh schemes_*.sh error_*.sh eigen_*.sh floquet_*.sh; do
+    for f in findsoln_*.sh simulate_*.sh continue_*.sh schemes_*.sh error_*.sh eigen_*.sh floquet_*.sh check_*.sh; do
         [ -f "$f" ] || continue  # a pattern with no matching scripts stays unexpanded
         c=${f#*_}; c=${c%.sh}
         t=$(sed -n 's/^tier=//p' "$f")
@@ -159,12 +159,12 @@ run_eigen() {
     echo "  ($wall s, peak RSS $((rss / 1024)) MB)"
 }
 
-# run_floquet CASE: the script writes checks.txt, lines "label value reference tolerance"; each must
-# satisfy |value - reference| <= tolerance
-run_floquet() {
-    local c=$1 script=floquet_$1.sh out=run/floquet_$1/ wall rss label value ref tol n=0
+# run_checks CASE PREFIX DESCRIPTION: the script PREFIX_CASE.sh writes checks.txt, lines
+# "label value reference tolerance"; each must satisfy |value - reference| <= tolerance
+run_checks() {
+    local c=$1 script=$2_$1.sh out=run/$2_$1/ wall rss label value ref tol n=0
     rm -rf "$out" && mkdir -p "$out"
-    echo "== $c (Floquet multipliers)"
+    echo "== $c ($3)"
     OUTDIR=$out /usr/bin/time -f "%e %M" -o "$out/time" ./"$script" > "$out/run.log" 2>&1
     read -r wall rss < "$out/time"
     while read -r label value ref tol; do
@@ -403,7 +403,8 @@ for c in $cases; do
     if [ -f continue_$c.sh ]; then run_cont "$c"; continue; fi
     if [ -f schemes_$c.sh ]; then run_schemes "$c"; continue; fi
     if [ -f error_$c.sh ]; then run_error "$c"; continue; fi
-    if [ -f floquet_$c.sh ]; then run_floquet "$c"; continue; fi
+    if [ -f floquet_$c.sh ]; then run_checks "$c" floquet "Floquet multipliers"; continue; fi
+    if [ -f check_$c.sh ]; then run_checks "$c" check "checked quantities"; continue; fi
     if [ -f eigen_$c.sh ]; then run_eigen "$c"; continue; fi
     if [ -f findsoln_$c.sh ]; then run_findsoln "$c"; continue; fi
     echo "unknown case: $c"; nfail=$((nfail + 1))
