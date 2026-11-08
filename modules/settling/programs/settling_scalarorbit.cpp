@@ -24,6 +24,7 @@
 #include "modules/settling/settlingdns.h"
 #include "modules/settling/settlingdsi.h"
 #include "modules/settling/settlingnse.h"
+#include "modules/settling/settlingstats.h"
 #include "nsolver/gmres.h"
 
 using namespace std;
@@ -85,7 +86,8 @@ int main(int argc, char* argv[]) {
         const int Nperiods = args.getint("-Np", "--Nperiods", 20, "maximum number of periods");
         const Real tol = args.getreal("-tol", "--tolerance", 1e-10, "stop when L2Dist(c(T), c(0))/L2Norm(c) < tol");
         const int Nsave = args.getint("-ns", "--Nsave", 0,
-                                      "save this many states per period (overwritten each period; 0 == none)");
+                                      "save this many states per period, equally spaced over T, with energy.asc and "
+                                      "cstats.asc as simulateflow writes them (overwritten each period; 0 == none)");
         const int Navg = args.getint("-na", "--Naverage", 400,
                                      "samples per period for the period-averaged flux profiles (trapezoid rule)");
         const int Nex = args.getint("-ex", "--extrapolate", 0,
@@ -243,6 +245,16 @@ int main(int argc, char* argv[]) {
             Real cflu = 0.0, cflc = 0.0;
             const int checkint = Greater(1, int(round(1.0 / dt)));  // CFL check about once per time unit
             ChebyCoeff Cavg(Nyc, c.a(), c.b(), Spectral), uCavg(Cavg), vCavg(Cavg);
+            ofstream eout, cout_;
+            FlowField svel, suc;
+            if (stats && Nsave > 0) {  // as simulateflow's energy.asc and cstats.asc, at the saved states
+                eout.open((outdir + "energy.asc").c_str());
+                eout << fieldstatsheader_t() << endl;
+                cout_.open((outdir + "cstats.asc").c_str());
+                cout_ << concstatsheader_t() << endl;
+                cdns.Ubase().save(outdir + "Ubase");
+                cdns.Wbase().save(outdir + "Wbase");
+            }
             for (int n = 0; n < N; ++n) {
                 cfields[0].interpolate(ufields[0]);
                 if (n == N - 2) {
@@ -266,6 +278,8 @@ int main(int argc, char* argv[]) {
                     combineVelocityScalar(cfields[0], cfields[1], u4);
                     u4.setPadded(flags.dealias_xz());
                     u4.save(outdir + "u" + i2s(n / (N / Nsave)));
+                    eout << fieldstats_t(u4, n * dt) << endl;
+                    cout_ << concstats_t(u4, svel, suc, n * dt) << endl;
                 }
                 cdns.advance(cfields, 1);
                 udns.advance(ufields, 1);
