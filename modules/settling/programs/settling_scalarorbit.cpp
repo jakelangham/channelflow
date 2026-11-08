@@ -24,6 +24,7 @@
 #include "modules/settling/settlingdns.h"
 #include "modules/settling/settlingdsi.h"
 #include "modules/settling/settlingnse.h"
+#include "nsolver/gmres.h"
 
 using namespace std;
 using namespace chflow;
@@ -90,9 +91,16 @@ int main(int argc, char* argv[]) {
         const int Nex = args.getint("-ex", "--extrapolate", 0,
                                     "every this many periods, extrapolate c past its dominant decaying mode "
                                     "(Aitken; >= 2, 0 == never)");
-        const Real exmin = args.getreal("-exmin", "--extrapolateMin", 1e-4,
-                                        "extrapolate only while |c(T) - c(0)|/|c(0)| > exmin: each extrapolation "
-                                        "restarts the multistep history, which costs ~2e-6 at vs/kappa = 32");
+        const Real exmin = args.getreal("-exmin", "--extrapolateMin", 0.0,
+                                        "extrapolate only while |c(T) - c(0)|/|c(0)| > exmin");
+        const int Ng = args.getint("-gm", "--gmres", 0,
+                                   "solve for the periodic c with GMRES (Newton steps of at most this many Krylov "
+                                   "periods each) instead of iterating; 0 == iterate");
+        string chdir = args.getstr("-ch", "--history", "",
+                                   "directory with uTm1.nc, uTm2.nc of a previous run (same grid and dt): "
+                                   "continue without restarting the multistep history");
+        if (chdir != "" && chdir.back() != '/')
+            chdir += '/';
         const int nproc0 = args.getint("-np0", "--nproc0", 0, "number of MPI-processes for transpose");
         const int nproc1 = args.getint("-np1", "--nproc1", 0, "number of MPI-processes for one fft");
         const string uname = args.getstr(1, "<velocity>", "velocity at t = 0 on the orbit (3 or 4 components)");
@@ -174,11 +182,6 @@ int main(int argc, char* argv[]) {
         }
 
         FlowField u4(Nxc, Nyc, Nzc, 4, u0.Lx(), u0.Lz(), u0.a(), u0.b(), cfmpi);
-        FlowField cstart;
-        unique_ptr<SettlingDNS> cdns;
-        vector<FlowField> cfields;
-        Real dtc = 0.0;
-
         ofstream conv((outdir + "convergence.asc").c_str());
         conv << "% period  dt  steps  maxCFL(velocity)  maxCFL(scalar)  L2Dist(u(T),u(0))/L2Norm(u(0))  "
                 "L2Dist(c(T),c(0))/L2Norm(c(0))  <(u+U)C>  <vC>  max|F|/max|vs<C>|"
@@ -188,14 +191,35 @@ int main(int argc, char* argv[]) {
         FlowField ftmp;
         ChebyCoeff C, uC, vC;
 
-        // Extrapolation: one period maps c to P c + b (linear, the velocity fixed), so after a few
-        // periods the error is ~ lambda^n v, lambda the dominant eigenvalue of P. From the last two
-        // period-to-period changes d1, d2, lambda ~ <d2, d1>/<d1, d1> and c* ~ c + lambda/(1 - lambda) d2.
-        // Needs two free periods since the last change of c (start or extrapolation).
-        FlowField cstartPrev;
-        int sinceJump = 0;
+        // The state of the scalar's SBDF scheme at the start of a period: c at t = 0, -dt and -2dt (and the
+        // velocity at -dt, -2dt, i.e. at T - dt, T - 2dt on the orbit). Pushing the earlier levels into the
+        // multistep history (DNS::push) continues the scheme exactly, without a lower-order restart; without
+        // a history (valid == false) the scheme restarts with -is, which costs ~1e-6.
+        struct State {
+            FlowField c0, c1, c2;  // c at t = 0, -dt, -2dt
+            bool valid = false;
+        };
+        FlowField uh1, uh2;  // velocity on c's grid at T - dt, T - 2dt (recorded each period)
+        bool uhValid = false;
 
-        for (int period = 0; period < Nperiods; ++period) {
+        State X;
+        X.c0 = c;
+        if (chdir != "") {
+            FlowField h1(chdir + "uTm1"), h2(chdir + "uTm2");
+            if (!h1.geomCongruent(c) || !h2.geomCongruent(c))
+                cferror("scalarorbit : the history in " + chdir + " is not on the scalar's grid");
+            splitVelocityScalar(h1, uh1, X.c1);
+            splitVelocityScalar(h2, uh2, X.c2);
+            X.valid = uhValid = true;
+            cout << "continuing the multistep history from " << chdir << " (it must have the same dt)" << endl;
+        }
+
+        int periodCount = 0;
+        Real lastDu = 0.0, lastCfl = 0.0;
+
+        // One period from X; returns the state at T. With stats, also writes the period averages, the
+        // snapshots (-ns) and a line of convergence.asc.
+        auto period = [&](const State& Xin, bool stats) {
             const Real dt = T / N;
             uflags.dt = dt;
             FlowField u = u0;
@@ -205,50 +229,59 @@ int main(int argc, char* argv[]) {
             psolver.solve(q, u);
             vector<FlowField> ufields = {u, q};
 
-            // the scalar's DNS is kept across periods while dt is unchanged (so c's history is kept)
-            if (dt != dtc) {
-                if (cdns)
-                    c = cfields[1];
-                DNSFlags cflags = flags;
-                cflags.dt = dt;
-                uc.interpolate(u0);
-                cfields = {uc, c, qc};
-                cdns.reset(new SettlingDNS(cfields, cflags, true));
-                dtc = dt;
+            DNSFlags cflags = flags;
+            cflags.dt = dt;
+            uc.interpolate(u0);
+            vector<FlowField> cfields = {uc, Xin.c0, qc};
+            SettlingDNS cdns(cfields, cflags, true);
+            if (Xin.valid && uhValid) {
+                cdns.push({uh2, Xin.c2, qc});
+                cdns.push({uh1, Xin.c1, qc});
             }
-            cstartPrev = cstart;
-            cstart = cfields[1];
 
+            State Y;
             Real cflu = 0.0, cflc = 0.0;
             const int checkint = Greater(1, int(round(1.0 / dt)));  // CFL check about once per time unit
             ChebyCoeff Cavg(Nyc, c.a(), c.b(), Spectral), uCavg(Cavg), vCavg(Cavg);
             for (int n = 0; n < N; ++n) {
                 cfields[0].interpolate(ufields[0]);
-                if (n % (N / Navg) == 0) {
-                    fluxProfiles(cfields[0], cfields[1], cdns->Ubase(), ftmp, C, uC, vC);
+                if (n == N - 2) {
+                    uh2 = cfields[0];
+                    Y.c2 = cfields[1];
+                } else if (n == N - 1) {
+                    uh1 = cfields[0];
+                    Y.c1 = cfields[1];
+                }
+                if (stats && n % (N / Navg) == 0) {
+                    fluxProfiles(cfields[0], cfields[1], cdns.Ubase(), ftmp, C, uC, vC);
                     Cavg += C;
                     uCavg += uC;
                     vCavg += vC;
                 }
                 if (n % checkint == 0) {
                     cflu = Greater(cflu, udns.CFL(ufields[0]));
-                    cflc = Greater(cflc, cdns->CFL(cfields[0]));
+                    cflc = Greater(cflc, cdns.CFL(cfields[0]));
                 }
-                if (Nsave > 0 && n % (N / Nsave) == 0) {
+                if (stats && Nsave > 0 && n % (N / Nsave) == 0) {
                     combineVelocityScalar(cfields[0], cfields[1], u4);
                     u4.setPadded(flags.dealias_xz());
                     u4.save(outdir + "u" + i2s(n / (N / Nsave)));
                 }
-                cdns->advance(cfields, 1);
+                cdns.advance(cfields, 1);
                 udns.advance(ufields, 1);
             }
             cfields[0].interpolate(ufields[0]);  // u(T), for the saved state
+            Y.c0 = cfields[1];
+            Y.valid = uhValid = true;
+            lastDu = L2Dist(ufields[0], u0) / L2Norm(u0);
+            lastCfl = Greater(cflu, cflc);
+            ++periodCount;
 
-            const Real du = L2Dist(ufields[0], u0) / L2Norm(u0);
-            const Real dc = L2Dist(cfields[1], cstart) / L2Norm(cstart);
-            cout << "  L2Norm(c(0)) == " << L2Norm(cstart) << " (state " << cstart.xzstate() << cstart.ystate()
-                 << "), L2Norm(c(T)) == " << L2Norm(cfields[1]) << " (state " << cfields[1].xzstate()
-                 << cfields[1].ystate() << ")" << endl;
+            const Real dc = L2Dist(Y.c0, Xin.c0) / L2Norm(Xin.c0);
+            if (!stats) {
+                cout << "period " << periodCount << " (Krylov): |c(T) - c(0)|/|c(0)| == " << dc << endl;
+                return Y;
+            }
 
             // period averages (periodic trapezoid rule), and the total vertical flux
             // F = <vC> - vs <C> - kappa d<C>/dy, which vanishes at every y for a converged periodic state
@@ -264,7 +297,8 @@ int main(int argc, char* argv[]) {
             dCdy.makePhysical();
             Vector y = chebypoints(Nyc, c.a(), c.b());
             ofstream prof((outdir + "profiles.asc").c_str());
-            prof << "% period " << period + 1 << " averages: y  <C>  <(u+U)C>  <vC>  -vs<C>  -kappa d<C>/dy  F" << endl;
+            prof << "% period " << periodCount << " averages: y  <C>  <(u+U)C>  <vC>  -vs<C>  -kappa d<C>/dy  F"
+                 << endl;
             Real Fmax = 0.0, settmax = 0.0;
             for (int ny = 0; ny < Nyc; ++ny) {
                 const Real F = vCavg[ny] - vs * Cavg[ny] - kappa * dCdy[ny];
@@ -274,45 +308,141 @@ int main(int argc, char* argv[]) {
                      << -vs * Cavg[ny] << ' ' << -kappa * dCdy[ny] << ' ' << F << endl;
             }
             const Real Frel = settmax > 0 ? Fmax / settmax : Fmax;
-
-            cout << "period " << period + 1 << ": dt == " << dt << " (" << N << " steps), max CFL velocity "
-                 << cflu << ", scalar " << cflc << ", |u(T) - u(0)|/|u(0)| == " << du
+            cout << "period " << periodCount << ": dt == " << dt << " (" << N << " steps), max CFL velocity "
+                 << cflu << ", scalar " << cflc << ", |u(T) - u(0)|/|u(0)| == " << lastDu
                  << ", |c(T) - c(0)|/|c(0)| == " << dc << ", <(u+U)C> == " << setprecision(10) << uCbulk
-                 << ", <vC> == " << vCbulk << ", max|F|/max|vs<C>| == " << Frel << setprecision(6) << endl;
-            conv << setw(4) << period + 1 << ' ' << setprecision(10) << dt << ' ' << N << ' ' << cflu << ' ' << cflc
-                 << ' ' << du << ' ' << dc << ' ' << uCbulk << ' ' << vCbulk << ' ' << Frel << endl;
+                 << ", <vC> == " << vCbulk << ", max|F|/max|vs<C>| == " << Frel << setprecision(6)
+                 << (Xin.valid ? "" : " (restarted)") << endl;
+            conv << setw(4) << periodCount << ' ' << setprecision(10) << dt << ' ' << N << ' ' << cflu << ' '
+                 << cflc << ' ' << lastDu << ' ' << dc << ' ' << uCbulk << ' ' << vCbulk << ' ' << Frel << endl;
 
-            combineVelocityScalar(cfields[0], cfields[1], u4);
+            // the state at T, and the history levels for continuing (-ch)
+            combineVelocityScalar(cfields[0], Y.c0, u4);
             u4.setPadded(flags.dealias_xz());
             u4.save(outdir + "uT");
-            if (dc < tol) {
-                cout << "converged: |c(T) - c(0)|/|c(0)| < " << tol << endl;
-                break;
-            }
+            combineVelocityScalar(uh1, Y.c1, u4);
+            u4.setPadded(flags.dealias_xz());
+            u4.save(outdir + "uTm1");
+            combineVelocityScalar(uh2, Y.c2, u4);
+            u4.setPadded(flags.dealias_xz());
+            u4.save(outdir + "uTm2");
+            return Y;
+        };
 
-            ++sinceJump;
-            if (Nex >= 2 && sinceJump >= Nex && dc > exmin) {
-                FlowField d1(cstart), d2(cfields[1]);
-                d1 -= cstartPrev;
-                d2 -= cstart;
-                const Real lambda = L2IP(d2, d1) / L2IP(d1, d1);
-                if (abs(lambda) < 0.9 && abs(lambda) > 1e-3) {  // either sign: c* = c + lambda/(1 - lambda) d2
-                    // c + a (c - c_prev) keeps the affine BC and the mass of c (coefficients sum to 1)
-                    d2 *= lambda / (1.0 - lambda);
-                    cfields[1] += d2;
-                    dtc = 0.0;  // restart the scalar's multistep history from the new c
-                    sinceJump = 0;
-                    cout << "  extrapolated: lambda == " << lambda << ", |dc|/|c| == " << L2Norm(d2) / L2Norm(cfields[1])
-                         << endl;
-                } else
-                    cout << "  no extrapolation: lambda == " << lambda << endl;
-            }
+        auto relChange = [](const State& A, const State& B) { return L2Dist(A.c0, B.c0) / L2Norm(B.c0); };
 
-            // keep the larger CFL number in [CFLmin, CFLmax] for the next period
-            const Real cfl = Greater(cflu, cflc);
-            if (flags.variabledt && (cfl > flags.CFLmax || cfl < flags.CFLmin)) {
-                const Real dtwant = Greater(flags.dtmin, lesser(flags.dtmax, dt * 0.5 * (flags.CFLmin + flags.CFLmax) / cfl));
-                N = stepsPerPeriod(dtwant);
+        if (Ng > 0) {
+            // GMRES: Phi(X) = P X + b is affine, so the periodic state solves (P - I) d = -(Phi(X) - X), with
+            // P v = (Phi(X + s v) - Phi(X))/s (exact up to round-off). The unknown is the whole SBDF state
+            // (c at 0, -dt, -2dt), so the fixed point is the periodic solution of the scheme itself.
+            auto pack = [](const State& S, Eigen::VectorXd& v) {
+                const FlowField* f[3] = {&S.c0, &S.c1, &S.c2};
+                const lint n1 = 2 * f[0]->Mxloc() * f[0]->My() * f[0]->Mzloc();
+                v.resize(3 * n1);
+                lint k = 0;
+                for (int l = 0; l < 3; ++l)
+                    for (int mx = f[l]->mxlocmin(); mx < f[l]->mxlocmin() + f[l]->Mxloc(); ++mx)
+                        for (int my = 0; my < f[l]->My(); ++my)
+                            for (int mz = f[l]->mzlocmin(); mz < f[l]->mzlocmin() + f[l]->Mzloc(); ++mz) {
+                                const Complex z = f[l]->cmplx(mx, my, mz, 0);
+                                v(k++) = Re(z);
+                                v(k++) = Im(z);
+                            }
+            };
+            auto unpack = [](const Eigen::VectorXd& v, State& S) {
+                FlowField* f[3] = {&S.c0, &S.c1, &S.c2};
+                lint k = 0;
+                for (int l = 0; l < 3; ++l)
+                    for (int mx = f[l]->mxlocmin(); mx < f[l]->mxlocmin() + f[l]->Mxloc(); ++mx)
+                        for (int my = 0; my < f[l]->My(); ++my)
+                            for (int mz = f[l]->mzlocmin(); mz < f[l]->mzlocmin() + f[l]->Mzloc(); ++mz) {
+                                f[l]->cmplx(mx, my, mz, 0) = Complex(v(k), v(k + 1));
+                                k += 2;
+                            }
+            };
+            if (!X.valid) {
+                cout << "GMRES: one period to set up the multistep history" << endl;
+                X = period(X, true);
+            }
+            for (int newton = 0; newton < Nperiods; ++newton) {
+                State Y = period(X, true);
+                const Real dc = relChange(Y, X);
+                if (dc < tol) {
+                    cout << "converged: |c(T) - c(0)|/|c(0)| == " << dc << " < " << tol << endl;
+                    break;
+                }
+                Eigen::VectorXd x, yv;
+                pack(X, x);
+                pack(Y, yv);
+                const Real s = x.norm();
+                Eigen::VectorXd b = x - yv;  // -(Phi(X) - X)
+                GMRES gmres(b, Ng, 1e-14);
+                for (int it = 0; it < Ng; ++it) {
+                    State Xq = X;
+                    unpack(x + s * gmres.testVector(), Xq);
+                    Xq.valid = true;
+                    State Yq = period(Xq, false);
+                    Eigen::VectorXd yq;
+                    pack(Yq, yq);
+                    gmres.iterate((yq - yv) / s - gmres.testVector());
+                    cout << "  GMRES " << it + 1 << ": residual " << gmres.residual() << endl;
+                    if (gmres.residual() * dc < 0.1 * tol)
+                        break;
+                }
+                unpack(x + gmres.solution(), X);
+                X.valid = true;
+            }
+        } else {
+            // Iterate c -> Phi(c), carrying the multistep history from period to period; optionally
+            // extrapolate past the dominant decaying mode (Aitken), on all history levels at once: one
+            // period maps the state to P X + b, so after a few periods the error is ~ lambda^n v; from the
+            // last two changes d1, d2 of c(0), lambda ~ <d2, d1>/<d1, d1>, X* ~ Y + lambda/(1 - lambda) (Y - X).
+            State Xprev;
+            int sinceJump = 0;
+            for (int p = 0; p < Nperiods; ++p) {
+                const int Nold = N;
+                State Y = period(X, true);
+                const Real dc = relChange(Y, X);
+                if (dc < tol) {
+                    cout << "converged: |c(T) - c(0)|/|c(0)| < " << tol << endl;
+                    break;
+                }
+                ++sinceJump;
+                State Xnext = Y;
+                if (Nex >= 2 && sinceJump >= Nex && dc > exmin && Xprev.valid) {
+                    FlowField d1(X.c0), d2(Y.c0);
+                    d1 -= Xprev.c0;
+                    d2 -= X.c0;
+                    const Real lambda = L2IP(d2, d1) / L2IP(d1, d1);
+                    if (abs(lambda) < 0.9 && abs(lambda) > 1e-3) {
+                        // Y + a (Y - X) keeps the affine BC and the mass (coefficients sum to 1)
+                        const Real a = lambda / (1.0 - lambda);
+                        FlowField* yl[3] = {&Xnext.c0, &Xnext.c1, &Xnext.c2};
+                        const FlowField* xl[3] = {&X.c0, &X.c1, &X.c2};
+                        for (int l = 0; l < 3; ++l) {
+                            FlowField d(*yl[l]);
+                            d -= *xl[l];
+                            d *= a;
+                            *yl[l] += d;
+                        }
+                        sinceJump = 0;
+                        cout << "  extrapolated: lambda == " << lambda << endl;
+                    } else
+                        cout << "  no extrapolation: lambda == " << lambda << endl;
+                }
+                Xprev = sinceJump == 0 ? State() : X;
+                X = Xnext;
+
+                // keep the larger CFL number in [CFLmin, CFLmax] for the next period (a new dt restarts)
+                if (flags.variabledt && (lastCfl > flags.CFLmax || lastCfl < flags.CFLmin)) {
+                    const Real dtwant = Greater(
+                        flags.dtmin, lesser(flags.dtmax, (T / N) * 0.5 * (flags.CFLmin + flags.CFLmax) / lastCfl));
+                    N = stepsPerPeriod(dtwant);
+                }
+                if (N != Nold) {  // the history belongs to the old dt
+                    X.valid = false;
+                    Xprev = State();
+                }
             }
         }
     }
