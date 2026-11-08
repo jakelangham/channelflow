@@ -87,6 +87,12 @@ int main(int argc, char* argv[]) {
                                       "save this many states per period (overwritten each period; 0 == none)");
         const int Navg = args.getint("-na", "--Naverage", 400,
                                      "samples per period for the period-averaged flux profiles (trapezoid rule)");
+        const int Nex = args.getint("-ex", "--extrapolate", 0,
+                                    "every this many periods, extrapolate c past its dominant decaying mode "
+                                    "(Aitken; >= 2, 0 == never)");
+        const Real exmin = args.getreal("-exmin", "--extrapolateMin", 1e-4,
+                                        "extrapolate only while |c(T) - c(0)|/|c(0)| > exmin: each extrapolation "
+                                        "restarts the multistep history, which costs ~2e-6 at vs/kappa = 32");
         const int nproc0 = args.getint("-np0", "--nproc0", 0, "number of MPI-processes for transpose");
         const int nproc1 = args.getint("-np1", "--nproc1", 0, "number of MPI-processes for one fft");
         const string uname = args.getstr(1, "<velocity>", "velocity at t = 0 on the orbit (3 or 4 components)");
@@ -182,6 +188,13 @@ int main(int argc, char* argv[]) {
         FlowField ftmp;
         ChebyCoeff C, uC, vC;
 
+        // Extrapolation: one period maps c to P c + b (linear, the velocity fixed), so after a few
+        // periods the error is ~ lambda^n v, lambda the dominant eigenvalue of P. From the last two
+        // period-to-period changes d1, d2, lambda ~ <d2, d1>/<d1, d1> and c* ~ c + lambda/(1 - lambda) d2.
+        // Needs two free periods since the last change of c (start or extrapolation).
+        FlowField cstartPrev;
+        int sinceJump = 0;
+
         for (int period = 0; period < Nperiods; ++period) {
             const Real dt = T / N;
             uflags.dt = dt;
@@ -203,6 +216,7 @@ int main(int argc, char* argv[]) {
                 cdns.reset(new SettlingDNS(cfields, cflags, true));
                 dtc = dt;
             }
+            cstartPrev = cstart;
             cstart = cfields[1];
 
             Real cflu = 0.0, cflc = 0.0;
@@ -274,6 +288,24 @@ int main(int argc, char* argv[]) {
             if (dc < tol) {
                 cout << "converged: |c(T) - c(0)|/|c(0)| < " << tol << endl;
                 break;
+            }
+
+            ++sinceJump;
+            if (Nex >= 2 && sinceJump >= Nex && dc > exmin) {
+                FlowField d1(cstart), d2(cfields[1]);
+                d1 -= cstartPrev;
+                d2 -= cstart;
+                const Real lambda = L2IP(d2, d1) / L2IP(d1, d1);
+                if (abs(lambda) < 0.9 && abs(lambda) > 1e-3) {  // either sign: c* = c + lambda/(1 - lambda) d2
+                    // c + a (c - c_prev) keeps the affine BC and the mass of c (coefficients sum to 1)
+                    d2 *= lambda / (1.0 - lambda);
+                    cfields[1] += d2;
+                    dtc = 0.0;  // restart the scalar's multistep history from the new c
+                    sinceJump = 0;
+                    cout << "  extrapolated: lambda == " << lambda << ", |dc|/|c| == " << L2Norm(d2) / L2Norm(cfields[1])
+                         << endl;
+                } else
+                    cout << "  no extrapolation: lambda == " << lambda << endl;
             }
 
             // keep the larger CFL number in [CFLmin, CFLmax] for the next period
