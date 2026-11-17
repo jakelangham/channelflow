@@ -100,6 +100,9 @@ for exe in "$FINDSOLN" "$SIMULATEFLOW" "$fieldcompare"; do
     [ -x "$exe" ] || { echo "missing executable: $exe"; exit 2; }
 done
 export OMP_NUM_THREADS=1
+# OpenMPI's UCX transport prints an error line when it cannot create its introspection (VFS) socket, e.g.
+# in a sandbox; that line ends up in the program output this script parses. The VFS is not needed.
+export UCX_VFS_ENABLE=${UCX_VFS_ENABLE:-n}
 
 # le A B: true if A <= B (floating point)
 le() { awk -v a="$1" -v b="$2" 'BEGIN { exit !(a <= b) }'; }

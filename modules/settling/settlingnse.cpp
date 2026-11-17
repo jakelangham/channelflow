@@ -120,15 +120,44 @@ void SettlingNSE::setPrescribedVelocity(bool prescribed) {
 }
 
 // Project a spectral field onto real fields: the kz = 0 modes kx and -kx become complex conjugates and
-// the kx = 0 one real, as a transform to physical space and back would leave them. Returns false,
-// changing nothing, if this process does not hold every kx (x distributed over MPI processes); that is
-// the same on every process, so the caller's fallback stays collective.
-static bool makeRealField(FlowField& f) {
+// the kx = 0 one real, as a transform to physical space and back would leave them.
+static void makeRealField(FlowField& f) {
     assert(f.xzstate() == Spectral);
-    if (f.Mxloc() != f.Mx())
-        return false;
-    if (f.mzlocmin() != 0)
-        return true;  // no kz = 0 modes on this process
+    if (f.Mzloc() == 0 || f.mzlocmin() != 0)
+        return;  // no kz = 0 modes on this process
+#ifdef HAVE_MPI
+    if (f.Mxloc() != f.Mx()) {
+        // x is distributed over the processes of comm0, which all hold the same kz range, so all of them
+        // get here. Share the kz = 0 plane (one Allreduce, Mx x My x Nd), then each process sets its own
+        // modes from the shared values with the same arithmetic as the serial branch (bit-identical).
+        const int Mx = f.Mx(), My = f.My(), Nd = f.Nd();
+        const int mx0 = f.mxlocmin(), mx1 = f.mxlocmin() + f.Mxloc();
+        auto idx = [My, Nd](int mx, int my, int i) { return (static_cast<size_t>(mx) * My + my) * Nd + i; };
+        vector<Complex> plane(static_cast<size_t>(Mx) * My * Nd, Complex(0.0, 0.0));
+        for (int mx = mx0; mx < mx1; ++mx)
+            for (int my = 0; my < My; ++my)
+                for (int i = 0; i < Nd; ++i)
+                    plane[idx(mx, my, i)] = f.cmplx(mx, my, 0, i);
+        MPI_Allreduce(MPI_IN_PLACE, plane.data(), 2 * static_cast<int>(plane.size()), MPI_DOUBLE, MPI_SUM,
+                      f.cfmpi()->comm0);
+        for (int mx = mx0; mx < mx1; ++mx) {
+            const int mxm = (Mx - mx) % Mx;  // the -kx partner (mx itself for kx = 0 and an even Nx's Nyquist)
+            const bool nonneg = (mx <= Mx / 2);  // kx >= 0, as f.kx(mx) >= 0
+            for (int i = 0; i < Nd; ++i)
+                for (int my = 0; my < My; ++my) {
+                    if (mxm == mx) {
+                        f.cmplx(mx, my, 0, i) = Complex(Re(plane[idx(mx, my, i)]), 0.0);
+                    } else if (nonneg) {
+                        f.cmplx(mx, my, 0, i) = 0.5 * (plane[idx(mx, my, i)] + conj(plane[idx(mxm, my, i)]));
+                    } else {
+                        const Complex a = 0.5 * (plane[idx(mxm, my, i)] + conj(plane[idx(mx, my, i)]));
+                        f.cmplx(mx, my, 0, i) = conj(a);
+                    }
+                }
+        }
+        return;
+    }
+#endif
     for (int mx = 0; mx < f.Mx(); ++mx) {
         const int kx = f.kx(mx);
         if (kx < 0)
@@ -146,7 +175,6 @@ static bool makeRealField(FlowField& f) {
                 }
             }
     }
-    return true;
 }
 
 void SettlingNSE::nonlinear(const vector<FlowField>& infields, vector<FlowField>& outfields) {
@@ -155,16 +183,11 @@ void SettlingNSE::nonlinear(const vector<FlowField>& infields, vector<FlowField>
     // physical space, but at high vs/kappa the scalar's grows: from t ~ 300 at vs/kappa = 10 (Ri = 0,
     // upo1 and its 60x61x60 parent; not at 0.56). The upstream nonlinear terms, and the original settling
     // code's densityAdvection, transformed the fields in place each step, which removes it; projecting
-    // directly does the same far more cheaply (the round trip cost 38% at 24x35x40), and the round trip
-    // remains the fallback with x distributed over MPI processes. With a prescribed velocity, the caller
+    // directly does the same far more cheaply (the round trip cost 38% at 24x35x40; with x distributed
+    // over MPI processes the kz = 0 plane is shared first). With a prescribed velocity, the caller
     // supplies a velocity that has been through this.
-    for (int i = prescribedVelocity_ ? 1 : 0; i <= nscalars(); ++i) {
-        FlowField& f = const_cast<FlowField&>(infields[i]);
-        if (!makeRealField(f)) {
-            f.makePhysical();
-            f.makeSpectral();
-        }
-    }
+    for (int i = prescribedVelocity_ ? 1 : 0; i <= nscalars(); ++i)
+        makeRealField(const_cast<FlowField&>(infields[i]));
 
     if (flags_.nonlinearity == Rotational)
         rotationalNonlinear(infields, outfields);
