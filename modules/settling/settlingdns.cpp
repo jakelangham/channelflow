@@ -39,6 +39,15 @@ SettlingDNS::SettlingDNS(const vector<FlowField>& fields, const DNSFlags& flags,
     }
 }
 
+void SettlingDNS::setVelocityProvider(const std::function<void(FlowField&)>& provider) {
+    for (const auto& nse : {main_nse_, init_nse_})
+        if (auto s = dynamic_pointer_cast<SettlingNSE>(nse)) {
+            if (!s->prescribedVelocity())
+                cferror("SettlingDNS::setVelocityProvider : needs a prescribed velocity");
+            s->setVelocityProvider(provider);
+        }
+}
+
 Real SettlingDNS::CFL(FlowField& u) const {
     Real cfl = DNS::CFL(u);
 

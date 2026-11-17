@@ -18,6 +18,7 @@
 #ifndef SETTLINGNSE_H
 #define SETTLINGNSE_H
 
+#include <functional>
 #include <vector>
 #include "modules/settling/boundarycond.h"
 #include "modules/settling/scalarsolver.h"
@@ -74,6 +75,16 @@ class SettlingNSE : public NSE {
     void setPrescribedVelocity(bool prescribed);
     bool prescribedVelocity() const { return prescribedVelocity_; }
 
+    // With a prescribed velocity, its RHS is not assembled (NSE::prescribed). Optionally a provider sets
+    // it at the start of each step (NSE::prestep): provider(u) must store u(t) of the step about to be
+    // taken in u (spectral, on this grid), so the caller can advance several steps per DNS::advance.
+    void setVelocityProvider(std::function<void(FlowField&)> provider) { provider_ = std::move(provider); }
+    bool prescribed(int i) const override { return prescribedVelocity_ && i == 0; }
+    void prestep(std::vector<FlowField>& fields) override {
+        if (prescribedVelocity_ && provider_)
+            provider_(fields[0]);
+    }
+
    protected:
     std::vector<SettlingScalar> scalars_;
     // scalarsolver_[i][j][mx][mz]: scalar i, substep j, Fourier mode (mx, mz)
@@ -83,6 +94,7 @@ class SettlingNSE : public NSE {
 
     FlowField utot_;  // work field: total velocity u + Ubase, physical in rotationalNonlinear
     bool prescribedVelocity_ = false;
+    std::function<void(FlowField&)> provider_;
 
     void rotationalNonlinear(const std::vector<FlowField>& infields, std::vector<FlowField>& outfields);
     void genericNonlinear(const std::vector<FlowField>& infields, std::vector<FlowField>& outfields);

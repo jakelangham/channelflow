@@ -212,6 +212,8 @@ void MultistepDNS::advance(vector<FlowField>& fieldsn, int Nsteps) {
     // Start of time stepping loop
 
     for (int step = 0; step < Nsteps; ++step) {
+        nse_->prestep(fields_[0]);  // no-op unless the equations supply a field (see NSE::prescribed)
+
         // Calculate nonlinearity, includes dealiasing if applicable
         if (order_ > 0) {
             nse_->nonlinear(fields_[0], nonlf_[0]);
@@ -219,6 +221,8 @@ void MultistepDNS::advance(vector<FlowField>& fieldsn, int Nsteps) {
 
         // Add up multistepping terms of linear and nonlinear terms
         for (int l = 0; l < len; ++l) {
+            if (nse_->prescribed(l))
+                continue;         // supplied, not integrated: its RHS is not used
             rhs_[l].setToZero();  // RHS must be zero before sum over multistep loop
             for (int j = 0; j < order_; ++j) {
                 const Real a = -alpha_[j] / flags_.dt;

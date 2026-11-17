@@ -288,7 +288,18 @@ int main(int argc, char* argv[]) {
                 cdns.Ubase().save(outdir + "Ubase");
                 cdns.Wbase().save(outdir + "Wbase");
             }
-            for (int n = 0; n < N; ++n) {
+            // The velocity of each step comes from udns through the provider, so the scalar is advanced
+            // from one step that needs the fields (flux sample, snapshot, CFL check, the last two steps)
+            // to the next in one call: DNS::advance copies all fields in and out per call.
+            cdns.setVelocityProvider([&](FlowField& ustep) {
+                interpolateY(ufields[0], ustep);  // u(t_n) for the step from t_n
+                udns.advance(ufields, 1);         // then the velocity to t_{n+1}
+            });
+            auto event = [&](int n) {
+                return n >= N - 2 || (stats && n % (N / Navg) == 0) || n % checkint == 0 ||
+                       (stats && Nsave > 0 && n % (N / Nsave) == 0);
+            };
+            for (int n = 0; n < N;) {
                 interpolateY(ufields[0], cfields[0]);
                 if (n == N - 2) {
                     uh2 = cfields[0];
@@ -314,8 +325,14 @@ int main(int argc, char* argv[]) {
                     eout << fieldstats_t(u4, n * dt) << endl;
                     cout_ << concstats_t(u4, svel, suc, n * dt) << endl;
                 }
-                cdns.advance(cfields, 1);
-                udns.advance(ufields, 1);
+                // While the multistep history fills, DNS::advance pushes the given fields (evaluating their
+                // nonlinear term) before each start-up step, so cfields[0] must hold u(t_n): one step at a time.
+                int next = n + 1;
+                if (cdns.full())
+                    while (next < N && !event(next))
+                        ++next;
+                cdns.advance(cfields, next - n);  // advances udns too, step by step
+                n = next;
             }
             interpolateY(ufields[0], cfields[0]);  // u(T), for the saved state
             Y.c0 = cfields[1];

@@ -387,11 +387,12 @@ void SettlingNSE::solve(vector<FlowField>& outfields, const vector<FlowField>& r
                 break;
             const bool mean = (kx == 0 && kz == 0);
 
-            for (int ny = 0; ny < Nyd_; ++ny) {
-                Ruk_.set(ny, rhs[0].cmplx(mx, ny, mz, 0));
-                Rvk_.set(ny, rhs[0].cmplx(mx, ny, mz, 1));
-                Rwk_.set(ny, rhs[0].cmplx(mx, ny, mz, 2));
-            }
+            if (!prescribedVelocity_)  // a prescribed velocity's RHS is not assembled (prescribed(0))
+                for (int ny = 0; ny < Nyd_; ++ny) {
+                    Ruk_.set(ny, rhs[0].cmplx(mx, ny, mz, 0));
+                    Rvk_.set(ny, rhs[0].cmplx(mx, ny, mz, 1));
+                    Rwk_.set(ny, rhs[0].cmplx(mx, ny, mz, 2));
+                }
 
             // Scalars first, so that the buoyancy uses c^{n+1}
             for (int i = 0; i < nscalars(); ++i) {

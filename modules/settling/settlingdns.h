@@ -23,6 +23,10 @@ class SettlingDNS : public DNS {
     // the implicit diffusion (see settlingdns.cpp).
     Real CFL(FlowField& u) const override;
 
+    // With a prescribed velocity: provider(u) is called at the start of every step (main and start-up
+    // schemes) to store the velocity of that step in u; see SettlingNSE::setVelocityProvider.
+    void setVelocityProvider(const std::function<void(FlowField&)>& provider);
+
    private:
     std::vector<Real> vs_;
     std::vector<Real> kappa_;

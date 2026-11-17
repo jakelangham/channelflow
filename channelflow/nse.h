@@ -42,6 +42,12 @@ class NSE {
     // returns vector of symmetries confining the vector of fields to a subspace
     virtual std::vector<cfarray<FieldSymmetry>> createSymmVec() const;
 
+    // Hooks for equations in which a field is supplied rather than integrated (used by MultistepDNS only):
+    // prescribed(i) == true makes MultistepDNS skip assembling the RHS of field i (solve must not use it),
+    // and prestep is called with the current fields at the start of every step, e.g. to set such a field.
+    virtual bool prescribed(int i) const { return false; }
+    virtual void prestep(std::vector<FlowField>& fields) {}
+
     inline int taskid() const;
 
     void reset_gradp(Real dPdx, Real dPdz);    // change dPdx and enforce const dPdx
