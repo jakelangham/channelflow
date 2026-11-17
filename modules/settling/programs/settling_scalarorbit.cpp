@@ -206,6 +206,10 @@ int main(int argc, char* argv[]) {
 
         State X;
         X.c0 = c;
+        // Placeholders until the first period records the history (unused while !valid). States are copied,
+        // and under MPI copying an empty FlowField fails (FFTW-MPI's layout with zero block sizes).
+        X.c1 = c;
+        X.c2 = c;
         if (chdir != "") {
             FlowField h1(chdir + "uTm1"), h2(chdir + "uTm2");
             if (!h1.geomCongruent(c) || !h2.geomCongruent(c))
