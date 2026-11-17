@@ -421,7 +421,7 @@ int main(int argc, char* argv[]) {
                 Eigen::VectorXd x, yv;
                 pack(X, x);
                 pack(Y, yv);
-                const Real s = x.norm();
+                const Real s = L2Norm(x);  // over all processes (x holds this process's modes only)
                 Eigen::VectorXd b = x - yv;  // -(Phi(X) - X)
                 GMRES gmres(b, Ng, 1e-14);
                 for (int it = 0; it < Ng; ++it) {
