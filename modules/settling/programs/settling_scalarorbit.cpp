@@ -65,6 +65,35 @@ void fluxProfiles(const FlowField& u, const FlowField& c, const ChebyCoeff& Ubas
     vC = Re(tmp.profile(0, 0, 1));
 }
 
+// g = f on g's grid, for spectral fields that differ at most in Ny (f.Ny() <= g.Ny()) with the same x-z
+// distribution: each process copies its own modes' Chebyshev coefficients and zeroes the rest. Same result
+// as FlowField::interpolate (including its zeroed x-Nyquist mode), which loops over every global mode on
+// every process (and copies f) and so does not scale with the number of processes; called every step.
+// Falls back to it otherwise.
+static void interpolateY(const FlowField& f, FlowField& g) {
+    const bool local = f.xzstate() == Spectral && f.ystate() == Spectral && f.Nx() == g.Nx() &&
+                       f.Nz() == g.Nz() && f.Ny() <= g.Ny() && f.Nd() == g.Nd() && f.Lx() == g.Lx() &&
+                       f.Lz() == g.Lz() && f.a() == g.a() && f.b() == g.b() && f.cfmpi() == g.cfmpi() &&
+                       f.mxlocmin() == g.mxlocmin() && f.Mxloc() == g.Mxloc() && f.mzlocmin() == g.mzlocmin() &&
+                       f.Mzloc() == g.Mzloc();
+    if (!local) {
+        g.interpolate(f);
+        return;
+    }
+    g.setState(Spectral, Spectral);
+    const int fNy = f.Ny(), gNy = g.Ny();
+    const int mxNyq = f.Nx() / 2;  // interpolate's kx loop stops before kxmax() = Nx/2, odd Nx included
+    for (int i = 0; i < f.Nd(); ++i)
+        for (int mx = f.mxlocmin(); mx < f.mxlocmin() + f.Mxloc(); ++mx)
+            for (int mz = f.mzlocmin(); mz < f.mzlocmin() + f.Mzloc(); ++mz) {
+                const bool nyq = (mx == mxNyq);
+                for (int ny = 0; ny < fNy; ++ny)
+                    g.cmplx(mx, ny, mz, i) = nyq ? Complex(0.0, 0.0) : f.cmplx(mx, ny, mz, i);
+                for (int ny = fNy; ny < gNy; ++ny)
+                    g.cmplx(mx, ny, mz, i) = Complex(0.0, 0.0);
+            }
+}
+
 int main(int argc, char* argv[]) {
     cfMPI_Init(&argc, &argv);
     {
@@ -260,7 +289,7 @@ int main(int argc, char* argv[]) {
                 cdns.Wbase().save(outdir + "Wbase");
             }
             for (int n = 0; n < N; ++n) {
-                cfields[0].interpolate(ufields[0]);
+                interpolateY(ufields[0], cfields[0]);
                 if (n == N - 2) {
                     uh2 = cfields[0];
                     Y.c2 = cfields[1];
@@ -288,7 +317,7 @@ int main(int argc, char* argv[]) {
                 cdns.advance(cfields, 1);
                 udns.advance(ufields, 1);
             }
-            cfields[0].interpolate(ufields[0]);  // u(T), for the saved state
+            interpolateY(ufields[0], cfields[0]);  // u(T), for the saved state
             Y.c0 = cfields[1];
             Y.valid = uhValid = true;
             lastDu = L2Dist(ufields[0], u0) / L2Norm(u0);
