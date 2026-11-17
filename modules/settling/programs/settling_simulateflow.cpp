@@ -56,11 +56,13 @@ int main(int argc, char* argv[]) {
         const bool pubulk = args.getflag("-u", "--ubulk", "print ubulk each dT");
         const bool pUbulk = args.getflag("-Up", "--Ubulk-print", "print Ubulk each dT");
         const bool pdPdx = args.getflag("-p", "--pressure", "print pressure gradient each dT");
-        const Real umin = args.getreal("-u", "--umin", 0.0, "stop if chebyNorm(u) < umin");
+        const Real umin = args.getreal("-umin", "--umin", 0.0, "stop if chebyNorm(u) < umin");
 
         const Real ecfmin = args.getreal("-e", "--ecfmin", 0.0, "stop if Ecf(u) < ecfmin");
         const int saveint = args.getint("-s", "--saveinterval", 1, "save fields every s dT");
         const int saveprofint = args.getint("-sprof", "--saveprofinterval", 1, "save profile data every s dT");
+        const int statint = args.getint("-sstat", "--statinterval", 1,
+                                        "write energy.asc and cstats.asc every s dT (0 == never)");
 
         const int nproc0 =
             args.getint("-np0", "--nproc0", 0, "number of MPI-processes for transpose/number of parallel ffts");
@@ -135,10 +137,12 @@ int main(int argc, char* argv[]) {
         ios::openmode openflag = (flags.t0 > 0) ? ios::app : ios::out;
 
         ofstream eout, x0out, concout;
-        openfile(eout, outdir + "energy.asc", openflag);
-        eout << fieldstatsheader_t() << endl;
-        openfile(concout, outdir + "cstats.asc", openflag);
-        concout << concstatsheader_t() << endl;
+        if (statint != 0) {
+            openfile(eout, outdir + "energy.asc", openflag);
+            eout << fieldstatsheader_t() << endl;
+            openfile(concout, outdir + "cstats.asc", openflag);
+            concout << concstatsheader_t() << endl;
+        }
 
         FlowField u0, du, tmp;
         FlowField vel(u.Nx(), u.Ny(), u.Nz(), 4, u.Lx(), u.Lz(), u.a(), u.b(), cfmpi);
@@ -157,13 +161,10 @@ int main(int argc, char* argv[]) {
             }
 
             cout << s;
-            // fields[0] += dns.Ubase(); //////////////////// ONLY
-            s = fieldstats_t(u_with_density, t);
-            // fields[0] -= dns.Ubase(); //////////////////// ONLY
-            eout << s << endl;
-
-            s = concstats_t(u_with_density, vel, uc, t);
-            concout << s << endl;
+            if (statint != 0 && i % statint == 0) {
+                eout << fieldstats_t(u_with_density, t) << endl;
+                concout << concstats_t(u_with_density, vel, uc, t) << endl;
+            }
 
             if (saveprofint != 0 && i % saveprofint == 0) {
                 // save <u>
