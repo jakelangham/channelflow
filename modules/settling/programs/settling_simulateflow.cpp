@@ -24,7 +24,8 @@
 using namespace std;
 using namespace chflow;
 
-string printdiagnostics(FlowField& u, const DNS& dns, Real t, const TimeStep& dt, Real nu, Real umin, bool vardt,
+string printdiagnostics(FlowField& u, const FlowField& uvel, const DNS& dns, Real t, const TimeStep& dt, Real nu,
+                        Real umin, bool vardt,
                         bool pl2norm, bool pchnorm, bool pdissip, bool pshear, bool pdiverge, bool pUbulk, bool pubulk,
                         bool pdPdx, bool pcfl);
 void saveprofiles(const FlowField& u, const FlowField& p, const ChebyCoeff& Ubase, const string outdir, Real t, const bool inttime);
@@ -56,7 +57,7 @@ int main(int argc, char* argv[]) {
         const bool pubulk = args.getflag("-u", "--ubulk", "print ubulk each dT");
         const bool pUbulk = args.getflag("-Up", "--Ubulk-print", "print Ubulk each dT");
         const bool pdPdx = args.getflag("-p", "--pressure", "print pressure gradient each dT");
-        const Real umin = args.getreal("-umin", "--umin", 0.0, "stop if chebyNorm(u) < umin");
+        const Real umin = args.getreal("-umin", "--umin", 0.0, "stop if chebyNorm(u) < umin (velocity deviation only)");
 
         const Real ecfmin = args.getreal("-e", "--ecfmin", 0.0, "stop if Ecf(u) < ecfmin");
         const int saveint = args.getint("-s", "--saveinterval", 1, "save fields every s dT");
@@ -153,7 +154,7 @@ int main(int argc, char* argv[]) {
             combineVelocityScalar(fields[0], fields[1], u_with_density);
             FlowField& qfield = fields[2];
             string s;
-            s = printdiagnostics(u_with_density, dns, t, dt, flags.nu, umin, dt.variable(), pl2norm, pchnorm,
+            s = printdiagnostics(u_with_density, fields[0], dns, t, dt, flags.nu, umin, dt.variable(), pl2norm, pchnorm,
                                  pdissip, pshear, pdiverge, pUbulk, pubulk, pdPdx, pcfl);
 
             if (ecfmin > 0 && Ecf(u_with_density) < ecfmin) {
@@ -190,7 +191,8 @@ int main(int argc, char* argv[]) {
     cfMPI_Finalize();
 }
 
-string printdiagnostics(FlowField& u, const DNS& dns, Real t, const TimeStep& dt, Real nu, Real umin, bool vardt,
+string printdiagnostics(FlowField& u, const FlowField& uvel, const DNS& dns, Real t, const TimeStep& dt, Real nu,
+                        Real umin, bool vardt,
                         bool pl2norm, bool pchnorm, bool pdissip, bool pshear, bool pdiverge, bool pUbulk, bool pubulk,
                         bool pdPdx, bool pcfl) {
     // Printing diagnostics
@@ -202,7 +204,8 @@ string printdiagnostics(FlowField& u, const DNS& dns, Real t, const TimeStep& dt
         sout << "   L2Norm(u) == " << L2Norm(u) << endl;
 
     if (pchnorm || umin != 0.0) {
-        Real chnorm = chebyNorm(u);
+        // the velocity alone: u also holds the scalar, stored as C + y, which never decays to zero
+        Real chnorm = chebyNorm(uvel);
         sout << "chebyNorm(u) == " << chnorm << endl;
         if (chnorm < umin) {
             cout << "Exiting: chebyNorm(u) < umin." << endl;
