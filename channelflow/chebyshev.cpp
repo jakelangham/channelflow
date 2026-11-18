@@ -15,7 +15,9 @@
 #include <wordexp.h>
 #endif
 
+#include <unistd.h>
 #include <algorithm>
+#include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <memory>
@@ -167,6 +169,70 @@ void fftw_savewisdom(const char* filename_) {
         } else {
             fftw_export_wisdom_to_file(output_file_ptr.get());
         }
+    }
+}
+
+namespace {
+unsigned fftw_planning_flags_ = FFTW_ESTIMATE;
+string fftw_wisdom_file_;
+}  // namespace
+
+unsigned fftw_planning_flags() { return fftw_planning_flags_; }
+
+void fftw_planning_from_env() {
+    const char* p = getenv("CHFLOW_FFTW");
+    if (p && *p) {
+        const string s(p);
+        if (s == "estimate")
+            fftw_planning_flags_ = FFTW_ESTIMATE;
+        else if (s == "measure")
+            fftw_planning_flags_ = FFTW_MEASURE;
+        else if (s == "patient")
+            fftw_planning_flags_ = FFTW_PATIENT;
+        else if (s == "exhaustive")
+            fftw_planning_flags_ = FFTW_EXHAUSTIVE;
+        else
+            cferror("CHFLOW_FFTW must be estimate, measure, patient or exhaustive, not " + s);
+    }
+    const char* w = getenv("CHFLOW_FFTW_WISDOM");
+    if (w && *w) {
+        fftw_wisdom_file_ = expand_filename(w);
+#ifdef HAVE_MPI
+        fftw_mpi_init();
+#endif
+        if (mpirank() == 0) {  // a missing file is not an error: it is written at the end
+            unique_ptr<FILE, int (*)(FILE*)> f(fopen(fftw_wisdom_file_.c_str(), "r"), fclose);
+            if (f && !fftw_import_wisdom_from_file(f.get()))
+                cerr << "Can't read fftw-wisdom file " << fftw_wisdom_file_ << ", proceeding without it\n";
+        }
+#ifdef HAVE_MPI
+        fftw_mpi_broadcast_wisdom(MPI_COMM_WORLD);
+#endif
+    }
+    // on stderr: programs' stdout can be data (fieldcompare's is parsed by the regression tests)
+    if (mpirank() == 0 && (fftw_planning_flags_ != FFTW_ESTIMATE || !fftw_wisdom_file_.empty()))
+        cerr << "FFTW planning: " << (p && *p ? p : "estimate")
+             << (fftw_wisdom_file_.empty() ? string() : ", wisdom " + fftw_wisdom_file_) << endl;
+}
+
+void fftw_planning_finalize() {
+    if (fftw_wisdom_file_.empty())
+        return;
+#ifdef HAVE_MPI
+    fftw_mpi_gather_wisdom(MPI_COMM_WORLD);
+#endif
+    if (mpirank() == 0) {  // write then rename, so concurrent jobs never leave a half-written file
+        const string tmp = fftw_wisdom_file_ + ".tmp" + i2s(getpid());
+        bool ok = false;
+        {
+            unique_ptr<FILE, int (*)(FILE*)> f(fopen(tmp.c_str(), "w"), fclose);
+            if (f) {
+                fftw_export_wisdom_to_file(f.get());
+                ok = true;
+            }
+        }
+        if (!ok || std::rename(tmp.c_str(), fftw_wisdom_file_.c_str()) != 0)
+            cerr << "Can't write fftw-wisdom file " << fftw_wisdom_file_ << "\n";
     }
 }
 

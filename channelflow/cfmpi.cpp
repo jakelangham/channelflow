@@ -7,6 +7,7 @@
 
 #include "cfmpi.h"
 #include "cfbasics/cfbasics.h"
+#include "channelflow/chebyshev.h"
 
 namespace chflow {
 int cfMPI_Init(int* argc, char*** argv) {
@@ -33,10 +34,12 @@ int cfMPI_Init(int* argc, char*** argv) {
         std::cerr.rdbuf(sink->rdbuf());
     }
 #endif
+    fftw_planning_from_env();
     return res;
 }
 
 int cfMPI_Finalize() {
+    fftw_planning_finalize();
 #ifdef HAVE_MPI
     return MPI_Finalize();
 #else

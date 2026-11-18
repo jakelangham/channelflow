@@ -28,6 +28,15 @@ enum NormType { Uniform, Chebyshev };  // Uniform weighting in y or 1/sqrt(1-y^2
 void fftw_loadwisdom(const char* filename = 0);  // defaults to ~/.fftw_wisdom
 void fftw_savewisdom(const char* filename = 0);
 
+// FFTW planning for FlowField transforms, set from the environment (read in cfMPI_Init):
+//   CHFLOW_FFTW = estimate (default) | measure | patient | exhaustive: planning effort, replacing
+//     FlowField's FFTW_ESTIMATE default. Anything but estimate picks plans by timing them, so results may
+//     differ in the last bits from run to run unless the plans come from a wisdom file.
+//   CHFLOW_FFTW_WISDOM = file: wisdom loaded at start-up (if the file exists) and saved at cfMPI_Finalize.
+void fftw_planning_from_env();
+void fftw_planning_finalize();
+unsigned fftw_planning_flags();  // what FFTW_ESTIMATE in FlowField planning is replaced by
+
 Vector chebypoints(int N, Real a, Real b);  // N   pts
 
 Real chebyIP(int m, int n);  // Integral_(-1)^1 Tm(y) Tn(y) dy

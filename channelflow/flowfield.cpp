@@ -609,6 +609,8 @@ void FlowField::fftw_initialize(uint fftw_flags) {
     static int count = 0;
     static int count2 = 0;
     count++;
+    if (fftw_flags == FFTW_ESTIMATE)  // the default: planning effort from CHFLOW_FFTW (see chebyshev.h)
+        fftw_flags = fftw_planning_flags();
 #ifndef HAVE_MPI
     fftw_flags = fftw_flags | FFTW_DESTROY_INPUT;
 #endif
