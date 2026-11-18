@@ -1091,13 +1091,46 @@ int NewtonAlgorithm::hookstep(VectorXd& dxH, VectorXd& GxH, const VectorXd& x, c
         Real Delta_rL = L2IP(Gx, DG_dx);  // rL - 1/2 (G(x), G(x)) == (G(x), DG dx)
 
         Real rL = rx_ + Delta_rL;  // rL == 1/2 (G(x), G(x)) + (G(x), DG dx)
+
+        // The linear model can disagree with the hookstep, which was built from GMRES's Krylov
+        // approximation of DG, when a fresh finite difference of DG dxH flips the sign of (G, DG dxH)
+        // (long, very unstable orbits). The model is then useless for adjusting the trust region, but
+        // the actual residual rH is known: take the step if it reduced the residual, otherwise shrink
+        // the trust region and recompute the hookstep (or take an acceptable backup step). Previously
+        // the search was abandoned here even when the step had reduced the residual.
+        auto modelFailed = [&]() -> int {  // 0: step taken, 1: give up, 2: recompute hookstep
+            if (rH < rx_) {
+                *os << "But the step reduced the residual (" << rx_ << " -> " << rH
+                    << "): take it and halve the trust region." << endl;
+                delta_ = std::max(0.5 * std::min(delta_, L2Norm(dxH, Nconstr0)), searchflags.deltaMin);
+                return 0;
+            }
+            if (have_backup) {
+                *os << "Take the backup step, which reduced the residual." << endl;
+                dxH = backup_dxH;
+                GxH = backup_GxH;
+                delta_ = backup_delta;
+                return 0;
+            }
+            delta_ *= 0.5;
+            if (delta_ < searchflags.deltaMin) {
+                *os << "The step did not reduce the residual and delta < deltaMin. Returning best answer so far."
+                    << endl;
+                return 1;
+            }
+            *os << "The step did not reduce the residual: halve the trust region (delta == " << delta_
+                << ") and recompute the hookstep." << endl;
+            return 2;
+        };
         if (rL >= rx_) {
             *os << "error : local linear model of residual is increasing, indicating\n"
                 << "        that the solution to the Newton equations is inaccurate\n";
 
             if (searchflags.centdiff == true) {
-                *os << "Returning best answer so far." << endl;
-                return 1;
+                const int k = modelFailed();
+                if (k == 2)
+                    continue;
+                return k;
             } else {
                 *os << "Trying local linear model again, using centered finite differencing" << endl;
                 //           DG_dx = dsiG.Jacobian ( x, dxH, Gx, epsDx, true, fcount_hookstep );
@@ -1109,9 +1142,11 @@ int NewtonAlgorithm::hookstep(VectorXd& dxH, VectorXd& GxH, const VectorXd& x, c
                 rL = rx_ + Delta_rL;         // rL == 1/2 (G(x),G(x)) + (G(x), DG dx)
 
                 if (rL >= rx_) {
-                    *os << "error : centered differencing didn't help\n"
-                        << "Returning best answer so far." << endl;
-                    return 1;
+                    *os << "error : centered differencing didn't help" << endl;
+                    const int k = modelFailed();
+                    if (k == 2)
+                        continue;
+                    return k;
                 }
                 // if we get here, centered differencing does help, and we can continue
             }
