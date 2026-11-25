@@ -64,9 +64,12 @@ std::string concstatsheader();                                 // header for con
 // Statistics of a stratified scalar c (the density perturbation about -g; 4-component state), as volume
 // means: <c>, <c^2>/2 (available potential energy / Ri), the perturbation fluxes <u c>, <v c>, <w c>,
 // the scalar dissipation chi = kappa <|grad c|^2> (d<c^2/2>/dt = <u_g c> - chi with homogeneous wall
-// BCs), and the buoyancy flux -Ri <u_g c> (its source in the kinetic energy budget)
+// BCs), and the buoyancy flux -Ri <u_g c> (its source in the kinetic energy budget); then the
+// perturbation's kinetic energy ke = <|u|^2>/2, shear production prod = -<u v U'> and dissipation
+// eps = nu <|grad u|^2>: d ke/dt = prod - eps + buoyflux for a base flow with U'' = 0 (Couette) and
+// no imposed pressure gradient
 std::string stratstatsheader_t(const std::string tname = "t");
-std::string stratstats_t(const FlowField& u4, const SettlingScalar& sc, Real t);
+std::string stratstats_t(const FlowField& u4, const SettlingScalar& sc, const ChebyCoeff& Ubase, Real nu, Real t);
 
 }  // namespace chflow
 #endif  // SETTLINGSTATS_H

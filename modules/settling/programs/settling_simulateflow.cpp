@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
             cout << s;
             if (statint != 0 && i % statint == 0) {
                 eout << fieldstats_t(u_with_density, t) << endl;
-                concout << (scalar.stratified() ? stratstats_t(u_with_density, scalar, t)
+                concout << (scalar.stratified() ? stratstats_t(u_with_density, scalar, dns.Ubase(), flags.nu, t)
                                                 : concstats_t(u_with_density, vel, uc, t))
                         << endl;
             }

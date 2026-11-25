@@ -1095,11 +1095,12 @@ string concstats(const FlowField& u, FlowField& vel, FlowField& uc) {
 string stratstatsheader_t(const string tname) {
     stringstream header;
     header << setw(8) << "#(" << tname << ")" << setw(14) << "cbulk" << setw(14) << "c2/2" << setw(14) << "uc"
-           << setw(14) << "vc" << setw(14) << "wc" << setw(14) << "chi" << setw(14) << "buoyflux";
+           << setw(14) << "vc" << setw(14) << "wc" << setw(14) << "chi" << setw(14) << "buoyflux" << setw(14)
+           << "ke" << setw(14) << "prod" << setw(14) << "eps";
     return header.str();
 }
 
-string stratstats_t(const FlowField& u4, const SettlingScalar& sc, Real t) {
+string stratstats_t(const FlowField& u4, const SettlingScalar& sc, const ChebyCoeff& Ubase, Real nu, Real t) {
     FlowField u, c;
     splitVelocityScalar(u4, u, c);
     u.makeSpectral();
@@ -1110,9 +1111,33 @@ string stratstats_t(const FlowField& u4, const SettlingScalar& sc, Real t) {
         flux[i] = L2InnerProduct(ui, c);
     }
     const Real chi = sc.kappa * L2Norm2(grad(c));
+
+    // shear production -<u v U'>: the xz-mean of u v (exact for dealiased fields), times U', averaged in y
+    FlowField uv = u[0], vf = u[1];
+    uv.makePhysical();
+    vf.makePhysical();
+    uv *= vf;
+    uv.makeSpectral();
+    Real prod = 0.0;
+    if (uv.taskid() == uv.task_coeff(0, 0)) {
+        ChebyCoeff uvmean = Re(uv.profile(0, 0, 0));
+        ChebyCoeff Uy = diff(Ubase);
+        uvmean.makePhysical();
+        Uy.makePhysical();
+        for (int ny = 0; ny < uvmean.N(); ++ny)
+            uvmean[ny] *= Uy[ny];
+        uvmean.makeSpectral();
+        prod = -uvmean.mean();
+    }
+#ifdef HAVE_MPI
+    MPI_Bcast(&prod, 1, MPI_DOUBLE, uv.task_coeff(0, 0), *uv.comm_world());
+#endif
+    const Real eps = nu * L2Norm2(grad(u));
+
     stringstream s;
     s << setw(8) << t << setw(14) << getCbulk(u4) << setw(14) << 0.5 * L2Norm2(c) << setw(14) << flux[0]
-      << setw(14) << flux[1] << setw(14) << flux[2] << setw(14) << chi << setw(14) << -sc.Ri * flux[sc.gravity()];
+      << setw(14) << flux[1] << setw(14) << flux[2] << setw(14) << chi << setw(14) << -sc.Ri * flux[sc.gravity()]
+      << setw(14) << 0.5 * L2Norm2(u) << setw(14) << prod << setw(14) << eps;
     return s.str();
 }
 
