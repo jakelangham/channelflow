@@ -145,6 +145,8 @@ int main(int argc, char* argv[]) {
         const vector<SettlingScalar> scalars = settlingScalars(flags);
         if (scalars.size() != 1 || scalars[0].Ri != 0.0)
             cferror("scalarorbit : needs one passive scalar (-ri 0)");
+        if (scalars[0].stratified())
+            cferror("scalarorbit : its profiles and fluxes assume a settling scalar (-strat none)");
 
         CfMPI* cfmpi = &CfMPI::getInstance(nproc0, nproc1);
 

@@ -2,6 +2,8 @@
 set(settling_TESTS settling_packingTest settling_scalarsolverTest)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/settle_eq3.nc DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data)
+# dnsflags.txt as written before the stratified scalar (%Pr, no %scalarmodel/%scalarbc)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/legacy/dnsflags.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/legacy)
 
 foreach (program ${settling_TESTS})
     install_channelflow_application(${program} OFF)

@@ -628,5 +628,12 @@ void field2vector(const FlowField& u, Eigen::VectorXd& v);
 void vector2field(const Eigen::VectorXd& v, FlowField& u);
 void fixdivnoslip(FlowField& u);
 
+// Symmetries of a 4-component field (velocity, and the settling module's scalar in component 3): the
+// scalar takes the overall sign s and, if an axis i (0, 1, 2) is set, the sign of that axis as u_i does
+// (a stratification's density perturbation along gravity e_i). -1, the default, sets none (a settling
+// concentration). Process-wide; set by the settling module from DNSFlags::scalarmodel.
+void setScalarParityAxis(int i);
+int scalarParityAxis();
+
 }  // namespace chflow
 #endif

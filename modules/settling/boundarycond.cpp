@@ -47,6 +47,8 @@ void fixBC(ChebyCoeff& f, BoundaryCond bc) {
         fixNeumRobin(f, 0.0, 0.0, bc.alpha_); 
     else if (bc.type_ == ScalarBCType::NoFlux)
         fixNoFlux(f, 0.0, 0.0, bc.alpha_); 
+    else if (bc.type_ == ScalarBCType::Neum)
+        fixNeum(f);
 }
 
 void fixBC(ChebyCoeff& f, Real ga, Real gb, BoundaryCond bc) {
@@ -56,6 +58,10 @@ void fixBC(ChebyCoeff& f, Real ga, Real gb, BoundaryCond bc) {
         fixDiriRobin(f, ga, gb, bc.alpha_);
     else if (bc.type_ == ScalarBCType::NoFlux)
         fixNoFlux(f, ga, gb, bc.alpha_);
+    else if (bc.type_ == ScalarBCType::Neum)
+        fixNeum(f, ga, gb);
+    else
+        cferror("fixBC : inhomogeneous values are not implemented for this BC type");
 }
 
 // JL cater for nonzero Dirichlet boundary values ga, gb
@@ -107,6 +113,27 @@ void fixNoFlux(ChebyCoeff& f, Real ga, Real gb, Real alpha) {
     //f[0] -= (alpha - 1) * (alpha * fb + sb - gb) / 2.0 / alpha + (alpha + 1) * (alpha * fa + sa - ga) / 2.0 / alpha;
     f[0] = tmp;
     f[1] -= (sb + alpha * fb - sa - alpha * fa + ga - gb) / (2.0 * alpha);
+}
+
+// T_n'(1) = n^2 and T_n'(-1) = (-1)^(n+1) n^2: the odd coefficients set f'(1) + f'(-1), the even ones
+// f'(1) - f'(-1), so coefficient 1 fixes the first and coefficient 2 the second.
+void fixNeum(ChebyCoeff& f, Real ga, Real gb) {
+    Real odd = 0.5 * (gb + ga), even = 0.5 * (gb - ga);  // sum of n^2 f_n over odd n, over even n
+    for (int n = 3; n < f.N(); n += 2)
+        odd -= Real(n) * n * f[n];
+    for (int n = 4; n < f.N(); n += 2)
+        even -= Real(n) * n * f[n];
+    f[1] = odd;
+    f[2] = even / 4.0;
+}
+
+// mean(T_n) = 1/(1 - n^2) for even n, 0 for odd n
+void fixNeumZeroMean(ChebyCoeff& f) {
+    fixNeum(f);
+    Real mean = 0.0;
+    for (int n = 2; n < f.N(); n += 2)
+        mean += f[n] / (1.0 - Real(n) * n);
+    f[0] = -mean;
 }
 
 void fixNoFluxNormaliseMass(ChebyCoeff& f, Real ga, Real gb, Real alpha) {

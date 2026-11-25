@@ -11,6 +11,7 @@
 
 #include <string>
 #include "channelflow/flowfield.h"
+#include "modules/settling/settlingnse.h"
 
 namespace chflow {
 
@@ -59,6 +60,13 @@ std::string concstats_t(const FlowField& u, FlowField& vel, FlowField& uc, Real 
 std::string concstatsheader_t(const std::string tname = "t");  // header for concstats
 std::string concstats(const FlowField& u, FlowField& vel, FlowField& uc);                     // return some information about c
 std::string concstatsheader();                                 // header for concstats
+
+// Statistics of a stratified scalar c (the density perturbation about -g; 4-component state), as volume
+// means: <c>, <c^2>/2 (available potential energy / Ri), the perturbation fluxes <u c>, <v c>, <w c>,
+// the scalar dissipation chi = kappa <|grad c|^2> (d<c^2/2>/dt = <u_g c> - chi with homogeneous wall
+// BCs), and the buoyancy flux -Ri <u_g c> (its source in the kinetic energy budget)
+std::string stratstatsheader_t(const std::string tname = "t");
+std::string stratstats_t(const FlowField& u4, const SettlingScalar& sc, Real t);
 
 }  // namespace chflow
 #endif  // SETTLINGSTATS_H

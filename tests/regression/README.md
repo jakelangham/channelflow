@@ -34,6 +34,9 @@ runs the CTest unit/integration tests that currently pass.
 | rpo1 | full | relative periodic orbit at Ri = 5.24e-4 (drifting in x), Newton + period + shift | 20 s |
 | floquet1 | full | Floquet multipliers of upo1 (Arnoldi, 40 vectors): leading, number unstable, two marginal | 12 min |
 | mpi | full | the MPI build's CTest suite; eq1, eq3, traj1 on 2 MPI processes, grids 2x1 and 1x2, match serial (needs `-m`) | 2.5 min |
+| stratz1 | quick | equilibrium with a stratification along z (Dirichlet), Newton; s1 flips the density perturbation | 1 s |
+| straty1 | quick | equilibrium with a stratification along y (Neumann, mean pinned), Newton | 1 s |
+| stratgrowth1 | full | linear growth rate along z (Facchini et al. 2018 reference case, Dirichlet and Neumann) vs `linstab_strat.py` | 1 min |
 
 Every case also checks that its output field keeps the NetCDF layout of the reference
 (dimensions, `Component_0`..`Component_3`, geometry attributes), since external scripts read it.
@@ -206,6 +209,29 @@ out of git.
 - ri1: Ri = 0 to 6.28e-4 with -xrel: eq1 becomes a travelling wave as Ri moves away from 0 (the
   shift-rotate symmetry is broken; Langham & Hogg 2026, section 4); fresh residual 6.6e-15. Ri
   continuation is how most of the paper's results were obtained.
+
+## stratz1, straty1 — equilibria with a linear stratification
+
+- The module's scalar as a linear stable stratification (`-strat y|z`, `-sbc diri|neum`, `-sc`; the
+  diffusivity is nu/Sc): `stratz1_16x35x32.nc` along z with Dirichlet walls, Ri = 0.001, Sc = 1;
+  `straty1_16x35x32.nc` along y with Neumann walls, Ri = 0.001, Sc = 2. Both s1-symmetric (`s1.asc`):
+  s1 reflects z, so along z it flips the density perturbation (as it does w), along y it leaves it.
+- Provenance (2026-11-25): eq1's velocity with a zero scalar, Newton at Ri = 0 (the passive scalar),
+  continuation in Ri (stratz1: three steps to Ri = 7.6e-4), then findsoln at Ri = 0.001 to
+  L2Norm(G) = 2.0e-14 (stratz1) and 2.2e-16 (straty1, from a Newton solve at Ri = 0.001, Sc = 1).
+- MPI (2x1 and 1x2) reproduces the residuals of the Ri = 0 solutions to 4 digits.
+
+## stratgrowth1 — linear instability of the spanwise-stratified flow
+
+- Facchini et al. (2018, JFM 853) reference case: Re = 966, Fr = 0.82 (Ri = 1/Fr^2), Sc = 7, box
+  2pi/0.96 x 2 x 2pi/5.16, 16x49x16, from random noise (`randomfield -sd 3`). The growth rate of
+  L2Norm over t = 300..600 matches the leading eigenvalue of `linstab_strat.py` (Chebyshev
+  collocation of the linearised equations, independent of channelflow) to 1e-8: 0.0086343687
+  (Dirichlet), 0.0077769007 (Neumann). Unchanged with Ny = 65 or dt = 0.01. The paper gives no number
+  at Sc = 7; at Sc = inf, Re = 1000, Fr = 1 `linstab_strat.py` gives 0.01155 at their most unstable
+  (kx, kz) = (0.815, 4.937), consistent with their figure 2 (stationary, Im(omega) just under 0.012).
+- The same check along y (Ri = -0.02 < 0, convective rolls at Re = 100) gave 0.024384 (Dirichlet)
+  and 0.032524 (Neumann) against 0.0243837 and 0.0325245; not a regression case.
 
 ## Effect of the buoyancy tau-correction fix (commit 9ab93c7)
 

@@ -101,6 +101,10 @@ ScalarSolver::ScalarSolver(int numberModes, BoundaryCond bc, Real a, Real b, Rea
                 r0[i] = sgn * (bc.alpha_ - ii);  // u'(-1) + alpha u(-1)
                 r1[i] = ii + bc.alpha_;          // u'(1) + alpha u(1)
                 break;
+            case ScalarBCType::Neum:
+                r0[i] = -sgn * ii;  // u'(-1)
+                r1[i] = ii;         // u'(1)
+                break;
         }
     }
     crow_ = {r0, r1};

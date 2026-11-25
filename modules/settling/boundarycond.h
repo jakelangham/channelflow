@@ -1,11 +1,11 @@
 /**
- * Boundary conditions of a scalar field in y (Dirichlet, Dirichlet/Robin, Neumann/Robin, no flux)
+ * Boundary conditions of a scalar field in y (Dirichlet, Dirichlet/Robin, Neumann/Robin, no flux, Neumann)
  * and the functions that impose them on Chebyshev expansions.
  *
  * Robin conditions are f' + alpha f = g. No flux, kappa c' + vs c = 0, is a Robin condition at both
  * walls with alpha = vs/kappa (for the stored field c + y, g = 1 -/+ alpha for the mean mode).
- * The settling module uses NoFlux; the other types are kept for later use and are covered by the
- * module's unit tests only.
+ * The settling scalar uses NoFlux, a stratified scalar Diri or Neum (homogeneous: u = 0 or u' = 0 at
+ * both walls); DiriRobin and NeumRobin are covered by the module's unit tests only.
  *
  * This file is a part of channelflow version 2.0.
  * License is GNU GPL version 2 or later: https://channelflow.org/license
@@ -20,7 +20,7 @@
 
 namespace chflow {
 
-enum class ScalarBCType { Diri, DiriRobin, NeumRobin, NoFlux };
+enum class ScalarBCType { Diri, DiriRobin, NeumRobin, NoFlux, Neum };
 
 class BoundaryCond {
    public:
@@ -52,6 +52,10 @@ void fixDiri(ChebyCoeff& f, Real ga, Real gb);
 void fixDiriRobin(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
 void fixNeumRobin(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
 void fixNoFlux(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
+// f'(-1) = ga, f'(1) = gb, by changing coefficients 1 and 2 (Neumann leaves coefficient 0 free)
+void fixNeum(ChebyCoeff& f, Real ga = 0, Real gb = 0);
+// f' = 0 at both walls and mean(f) = 0, by changing coefficients 1, 2 and 0
+void fixNeumZeroMean(ChebyCoeff& f);
 // fixNoFlux and mean(f) = 1, by changing coefficients 0, 1 and 2
 void fixNoFluxNormaliseMass(ChebyCoeff& f, Real ga = 0, Real gb = 0, Real alpha = 0);
 

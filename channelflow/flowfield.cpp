@@ -1102,6 +1102,14 @@ BasisFunc FlowField::profile(int mx, int mz) const {
     return rtn;
 }
 
+static int scalarParityAxis_ = -1;
+void setScalarParityAxis(int i) {
+    if (i < -1 || i > 2)
+        cferror("setScalarParityAxis : axis " + i2s(i) + " is not one of -1 (none), 0, 1, 2");
+    scalarParityAxis_ = i;
+}
+int scalarParityAxis() { return scalarParityAxis_; }
+
 int sign_i(const FieldSymmetry& sigma, int n, int Nd) {
     switch (Nd) {
         case 0:
@@ -1110,9 +1118,11 @@ int sign_i(const FieldSymmetry& sigma, int n, int Nd) {
         case 3:
             return sigma.s(n);
         case 4:
-            // velocity and a scalar (the settling module's state): the scalar takes only the overall
-            // sign sigma.s(), which multiplies every component
-            return n < 3 ? sigma.s(n) : 1;
+            // velocity and a scalar (the settling module's state): the scalar takes the overall sign
+            // sigma.s(), which multiplies every component, and that of its parity axis if one is set
+            if (n < 3)
+                return sigma.s(n);
+            return scalarParityAxis_ >= 0 ? sigma.s(scalarParityAxis_) : 1;
         case 6: {
             //***** Components of a symmetric tensor *****
             //  ***** 0 ---------- 00 *****

@@ -59,6 +59,7 @@ int main() {
         {"NeumRobin", ScalarBCType::NeumRobin, dua, dub + alpha * ub, false},
         {"NoFlux", ScalarBCType::NoFlux, dua + alpha * ua, dub + alpha * ub, false},
         {"NoFlux+mass", ScalarBCType::NoFlux, dua + alpha * ua, dub + alpha * ub, true},
+        {"Neum", ScalarBCType::Neum, dua, dub, false},
     };
 
     cout << "solvers: max |u - u_exact| (coefficients), dense and ScalarSolver" << endl;
@@ -87,6 +88,8 @@ int main() {
     for (int Nm : {17, 35, 61, 181})
         for (Real lam : {0.0, 3.1, 2.0e4})
             for (const Case& c : cases) {
+                if (lam == 0.0 && c.type == ScalarBCType::Neum)
+                    continue;  // u'' = f with u' given at both walls: singular (u + const)
                 const Real nuk = 2.5e-3;
                 BoundaryCond bc(c.type, 1, 1, 0.3, -0.7, alpha);
                 DenseHelmholtzSolver dense(Nm, bc, -1, 1, lam, nuk, c.mass);
@@ -112,8 +115,9 @@ int main() {
     cout << "  worst over N = 17, 35, 61, 181, lambda = 0, 3.1, 2e4, every BC: " << worst
          << " (cases above 1e-10 are listed)" << endl;
 
-    // fixBC imposes the inhomogeneous BC through coefficients 0 and 1 (Diri, DiriRobin, NoFlux)
-    cout << "fixBC: BC residual after perturbing coefficients 0, 1" << endl;
+    // fixBC imposes the inhomogeneous BC through coefficients 0 and 1 (Diri, DiriRobin, NoFlux), or
+    // 1 and 2 (Neum)
+    cout << "fixBC: BC residual after perturbing coefficients 0, 1, 2" << endl;
     for (const Case& c : cases) {
         if (c.type == ScalarBCType::NeumRobin || c.mass)
             continue;  // fixBC(f, ga, gb, bc) has no NeumRobin branch; the mass is checked below
@@ -121,9 +125,18 @@ int main() {
         ChebyCoeff v(u);
         v[0] += 0.1;
         v[1] -= 0.2;
+        v[2] += 0.05;
+        const Real v0 = v[0];
         fixBC(v, c.g0, c.g1, bc);
-        const Real r0 = (c.type == ScalarBCType::NoFlux) ? v.slope_a() + alpha * v.eval_a() - c.g0 : v.eval_a() - c.g0;
-        const Real r1 = (c.type == ScalarBCType::Diri) ? v.eval_b() - c.g1 : v.slope_b() + alpha * v.eval_b() - c.g1;
+        Real r0, r1;
+        if (c.type == ScalarBCType::Neum) {
+            r0 = v.slope_a() - c.g0;
+            r1 = v.slope_b() - c.g1;
+            r1 = max(abs(r1), abs(v[0] - v0));  // coefficient 0 is left as it is
+        } else {
+            r0 = (c.type == ScalarBCType::NoFlux) ? v.slope_a() + alpha * v.eval_a() - c.g0 : v.eval_a() - c.g0;
+            r1 = (c.type == ScalarBCType::Diri) ? v.eval_b() - c.g1 : v.slope_b() + alpha * v.eval_b() - c.g1;
+        }
         const Real err = max(abs(r0), abs(r1));
         cout << "  " << c.name << " " << err << endl;
         if (!(err < tol))
@@ -142,6 +155,16 @@ int main() {
         const Real err = max(max(abs(v.slope_a() + alpha * v.eval_a() - ga), abs(v.slope_b() + alpha * v.eval_b() - gb)),
                              abs(v.mean() - 1.0));
         cout << "fixNoFluxNormaliseMass: BC and mass residual " << err << endl;
+        if (!(err < tol))
+            failure = 1;
+    }
+
+    // fixNeumZeroMean imposes u' = 0 at both walls and mean(u) = 0 through coefficients 1, 2 and 0
+    {
+        ChebyCoeff v(u);
+        fixNeumZeroMean(v);
+        const Real err = max(max(abs(v.slope_a()), abs(v.slope_b())), abs(v.mean()));
+        cout << "fixNeumZeroMean: BC and mean residual " << err << endl;
         if (!(err < tol))
             failure = 1;
     }

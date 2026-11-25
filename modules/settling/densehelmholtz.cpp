@@ -156,6 +156,11 @@ DenseHelmholtzSolver::DenseHelmholtzSolver(int numberModes, BoundaryCond bc, Rea
             }
             A_.elem(1, i) = i * i + bc.alpha_;
         }
+    } else if (bc.type_ == ScalarBCType::Neum) {
+        for (i = 0; i < nModes_; ++i) {
+            A_.elem(0, i) = (i % 2 == 0) ? -i * i : i * i;  // u'(-1)
+            A_.elem(1, i) = i * i;                          // u'(1)
+        }
     }
 
     A_.ULdecomp();

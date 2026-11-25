@@ -16,19 +16,20 @@
 
 namespace chflow {
 
-/** Newton-vector packing of one settling scalar c (stored as c + y): the coefficients left free by
- * the no-flux BC and, for the mean mode, the unit-mass constraint. */
-int scalarVectorSize(const FlowField& c);
-void scalarToVector(const FlowField& c, Eigen::VectorXd& x, int& n);  // writes from x(n), advances n
+/** Newton-vector packing of one scalar c: the coefficients left free by its BC (no flux for a settling
+ * scalar, stored as c + y; Dirichlet or Neumann for a stratification) and, for the mean mode, the
+ * settling scalar's unit mass or a pinned zero mean (SettlingScalar::pinMean). */
+int scalarVectorSize(const FlowField& c, const SettlingScalar& sc);
+void scalarToVector(const FlowField& c, Eigen::VectorXd& x, int& n, const SettlingScalar& sc);  // from x(n), advances n
 void vectorToScalar(const Eigen::VectorXd& x, int& n, FlowField& c, const SettlingScalar& sc);
 
-/** Impose the scalar's no-flux BC and unit mass on c (a round trip through its packing) */
+/** Impose the scalar's BC (and unit mass or zero mean) on c (a round trip through its packing) */
 void projectScalar(FlowField& c, const SettlingScalar& sc);
 /** As fixdivnoslip for a 4-component state: divergence-free no-slip velocity, and projectScalar */
 void fixdivnoslipSettling(FlowField& u4, const SettlingScalar& sc);
 
 /** Continuation parameters of the settling equations; none defers to cfDSI's (Re, T, P, ...) */
-enum class settling_continuationParameter { none, Ri, vsett, kappa };
+enum class settling_continuationParameter { none, Ri, vsett, kappa, Sc };
 
 class SettlingDSI : public cfDSI {
    public:
@@ -42,8 +43,9 @@ class SettlingDSI : public cfDSI {
     void fieldToVector(const FlowField& u, Eigen::VectorXd& x) override;
     void vectorToField(const Eigen::VectorXd& x, FlowField& u) override;
 
-    /// \name Continuation in Ri, vsett, kappa (names as for -cont), or any of cfDSI's parameters.
-    /// The no-flux BC follows vsett and kappa, since it is rebuilt from dnsflags_ when unpacking.
+    /// \name Continuation in Ri, vsett, kappa (settling) or Sc (stratified) (names as for -cont), or any
+    /// of cfDSI's parameters. The no-flux BC follows vsett and kappa, since it is rebuilt from dnsflags_
+    /// when unpacking; a stratification's diffusivity nu/Sc follows Re.
     void chooseMuSettling(std::string muName);
     void updateMu(Real mu) override;
     std::string printMu() override;

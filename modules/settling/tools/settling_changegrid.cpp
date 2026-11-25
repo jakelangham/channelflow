@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
         string purpose(
             "interpolate a given flowfield onto a different grid. A 4-component field (velocity and "
             "settling scalar in component 3) keeps its scalar; with -vsok, -dv also imposes the "
-            "scalar's no-flux BC and unit mass");
+            "scalar's no-flux BC and unit mass, with -strat y|z a stratified scalar's BC (-sbc)");
         ArgList args(argc, argv, purpose);  // Assign parameters
 
         const bool padded = args.getbool("-p", "--padded", true, "set padding modes to zero");
@@ -35,6 +35,12 @@ int main(int argc, char* argv[]) {
         const Real gamma = args.getreal("-ga", "--gamma", 0.0, "new gamma == 2pi/Lz");
         const Real vs_o_kappa =
             args.getreal("-vsok", "--vsoverkappa", 0.0, "vs/kappa of the settling scalar (for -dv; 0 == leave it)");
+        const ScalarModel model = s2scalarmodel(args.getstr(
+            "-strat", "--stratification", "none", "stratified scalar along y or z (for -dv; none == see -vsok)"));
+        const ScalarWallBC wallbc =
+            s2scalarwallbc(args.getstr("-sbc", "--scalarbc", "diri", "a stratified scalar's wall BC, [diri|neum]"));
+        if (model != SettlingModel && vs_o_kappa != 0)
+            cferror("settling_changegrid : give -vsok (settling scalar) or -strat (stratified scalar), not both");
         const Real lx = (alpha == 0) ? args.getreal("-lx", "--lx", 0.0, "new Lx = 2 pi lx") : 1.0 / alpha;
         const Real lz = (gamma == 0) ? args.getreal("-lz", "--lz", 0.0, "new Lz = 2 pi lz") : 1.0 / gamma;
         /***/ Real Lx = (lx == 0.0) ? args.getreal("-Lx", "--Lx", 0.0, "streamwise (x) box length") : 2 * pi * lx;
@@ -113,8 +119,13 @@ int main(int argc, char* argv[]) {
                         projectScalar(c1, SettlingScalar{0.0, vs_o_kappa, 1.0});
                         cout << "scalar: imposed the no-flux BC (vs/kappa == " << vs_o_kappa << ") and unit mass"
                              << endl;
+                    } else if (model != SettlingModel) {
+                        const SettlingScalar sc(0.0, 0.0, 1.0, model, wallbc);
+                        projectScalar(c1, sc);
+                        cout << "scalar: imposed the stratified scalar's " << scalarwallbc2string(wallbc) << " BC"
+                             << (sc.pinMean() ? " and zero mean" : "") << endl;
                     } else {
-                        cout << "scalar: BC and mass unchanged (give -vsok to impose them)" << endl;
+                        cout << "scalar: BC and mass unchanged (give -vsok or -strat to impose them)" << endl;
                     }
                 }
             } else {

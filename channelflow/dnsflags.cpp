@@ -109,7 +109,7 @@ void BodyForce::eval(Real t, FlowField& f) {
 // virtual
 bool BodyForce::isOn(Real t) { return true; }
 
-DNSFlags::DNSFlags(Real nu_, Real Pr_, Real Ri_, Real vs_, Real kappa_, Real dPdx_, Real dPdz_, Real Ubulk_, Real Wbulk_, Real Uwall_, Real ulowerwall_,
+DNSFlags::DNSFlags(Real nu_, Real Sc_, Real Ri_, Real vs_, Real kappa_, Real dPdx_, Real dPdz_, Real Ubulk_, Real Wbulk_, Real Uwall_, Real ulowerwall_,
                    Real uupperwall_, Real wlowerwall_, Real wupperwall_, Real theta_, Real Vsuck_, Real rotation_,
                    Real t0_, Real T_, Real dT_, Real dt_, bool variabledt_, Real dtmin_, Real dtmax_, Real CFLmin_,
                    Real CFLmax_, Real symmetryprojectioninterval_, BaseFlow baseflow_, MeanConstraint constraint_,
@@ -125,10 +125,12 @@ DNSFlags::DNSFlags(Real nu_, Real Pr_, Real Ri_, Real vs_, Real kappa_, Real dPd
       bodyforce(bodyforce_),
       taucorrection(taucorrection_),
       nu(nu_),
-      Pr(Pr_),
+      Sc(Sc_),
       Ri(Ri_),
       vs(vs_),
       kappa(kappa_),
+      scalarmodel(SettlingModel),
+      scalarbc(DirichletWalls),
       Vsuck(Vsuck_),
       rotation(rotation_),
       theta(theta_),
@@ -174,10 +176,19 @@ DNSFlags::DNSFlags(ArgList& args, const bool laurette)
     const Real nuarg =
         args.getreal("-nu", "--nu", 0, "kinematic viscosity (takes precedence over Reynolds, if nonzero)");
     nu = (nuarg != 0) ? nuarg : 1.0 / Reynolds;
-    Pr = args.getreal("-pr", "--pr", 1, "Prandtl number");
     Ri = args.getreal("-ri", "--ri", 0, "Richardson number");
-    vs = args.getreal("-vsett", "--settling", 0, "settling velocity");
-    kappa = args.getreal("-kap", "--kappa", 1, "concentration diffusivity");
+    const string scalarstr = args.getstr("-strat", "--stratification", "none",
+                                         "scalar of the settling module: none (a settling suspension), or a linear "
+                                         "stable stratification along y (wall-normal) or z (spanwise), [none|y|z]");
+    scalarmodel = s2scalarmodel(scalarstr);
+    vs = args.getreal("-vsett", "--settling", 0, "settling velocity (settling scalar)");
+    kappa = args.getreal("-kap", "--kappa", 1, "concentration diffusivity (settling scalar)");
+    Sc = args.getreal("-sc", "--Schmidt", 1, "Schmidt number nu/kappa (stratified scalar)");
+    const string sbcstr = args.getstr("-sbc", "--scalarbc", "diri",
+                                      "wall condition on a stratified scalar's perturbation, [diri|neum]");
+    scalarbc = s2scalarwallbc(sbcstr);
+    // symmetries of 4-component states (e.g. a program's -symms projection) treat the scalar to match
+    setScalarParityAxis(scalarmodel == StratifiedY ? 1 : (scalarmodel == StratifiedZ ? 2 : -1));
     // more general dnsflags
     args2BC(args);
     args2numerics(args, laurette);
@@ -287,6 +298,8 @@ ostream& operator<<(ostream& os, TimeStepMethod t) { return os << stepmethod2str
 ostream& operator<<(ostream& os, NonlinearMethod nonl) { return os << nonlmethod2string(nonl); }
 ostream& operator<<(ostream& os, Dealiasing d) { return os << dealiasing2string(d); }
 ostream& operator<<(ostream& os, Verbosity v) { return os << verbosity2string(v); }
+ostream& operator<<(ostream& os, ScalarModel m) { return os << scalarmodel2string(m); }
+ostream& operator<<(ostream& os, ScalarWallBC b) { return os << scalarwallbc2string(b); }
 
 string dealiasing2string(Dealiasing d) {
     string s;
@@ -379,6 +392,28 @@ string verbosity2string(Verbosity v) {
             s = "Invalid Verbosity value: please submit bug report";
     }
     return s;
+}
+
+string scalarmodel2string(ScalarModel m) {
+    switch (m) {
+        case SettlingModel:
+            return "settling";
+        case StratifiedY:
+            return "stratified_y";
+        case StratifiedZ:
+            return "stratified_z";
+    }
+    return "Invalid ScalarModel value: please submit bug report";
+}
+
+string scalarwallbc2string(ScalarWallBC b) {
+    switch (b) {
+        case DirichletWalls:
+            return "dirichlet";
+        case NeumannWalls:
+            return "neumann";
+    }
+    return "Invalid ScalarWallBC value: please submit bug report";
 }
 
 string velocityscale2string(VelocityScale v) {
@@ -583,6 +618,28 @@ Dealiasing s2dealiasing(const std::string& s_) {
     return d;
 }
 
+ScalarModel s2scalarmodel(const std::string& s_) {
+    const string s = lowercase(s_);
+    if (s == "none" || s == "settling")
+        return SettlingModel;
+    if (s == "y" || s == "stratified_y")
+        return StratifiedY;
+    if (s == "z" || s == "stratified_z")
+        return StratifiedZ;
+    cerr << "error : s2scalarmodel(string) : unrecognized string " << s << " (expected none, y or z)" << endl;
+    exit(1);
+}
+
+ScalarWallBC s2scalarwallbc(const std::string& s_) {
+    const string s = lowercase(s_);
+    if (s == "diri" || s == "dirichlet")
+        return DirichletWalls;
+    if (s == "neum" || s == "neumann")
+        return NeumannWalls;
+    cerr << "error : s2scalarwallbc(string) : unrecognized string " << s << " (expected diri or neum)" << endl;
+    exit(1);
+}
+
 Verbosity s2verbosity(const std::string& s_) {
     Verbosity v = Silent;
     string s = lowercase(s_);
@@ -614,7 +671,7 @@ void DNSFlags::save(const string& outdir) const {
         os.precision(16);
         os.setf(ios::left);
         os << setw(REAL_IOWIDTH) << nu << "  %nu\n"
-           << setw(REAL_IOWIDTH) << Pr << "  %Pr\n"
+           << setw(REAL_IOWIDTH) << Sc << "  %Sc\n"
            << setw(REAL_IOWIDTH) << Ri << "  %Ri\n"
            << setw(REAL_IOWIDTH) << vs << "  %vs\n"
            << setw(REAL_IOWIDTH) << kappa << "  %kappa\n"
@@ -648,27 +705,49 @@ void DNSFlags::save(const string& outdir) const {
            << setw(REAL_IOWIDTH) << dealiasing << "  %dealiasing\n"
            << setw(REAL_IOWIDTH) << taucorrection << "  %taucorrection\n"
            << setw(REAL_IOWIDTH) << (bodyforce ? "nonzero_bodyforce" : "zero_bodyforce") << "  %bodyforce\n"
-           << setw(REAL_IOWIDTH) << verbosity << "  %verbosity\n";
+           << setw(REAL_IOWIDTH) << verbosity << "  %verbosity\n"
+           << setw(REAL_IOWIDTH) << scalarmodel << "  %scalarmodel\n"
+           << setw(REAL_IOWIDTH) << scalarbc << "  %scalarbc\n";
         os.unsetf(ios::left);
     }
 }
 
+// The flag list of files written before the stratified scalar: %Pr for %Sc, no scalar model or BC
+static vector<string> legacyFlagList(vector<string> list) {
+    vector<string> legacy;
+    for (const string& f : list) {
+        if (f == "%scalarmodel" || f == "%scalarbc")
+            continue;
+        legacy.push_back(f == "%Sc" ? "%Pr" : f);
+    }
+    return legacy;
+}
+
 void DNSFlags::load(int taskid, const string indir) {
     ifstream is;
+    int legacy = 0;
     if (taskid == 0) {
         is.open(indir + "dnsflags.txt");
         if (!is.good()) {
             cout << "    DNSFlags::load(taskid, indir): can't open file " + indir + "dnsflags.txt" << endl;
             return;
         }
+        // Files from before the stratified scalar have %Pr in place of %Sc and end at %verbosity
         if (!checkFlagContent(is, getFlagList())) {
-            cerr << " DNSFlags::load(taskid, indir): the order of variables in the file is not what we expect !!"
-                 << endl;
-            exit(1);
+            if (checkFlagContent(is, legacyFlagList(getFlagList())))
+                legacy = 1;
+            else {
+                cerr << " DNSFlags::load(taskid, indir): the order of variables in the file is not what we expect !!"
+                     << endl;
+                exit(1);
+            }
         }
     }
+#ifdef HAVE_MPI
+    MPI_Bcast(&legacy, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
     nu = getRealfromLine(taskid, is);
-    Pr = getRealfromLine(taskid, is);
+    Sc = getRealfromLine(taskid, is);
     Ri = getRealfromLine(taskid, is);
     vs = getRealfromLine(taskid, is);
     kappa = getRealfromLine(taskid, is);
@@ -704,11 +783,19 @@ void DNSFlags::load(int taskid, const string indir) {
     getBodyforcefromLine(taskid, is);  // calling this function returns either error or zero. Thus, next line.
     bodyforce = (BodyForce*)0;
     verbosity = parse_enum_value(is, s2verbosity, Silent);
+    if (legacy) {
+        scalarmodel = SettlingModel;
+        scalarbc = DirichletWalls;
+    } else {
+        scalarmodel = parse_enum_value(is, s2scalarmodel, SettlingModel);
+        scalarbc = parse_enum_value(is, s2scalarwallbc, DirichletWalls);
+    }
+    setScalarParityAxis(scalarmodel == StratifiedY ? 1 : (scalarmodel == StratifiedZ ? 2 : -1));
 }
 
 const vector<string> DNSFlags::getFlagList() {
     const vector<string> flagList = {"%nu",
-                                     "%Pr",
+                                     "%Sc",
                                      "%Ri",
                                      "%vs",
                                      "%kappa",
@@ -742,7 +829,9 @@ const vector<string> DNSFlags::getFlagList() {
                                      "%dealiasing",
                                      "%taucorrection",
                                      "%bodyforce",
-                                     "%verbosity"};
+                                     "%verbosity",
+                                     "%scalarmodel",
+                                     "%scalarbc"};
     return flagList;
 }
 
@@ -1000,7 +1089,7 @@ ostream& operator<<(ostream& os, const DNSFlags& flags) {
     string tau = (flags.taucorrection) ? "TauCorrection" : "NoTauCorrection";
     const int p = os.precision();
     os.precision(16);
-    os << "nu==" << flags.nu << s << "Pr==" << flags.Pr << s << "Ri==" << flags.Ri << s << "v_s==" << flags.vs << s << "kappa==" << flags.kappa << s
+    os << "nu==" << flags.nu << s << "Sc==" << flags.Sc << s << "Ri==" << flags.Ri << s << "v_s==" << flags.vs << s << "kappa==" << flags.kappa << s
        << "Vsuck==" << flags.Vsuck << s << "rotation==" << flags.rotation << s
        << "theta==" << flags.theta << s << "dPdx==" << flags.dPdx << s << "dPdz==" << flags.dPdz << s
        << "Ubulk==" << flags.Ubulk << s << "Wbulk==" << flags.Wbulk << s << "uwall==" << flags.Uwall << s
@@ -1010,7 +1099,7 @@ ostream& operator<<(ostream& os, const DNSFlags& flags) {
        << "dtmax==" << flags.dtmax << s << "CFLmin==" << flags.CFLmin << s << "CFLmax==" << flags.CFLmax << s
        << flags.baseflow << s << flags.constraint << s << flags.timestepping << s << flags.initstepping << s
        << flags.nonlinearity << s << flags.dealiasing << s << (flags.bodyforce ? "nonzero_bodyforce" : "zero_bodyforce")
-       << s << tau << s << flags.verbosity;
+       << s << tau << s << flags.verbosity << s << flags.scalarmodel << s << flags.scalarbc;
     os.precision(p);
     return os;
 }

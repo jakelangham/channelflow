@@ -1092,6 +1092,30 @@ string concstats(const FlowField& u, FlowField& vel, FlowField& uc) {
     return s.str();
 }
 
+string stratstatsheader_t(const string tname) {
+    stringstream header;
+    header << setw(8) << "#(" << tname << ")" << setw(14) << "cbulk" << setw(14) << "c2/2" << setw(14) << "uc"
+           << setw(14) << "vc" << setw(14) << "wc" << setw(14) << "chi" << setw(14) << "buoyflux";
+    return header.str();
+}
+
+string stratstats_t(const FlowField& u4, const SettlingScalar& sc, Real t) {
+    FlowField u, c;
+    splitVelocityScalar(u4, u, c);
+    u.makeSpectral();
+    c.makeSpectral();
+    Real flux[3];
+    for (int i = 0; i < 3; ++i) {
+        FlowField ui = u[i];
+        flux[i] = L2InnerProduct(ui, c);
+    }
+    const Real chi = sc.kappa * L2Norm2(grad(c));
+    stringstream s;
+    s << setw(8) << t << setw(14) << getCbulk(u4) << setw(14) << 0.5 * L2Norm2(c) << setw(14) << flux[0]
+      << setw(14) << flux[1] << setw(14) << flux[2] << setw(14) << chi << setw(14) << -sc.Ri * flux[sc.gravity()];
+    return s.str();
+}
+
 // Return some statistics about the concentration field
 string concstats_t(const FlowField& u, FlowField& vel, FlowField& uc, Real t) {
     stringstream s;

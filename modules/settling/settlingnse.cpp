@@ -8,7 +8,16 @@ using namespace std;
 
 namespace chflow {
 
-vector<SettlingScalar> settlingScalars(const DNSFlags& flags) { return {SettlingScalar{flags.Ri, flags.vs, flags.kappa}}; }
+vector<SettlingScalar> settlingScalars(const DNSFlags& flags) {
+    if (flags.scalarmodel == SettlingModel)
+        return {SettlingScalar(flags.Ri, flags.vs, flags.kappa)};
+    if (flags.vs != 0.0)
+        cferror("settlingScalars : a stratified scalar does not settle (vs must be 0)");
+    if (!(flags.Sc > 0.0))
+        cferror("settlingScalars : a stratified scalar needs Sc > 0");
+    // the diffusivity follows nu, so that continuation in Re keeps Sc fixed
+    return {SettlingScalar(flags.Ri, 0.0, flags.nu / flags.Sc, flags.scalarmodel, flags.scalarbc)};
+}
 
 void splitVelocityScalar(const FlowField& u4, FlowField& u, FlowField& c) {
     if (u4.Nd() != 4)
@@ -33,7 +42,7 @@ void combineVelocityScalar(const FlowField& u, const FlowField& c, FlowField& u4
     u4.copySubfields(c, {0}, {3});
 }
 
-void scalarAdvection(const FlowField& u_, const FlowField& c_, Real vs, FlowField& fc, FlowField& tmp) {
+void scalarAdvection(const FlowField& u_, const FlowField& c_, Real vs, int g, FlowField& fc, FlowField& tmp) {
     FlowField& u = const_cast<FlowField&>(u_);
     FlowField& c = const_cast<FlowField&>(c_);
     FlowField& gradc = tmp;
@@ -64,7 +73,7 @@ void scalarAdvection(const FlowField& u_, const FlowField& c_, Real vs, FlowFiel
                 Real f = 0.0;
                 for (int j = 0; j < 3; ++j)
                     f += u(nx, ny, nz, j) * gradc(nx, ny, nz, j);
-                f -= u(nx, ny, nz, 1) - vs;          // advection of the background -y, with settling
+                f -= u(nx, ny, nz, g) - vs;          // advection of the background -g, with settling
                 f -= vs * gradc(nx, ny, nz, 1);       // settling of the perturbation
                 fc(nx, ny, nz, 0) = f;
             }
@@ -72,6 +81,18 @@ void scalarAdvection(const FlowField& u_, const FlowField& c_, Real vs, FlowFiel
     fc.makeSpectral();
     u.makeState(uxzstate, uystate);
     c.makeState(cxzstate, cystate);
+}
+
+cfarray<FieldSymmetry> scalarSymmetries(const cfarray<FieldSymmetry>& usym, int axis) {
+    if (axis < 0)
+        return usym;
+    cfarray<FieldSymmetry> csym(usym.length());
+    for (int n = 0; n < usym.length(); ++n) {
+        const FieldSymmetry& g = usym[n];
+        const int sa = axis == 0 ? g.sx() : (axis == 1 ? g.sy() : g.sz());
+        csym[n] = FieldSymmetry(g.sx(), g.sy(), g.sz(), g.ax(), g.az(), g.s() * sa);
+    }
+    return csym;
 }
 
 SettlingNSE::SettlingNSE(const vector<FlowField>& fields, const DNSFlags& flags)
@@ -88,6 +109,8 @@ SettlingNSE::SettlingNSE(const vector<FlowField>& fields, const DNSFlags& flags)
         cferror("SettlingNSE : the scalar solver needs an odd number of Chebyshev modes");
     if (flags.nonlinearity == LinearAboutProfile)
         cferror("SettlingNSE : the linearised nonlinearity is not implemented for the settling scalar");
+    // symmetries acting on the 4-component state (e.g. Newton's sigma) treat the scalar to match
+    setScalarParityAxis(scalars_[0].parityAxis());
     ck_.assign(scalars_.size(), ComplexChebyCoeff(Nyd_, a_, b_, Spectral));
     scalarsolver_.assign(scalars_.size(), nullptr);
 }
@@ -247,6 +270,7 @@ void SettlingNSE::rotationalNonlinear(const vector<FlowField>& infields, vector<
         FlowField& c = const_cast<FlowField&>(infields[1 + i]);
         FlowField& fc = outfields[1 + i];
         const Real vs = scalars_[i].vs;
+        const int g = scalars_[i].gravity();
         assert(c.xzstate() == Spectral && c.ystate() == Spectral);
         if (!c.geomCongruent(fc) || fc.Nd() != 1)
             fc.resize(c.Nx(), c.Ny(), c.Nz(), 1, c.Lx(), c.Lz(), c.a(), c.b(), c.cfmpi());
@@ -260,7 +284,7 @@ void SettlingNSE::rotationalNonlinear(const vector<FlowField>& infields, vector<
                     Real fcn = 0.0;
                     for (int j = 0; j < 3; ++j)
                         fcn += utot_(nx, ny, nz, j) * gradc(nx, ny, nz, j);
-                    fcn -= utot_(nx, ny, nz, 1) - vs;     // advection of the background -y, with settling
+                    fcn -= utot_(nx, ny, nz, g) - vs;     // advection of the background -g, with settling
                     fcn -= vs * gradc(nx, ny, nz, 1);      // settling of the perturbation
                     fc(nx, ny, nz, 0) = fcn;
                 }
@@ -285,7 +309,7 @@ void SettlingNSE::genericNonlinear(const vector<FlowField>& infields, vector<Flo
         u.cmplx(0, 0, 0, 1) -= Complex(flags_.Vsuck, 0.);
 
     for (int i = 0; i < nscalars(); ++i)
-        scalarAdvection(u, infields[1 + i], scalars_[i].vs, outfields[1 + i], tmp_);
+        scalarAdvection(u, infields[1 + i], scalars_[i].vs, scalars_[i].gravity(), outfields[1 + i], tmp_);
 
     for (int ny = 0; ny < u.Ny(); ++ny)
         if (owner) {
@@ -398,12 +422,14 @@ void SettlingNSE::solve(vector<FlowField>& outfields, const vector<FlowField>& r
             for (int i = 0; i < nscalars(); ++i) {
                 for (int ny = 0; ny < Nyd_; ++ny)
                     Rck_.set(ny, -rhs[1 + i].cmplx(mx, ny, mz, 0));
-                const Real ga = mean ? 1.0 - scalars_[i].alpha() : 0.0;
-                const Real gb = mean ? 1.0 + scalars_[i].alpha() : 0.0;
+                const SettlingScalar& sc = scalars_[i];
+                const Real ga = mean ? sc.meanga() : 0.0;
+                const Real gb = mean ? sc.meangb() : 0.0;
                 scalarsolver_[i][s][ix][iz].solve(ck_[i].re, Rck_.re, ga, gb, 1.0);
                 scalarsolver_[i][s][ix][iz].solve(ck_[i].im, Rck_.im, 0.0, 0.0, 0.0);
+                ComplexChebyCoeff& Rgk = sc.gravity() == 2 ? Rwk_ : Rvk_;
                 for (int ny = 0; ny < Nyd_; ++ny)
-                    Rvk_.sub(ny, scalars_[i].Ri * ck_[i][ny]);
+                    Rgk.sub(ny, sc.Ri * ck_[i][ny]);
             }
 
             if (prescribedVelocity_) {
@@ -493,7 +519,7 @@ void SettlingNSE::reset_lambda(const vector<Real> lambda_t) {
                     const SettlingScalar& sc = scalars_[i];
                     scalarsolver_[i][j][mx][mz] =
                         ScalarSolver(Nyd_, sc.bc(Mxloc_, Mzloc_), a_, b_, lambda_t[j] + sc.kappa * k2,
-                                             sc.kappa, kx == 0 && kz == 0);
+                                             sc.kappa, sc.normaliseMass() && kx == 0 && kz == 0);
                 }
             }
         }
@@ -504,12 +530,15 @@ vector<FlowField> SettlingNSE::createRHS(const vector<FlowField>& fields) const 
 }
 
 vector<cfarray<FieldSymmetry>> SettlingNSE::createSymmVec() const {
-    // The same symmetries act on the velocity and on each scalar (a 1-component field is unsigned
-    // except for the overall sign s); none on the pressure.
+    // The same symmetries act on the velocity and on each scalar; none on the pressure. A 1-component
+    // field takes only the overall sign s, so a stratification's perturbation (which changes sign with
+    // its gravity axis, as u_g) gets s times that axis' sign.
     cfarray<FieldSymmetry> usym = SymmetryList(1);
     if (flags_.symmetries.length() > 0)
         usym = flags_.symmetries;
-    vector<cfarray<FieldSymmetry>> symm(1 + nscalars(), usym);
+    vector<cfarray<FieldSymmetry>> symm(1, usym);
+    for (const SettlingScalar& sc : scalars_)
+        symm.push_back(scalarSymmetries(usym, sc.parityAxis()));
     symm.push_back(SymmetryList(1));
     return symm;
 }

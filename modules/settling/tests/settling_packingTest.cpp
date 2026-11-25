@@ -43,6 +43,92 @@ Real constraintError(const FlowField& u, Real alpha) {
     return err;
 }
 
+// As constraintError, for a stratified scalar: no slip, and c = 0 (Dirichlet) or c' = 0 (Neumann) at
+// the walls in every mode, and with pinMean mean(c) = 0
+Real stratConstraintError(const FlowField& u, const SettlingScalar& sc) {
+    Real err = 0;
+    for (int mx = u.mxlocmin(); mx < u.mxlocmin() + u.Mxloc(); ++mx)
+        for (int mz = u.mzlocmin(); mz < u.mzlocmin() + u.Mzloc(); ++mz) {
+            for (int i = 0; i < 3; ++i) {
+                ComplexChebyCoeff f = u.profile(mx, mz, i);
+                err = Greater(err, Greater(abs(f.eval_a()), abs(f.eval_b())));
+            }
+            ComplexChebyCoeff c = u.profile(mx, mz, 3);
+            if (sc.wallbc == NeumannWalls)
+                err = Greater(err, Greater(abs(c.slope_a()), abs(c.slope_b())));
+            else
+                err = Greater(err, Greater(abs(c.eval_a()), abs(c.eval_b())));
+            if (sc.pinMean() && u.kx(mx) == 0 && u.kz(mz) == 0)
+                err = Greater(err, abs(c.re.mean()));
+        }
+#ifdef HAVE_MPI
+    Real globalerr = 0;
+    MPI_Allreduce(&err, &globalerr, 1, MPI_DOUBLE, MPI_MAX, *u.comm_world());
+    err = globalerr;
+#endif
+    return err;
+}
+
+// Packing of a stratified scalar (gravity along y or z, Dirichlet or Neumann walls): vectorToField
+// imposes the constraints on an arbitrary vector, and fieldToVector inverts it; and a symmetry acts on
+// the 4-component state with the scalar's parity (as u_g). Returns 1 on failure.
+int stratifiedCase(const FlowField& u0, ScalarModel model, ScalarWallBC wallbc, Real tol) {
+    DNSFlags flags;
+    flags.nu = 1.0 / 400;
+    flags.Ri = 0.01;
+    flags.Sc = 7.0;
+    flags.scalarmodel = model;
+    flags.scalarbc = wallbc;
+    const SettlingScalar sc = settlingScalars(flags)[0];
+    TimeStep dt(0.02, 0.02, 0.02, 1.0, 0.4, 0.6, false);
+    SettlingDSI dsi(flags, FieldSymmetry(), 0, dt, false, false, false, false, 0.0, u0, &cout);
+    int failure = 0;
+
+    VectorXd v, v2;
+    dsi.fieldToVector(u0, v);
+    srand(3 + u0.taskid());
+    VectorXd r = VectorXd::Random(v.size()) * 0.1;
+    FlowField u(u0), u2(u0);
+    dsi.vectorToField(r, u);
+    const Real cerr = stratConstraintError(u, sc);
+    dsi.fieldToVector(u, v);
+    dsi.vectorToField(v, u2);
+    dsi.fieldToVector(u2, v2);
+    Real d2 = (v2 - v).squaredNorm(), n2 = v.squaredNorm();
+#ifdef HAVE_MPI
+    Real buf[2] = {d2, n2}, sum[2];
+    MPI_Allreduce(buf, sum, 2, MPI_DOUBLE, MPI_SUM, *u.comm_world());
+    d2 = sum[0];
+    n2 = sum[1];
+#endif
+    const Real dfield = L2Dist(u, u2) / L2Norm(u);
+    const Real dvector = sqrt(d2 / n2);
+
+    // the scalar changes sign with the reflection of its gravity axis: s1 = [u, v, -w](x + Lx/2, y, -z)
+    // flips it along z, the shift-rotation [-u, -v, w](-x + Lx/2, -y, z + Lz/2) along y
+    const int g = sc.gravity();
+    const FieldSymmetry sigma = (g == 2) ? FieldSymmetry(1, 1, -1, 0.5, 0.0) : FieldSymmetry(-1, -1, 1, 0.5, 0.5);
+    FlowField su4 = sigma(u), uv, cv, suv, scv;
+    splitVelocityScalar(u, uv, cv);
+    splitVelocityScalar(su4, suv, scv);
+    FlowField mscv = sigma(cv);
+    mscv *= -1.0;
+    const Real svel = L2Dist(suv, sigma(uv)) / L2Norm(uv);
+    const Real sscal = L2Dist(scv, mscv) / L2Norm(cv);
+    // and the DNS's symmetry projection list for the scalar matches
+    cfarray<FieldSymmetry> one(1);
+    one[0] = sigma;
+    FlowField pcv = scalarSymmetries(one, sc.parityAxis())[0](cv);
+    const Real sproj = L2Dist(pcv, mscv) / L2Norm(cv);
+
+    cout << scalarmodel2string(model) << " " << scalarwallbc2string(wallbc) << ": constraint error " << cerr
+         << ", round trip " << dfield << " " << dvector << ", symmetry velocity " << svel << " scalar " << sscal
+         << " projection " << sproj << endl;
+    if (cerr > tol || dfield > tol || dvector > tol || svel > tol || sscal > tol || sproj > tol)
+        failure = 1;
+    return failure;
+}
+
 // Test that SettlingDSI's fieldToVector and vectorToField are inverse to each other on states
 // satisfying the constraints, and that vectorToField imposes the constraints on an arbitrary
 // vector. On 2 MPI processes this also covers the conjugate (-kx, 0) modes owned by another process.
@@ -129,6 +215,36 @@ int main(int argc, char* argv[]) {
         cout << "symmetry: velocity " << svel << ", scalar " << sscal << endl;
         if (svel > tol || sscal > tol)
             failure = 1;
+
+        // 5. Stratified scalars, on the same grid (their SettlingDSI sets the scalar's parity axis)
+        for (ScalarModel model : {StratifiedY, StratifiedZ})
+            for (ScalarWallBC wallbc : {DirichletWalls, NeumannWalls})
+                failure |= stratifiedCase(u, model, wallbc, tol);
+        setScalarParityAxis(-1);
+
+        // 6. dnsflags.txt: the stratified scalar's flags survive a save/load, and a file from before
+        // them (%Pr in place of %Sc, no scalar model or BC) loads as a settling scalar
+        {
+            DNSFlags fs;
+            fs.Sc = 7.0;
+            fs.Ri = 1.5;
+            fs.scalarmodel = StratifiedZ;
+            fs.scalarbc = NeumannWalls;
+            mkdir("flagtest");
+            fs.save("flagtest/");
+            DNSFlags fl, fo;
+            fl.load(u.taskid(), "flagtest/");
+            const bool okNew = fl.Sc == 7.0 && fl.Ri == 1.5 && fl.scalarmodel == StratifiedZ &&
+                               fl.scalarbc == NeumannWalls && scalarParityAxis() == 2;
+            fo.scalarmodel = StratifiedY;  // must be reset by the legacy load
+            fo.load(u.taskid(), "data/legacy/");
+            const bool okOld = fo.scalarmodel == SettlingModel && fo.kappa == 0.0025 && fo.vs == 2.5e-5 &&
+                               fo.Sc == 1.0 && scalarParityAxis() == -1;
+            cout << "dnsflags.txt: new format " << (okNew ? "ok" : "WRONG") << ", legacy format "
+                 << (okOld ? "ok" : "WRONG") << endl;
+            if (!okNew || !okOld)
+                failure = 1;
+        }
 
         cout << (failure ? "\t** FAIL **" : "\t   pass   ") << endl;
     }

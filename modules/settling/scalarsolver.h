@@ -3,7 +3,7 @@
  *
  *   nu u''(y) - lambda u(y) = f(y) on [a, b],
  *
- * with the boundary conditions of BoundaryCond (Diri, DiriRobin, NeumRobin, NoFlux) in rows 0 and 1
+ * with the boundary conditions of BoundaryCond (Diri, DiriRobin, NeumRobin, NoFlux, Neum) in rows 0 and 1
  * of the tau system and, for NoFlux with normalise_mass, mean(u) = mass in row 2. It solves the
  * same linear system as DenseHelmholtzSolver (which stays as its reference in the unit tests) but
  * without the dense N x N factorisation.

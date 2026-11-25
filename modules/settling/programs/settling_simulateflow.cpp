@@ -115,6 +115,7 @@ int main(int argc, char* argv[]) {
         FlowField uvel, conc;
         splitVelocityScalar(u_with_density, uvel, conc);
         SettlingDNS dns({uvel, conc, q}, flags);
+        const SettlingScalar scalar = settlingScalars(flags)[0];
         //     u.setnu (flags.nu);
         //
         cout << "uwd " << u_with_density.taskid() << endl;
@@ -142,7 +143,7 @@ int main(int argc, char* argv[]) {
             openfile(eout, outdir + "energy.asc", openflag);
             eout << fieldstatsheader_t() << endl;
             openfile(concout, outdir + "cstats.asc", openflag);
-            concout << concstatsheader_t() << endl;
+            concout << (scalar.stratified() ? stratstatsheader_t() : concstatsheader_t()) << endl;
         }
 
         FlowField u0, du, tmp;
@@ -164,7 +165,9 @@ int main(int argc, char* argv[]) {
             cout << s;
             if (statint != 0 && i % statint == 0) {
                 eout << fieldstats_t(u_with_density, t) << endl;
-                concout << concstats_t(u_with_density, vel, uc, t) << endl;
+                concout << (scalar.stratified() ? stratstats_t(u_with_density, scalar, t)
+                                                : concstats_t(u_with_density, vel, uc, t))
+                        << endl;
             }
 
             if (saveprofint != 0 && i % saveprofint == 0) {
