@@ -322,7 +322,7 @@ void SettlingNSE::genericNonlinear(const vector<FlowField>& infields, vector<Flo
 
 void SettlingNSE::linear(const vector<FlowField>& infields, vector<FlowField>& outfields) {
     // Linear terms L for fields {u, c_i} (pressure is the last infield):
-    //   L u = nu u'' - k^2 nu u - grad p + C,   L c_i = kappa_i (c_i'' - k^2 c_i)
+    //   L u = nu u'' - k^2 nu u - grad p - sum_i Ri_i c_i e_{g_i} + C,   L c_i = kappa_i (c_i'' - k^2 c_i)
     assert(infields.size() == outfields.size() + 1);
     const FlowField& press = infields.back();
     const int kxmax = infields[0].kxmax();
@@ -353,6 +353,11 @@ void SettlingNSE::linear(const vector<FlowField>& infields, vector<FlowField>& o
                 outfields[0].cmplx(mx, ny, mz, 0) = Ruk_[ny] - kappa2 * uk_[ny] - Dx * Pk_[ny];
                 outfields[0].cmplx(mx, ny, mz, 1) = Rvk_[ny] - kappa2 * vk_[ny] - Pyk_[ny];
                 outfields[0].cmplx(mx, ny, mz, 2) = Rwk_[ny] - kappa2 * wk_[ny] - Dz * Pk_[ny];
+            }
+            for (int i = 0; i < nscalars(); ++i) {
+                const int g = scalars_[i].gravity();
+                for (int ny = 0; ny < Nyd_; ++ny)
+                    outfields[0].cmplx(mx, ny, mz, g) -= scalars_[i].Ri * infields[1 + i].cmplx(mx, ny, mz, 0);
             }
 
             if (kx == 0 && kz == 0) {
